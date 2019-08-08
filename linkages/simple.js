@@ -48,8 +48,10 @@ function windowResized() {
 function mouseMoved() {
   if (grabbedElement) {
     if (grabbedElement instanceof Point) {
-      grabbedElement.editorX = mouseX;
-      grabbedElement.editorY = mouseY;
+      if (!running || (running && grabbedElement.fixed)) {
+        grabbedElement.editorX = mouseX;
+        grabbedElement.editorY = mouseY;
+      }
       grabbedElement.x = mouseX;
       grabbedElement.y = mouseY;
     }
@@ -70,6 +72,7 @@ function mousePressed() {
       } else if (hoverElement instanceof Link) {
         links = links.filter( l => l!==hoverElement );
       }
+      hoverElement = null;
     } else if (mouseButton === CENTER) {
       if (hoverElement instanceof Point) {
         //hoverElement = null;
@@ -122,8 +125,10 @@ function mousePressed() {
 function mouseDragged() {
   if (grabbedElement) {
     if (grabbedElement instanceof Point) {
-      grabbedElement.editorX = mouseX;
-      grabbedElement.editorY = mouseY;
+      if (!running || (running && grabbedElement.fixed)) {
+        grabbedElement.editorX = mouseX;
+        grabbedElement.editorY = mouseY;
+      }
       grabbedElement.x = mouseX;
       grabbedElement.y = mouseY;
     }
@@ -188,6 +193,8 @@ function keyPressed() {
     } else if (hoverElement instanceof Link) {
       links = links.filter( l => l!==hoverElement );
     }
+    hoverElement = null;
+    selectHoverPoint();
   }
   if (key == ' ') { 
     if (running) {
