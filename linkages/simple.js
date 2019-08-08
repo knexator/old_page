@@ -46,6 +46,14 @@ function windowResized() {
 }
 
 function mouseMoved() {
+  if (grabbedElement) {
+    if (grabbedElement instanceof Point) {
+      grabbedElement.editorX = mouseX;
+      grabbedElement.editorY = mouseY;
+      grabbedElement.x = mouseX;
+      grabbedElement.y = mouseY;
+    }
+  }
   selectHoverPoint();
   return false;
 }
@@ -159,6 +167,12 @@ function keyPressed() {
   if (key == 'd' && hoverElement && hoverElement instanceof Point) {
     hoverElement.drawer = !hoverElement.drawer;
   }
+  if (key == 'e' && hoverElement && hoverElement instanceof Point) {
+    grabbedElement = new Point(mouseX, mouseY, false);
+    points.push(grabbedElement);
+    links.push(new Link(hoverElement, grabbedElement));
+    hoverElement = null;
+  }
   if (key == ' ') { 
     if (running) {
       stopRun();
@@ -166,6 +180,29 @@ function keyPressed() {
       startRun();
     }
   }
+}
+
+function keyReleased() {
+  if (key == 'e') {
+    if (grabbedElement) {
+      if (hoverElement && grabbedElement !== hoverElement) {
+        if (grabbedElement instanceof Point && hoverElement instanceof Point) {
+          links.forEach(function(l) {
+            if (l.pointA === grabbedElement) {
+              l.pointA = hoverElement;
+            }
+            if (l.pointB === grabbedElement) {
+              l.pointB = hoverElement;
+            }          
+          });
+          links = links.filter(l => l.pointA !== l.pointB);
+          points = points.filter(p => p!== grabbedElement);
+        }
+      }
+    }
+    grabbedElement = null;
+    selectHoverPoint();
+  }  
 }
 
 function startRun() {
