@@ -173,6 +173,22 @@ function keyPressed() {
     links.push(new Link(hoverElement, grabbedElement));
     hoverElement = null;
   }
+  if (key == 'q' && hoverElement && hoverElement instanceof Link) {
+    if (!hoverElement.motorSpeed) hoverElement.motorSpeed = 0;
+    hoverElement.motorSpeed -= 1;
+  }
+  if (key == 'w' && hoverElement && hoverElement instanceof Link) {
+    if (!hoverElement.motorSpeed) hoverElement.motorSpeed = 0;
+    hoverElement.motorSpeed += 1;
+  }
+  if (key == 'x' && hoverElement) {
+    if (hoverElement instanceof Point) {
+      points = points.filter( p => p!=hoverElement );
+      links = links.filter( l => l.pointA!=hoverElement && l.pointB!=hoverElement );
+    } else if (hoverElement instanceof Link) {
+      links = links.filter( l => l!==hoverElement );
+    }
+  }
   if (key == ' ') { 
     if (running) {
       stopRun();
