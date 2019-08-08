@@ -1,0 +1,59 @@
+<html>
+<head>
+<style>
+* {
+  margin:0;
+  padding:0;
+}
+
+html, body {
+  width:  100%;
+  height: 100%;
+}
+
+canvas {
+  display:block;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<script>
+var canvas;
+var ctx;
+
+$(function () {
+  init();
+  $(window).on('resize', function(){
+    resizeCanvas();
+  });
+  $(canvas).on('mousemove', mouseMoved);
+  //$(canvas).on('touchmove', touchMoved);
+  /*$(canvas).on('touchend', () => {
+    prev_mouse = null;
+  });*/
+  $(canvas).on('mousewheel', onWheel);
+  $(canvas).on('contextmenu', () => false);
+  window.redraw = redraw;
+});
+
+function init() {
+  canvas = document.getElementById('canvas');
+  ctx = canvas.getContext('2d');
+  resizeCanvas();  
+}
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  ctx.lineCap = "round";
+  radius = Math.min(canvas.width, canvas.height)/2;
+  redraw();
+  clearTimeout(redraw_timer);
+  redraw_timer = setTimeout(redraw, 250);
+}
+
+
+</script>
+</body>
+</html>
