@@ -12,6 +12,7 @@ let startRunning = new Date();
 let lastRunning = new Date();
 
 let drawnSegments = [];
+let accuracy = 24;
 
 function setup() {
   var cnv = createCanvas(windowWidth, windowHeight);
@@ -281,7 +282,7 @@ function fullConstraint(dt) {
       points[i].y = points[i].editorY;
     }
   }
-  for (let k=0; k<12; k++) {
+  for (let k=0; k<accuracy; k++) {
     for (let i=0; i<links.length; i++) {
       links[i].enforce();
     }

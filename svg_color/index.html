@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>This shows how to get elements inside included svg images from the surrounding html.</title>
+	</head>
+	<body>
+		<object class="emb" data="svglogo.svg" width="100" height="100" type="image/svg+xml"></object>
+		<embed class="emb" src="svglogo.svg" width="100" height="100" type="image/svg+xml" />
+		<iframe class="emb" src="svglogo.svg" width="100" height="100" style="border:0" ></iframe>
+		<p>
+			You should see three svg logo images with green fill above here.
+		</p>
+		<p>
+			If any of the logos are shown in orange that means the browser failed to access the DOM of the referenced svg resource.
+			From left to right we have &lt;object&gt;, &lt;embed&gt; and &lt;iframe&gt; that all reference the <a href="images/svglogo.svg">same svg file</a>.
+			The script gets the referenced svg document either with <code>contentDocument</code> or <code>getSVGDocument()</code> and then sets the fill color
+			to lime green.
+		</p>
+		<p>
+			View source to see how this works.
+		</p>
+		<script>//<![CDATA[
+		
+		// wait until all the resources are loaded
+		window.addEventListener("load", findSVGElements, false);
+		
+		// fetches the document for the given embedding_element
+		function getSubDocument(embedding_element)
+		{
+			if (embedding_element.contentDocument) 
+			{
+				return embedding_element.contentDocument;
+			} 
+			else 
+			{
+				var subdoc = null;
+				try {
+					subdoc = embedding_element.getSVGDocument();
+				} catch(e) {}
+				return subdoc;
+			}
+		}
+				
+		function findSVGElements()
+		{
+			var elms = document.querySelectorAll(".emb");
+			for (var i = 0; i < elms.length; i++)
+			{
+				var subdoc = getSubDocument(elms[i])
+				if (subdoc)
+					subdoc.getElementById("svgbar").setAttribute("fill", "lime");
+			}
+		}
+		//]]>
+		</script>
+	</body>
+</html>
