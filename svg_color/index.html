@@ -5,7 +5,19 @@
 	</head>
 	<body>
 		<object class="emb" data="camiseta.svg" type="image/svg+xml"></object>
+    <input type="color" id="color1" value="#ff0000">
+    <input type="color" id="color2" value="#00ff00">    
 		<script>
+    let subdoc = null;
+    
+    function watchColorPicker(event) {
+      subdoc.getElementById("derecha").style.fill = pickers[0].value;
+      subdoc.getElementById("izquierda").style.fill = pickers[1].value;
+    }
+    
+    let pickers = document.querySelectorAll("input");
+    pickers.forEach((picker) => picker.addEventListener("change", watchColorPicker, false));
+
 		
 		// wait until all the resources are loaded
 		window.addEventListener("load", findSVGElements, false);
@@ -32,9 +44,9 @@
 			var elms = document.querySelectorAll(".emb");
 			for (var i = 0; i < elms.length; i++)
 			{
-				var subdoc = getSubDocument(elms[i])
-				if (subdoc)
-					subdoc.getElementById("derecha").setAttribute("fill", "lime");
+				subdoc = getSubDocument(elms[i])
+				//if (subdoc)
+				//	subdoc.getElementById("derecha").style.fill = "lime";
 			}
 		}
 		</script>
