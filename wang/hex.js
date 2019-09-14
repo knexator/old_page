@@ -561,7 +561,7 @@ PacketEditor.prototype.launch = function() {
       if (!otherTile) continue;
       if (visited.has(JSON.stringify([i+c[0],j+c[1],k+c[2]]))) continue;
       //visited.add([i+c[0],j+c[1],k+c[2]]);
-      if (tile.colors[n] != tile.colors[(n+3)%6]) continue;
+      if (tile.colors[n] != otherTile.colors[(n+3)%6]) continue;
       result.push([i+c[0],j+c[1],k+c[2]]);
     }
     return result;
