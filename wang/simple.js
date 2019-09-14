@@ -4,6 +4,7 @@ let tileSize = 50;
 let COLORS;
 let board;
 let editor;
+let minGlue = 1;
 
 function setup() {
   var cnv = createCanvas(windowWidth, windowHeight);
@@ -20,14 +21,26 @@ function setup() {
   board.proteins.push(protein);
   let protein2 = new Protein(platonic, 10, 1);
   board.proteins.push(protein2);*/
-  board = new Board();
+  board = new Board((b) => {
+    for (let i=-30; i<29; i++) {
+      if (i==0) {
+        b.proteins.push(Protein.fromSingleColors([3,3,3,1],i,10));        
+      } else {
+        b.proteins.push(Protein.fromSingleColors([3,3,3,3],i,10));
+      }
+    }
+    for (let j=11; j<31; j++) {      
+      b.proteins.push(Protein.fromSingleColors([Math.floor(Math.random()*4),3,3,3],-30,j));
+    }
+  });
   editor = new PacketEditor();
-  let platonic = new PlatonicProtein();
-  platonic.tiles[0][0] = new Tile(0,1,2,0);
-  platonic.tiles[1][0] = new Tile(2,3,0,3);
-  platonic.tiles[0][1] = new Tile(3,0,3,1);
-  board.blueprints.push(platonic);
-  board.proteins.push(new Protein(platonic, 10, 10));
+  editor.tiles[1][1] = new Tile(0,1,2,0);
+  editor.tiles[2][1] = new Tile(2,3,0,3);
+  editor.tiles[1][2] = new Tile(3,0,3,1);
+  //board.proteins.push(new Protein(platonic, 10, 10));
+  /*let platonic = new PlatonicProtein();
+  platonic.tiles[0][0] = new Tile(3,3,3,3);
+  board.proteins.push(new Protein(platonic, 10, 10));*/
 }
 
 function draw() {
@@ -108,7 +121,7 @@ function keyReleased(event) {
 
 function Tile(right,up,left,down) {
   this.colors = [right,up,left,down];
-  this.minGlue = 1;
+  this.minGlue = minGlue;
 }
 
 Tile.prototype.copy = function() {
@@ -125,18 +138,30 @@ function PlatonicProtein() {
   }
 }
 
+PlatonicProtein.fromSingleColors = function(colors) {
+  let p = new PlatonicProtein();
+  p.tiles[0][0] = new Tile(...colors);
+  return p;
+}
+
 function Protein(blueprint, i, j) {
   this.blueprint = blueprint;
   this.i = i;
   this.j = j;
 }
 
-function Board() {
+Protein.fromSingleColors = function(colors,i,j) {
+  let plato = PlatonicProtein.fromSingleColors(colors);
+  return new Protein(plato, i,j);
+}
+
+function Board(startFunction) {
   this.blueprints = [];
   this.proteins = [];
   this.offsetX = 0;
   this.offsetY = 0;
-  
+  this.startFunction = startFunction;
+  if (this.startFunction) this.startFunction(this);
   this.color_triangles = [];
 }
 
@@ -293,7 +318,7 @@ Protein.prototype.draw = function(ox,oy) {
 
 PacketEditor = function() {
   this.si = 4;
-  this.sj = 4;
+  this.sj = 8;
   this.tiles = [];
   this.margin = tileSize / 4;
   this.erase();
