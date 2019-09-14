@@ -468,13 +468,14 @@ PacketEditor.prototype.ijkAtXY = function(_x,_y) {
 }
 
 PacketEditor.prototype.mousePress = function(_x,_y) {
+  if (mouseButton === "center") return;
   let x = _x - this.offsetX;
   let y = _y - this.offsetY;
   let q = (1./2. * x  -  Math.sqrt(3)/6 * y) / tileApot;
   let r = (              Math.sqrt(3)/3 * y) / tileApot;
   let [i,j,k] = cube_round(q, r, -q-r);
   let tile = this.tiles.get([i,j,k]);
-  if (!tile && mouseButton != "center") {
+  if (!tile) {
     this.tiles.set([i,j,k], new Tile([0,0,0,0,0,0]));
     return;
   }
