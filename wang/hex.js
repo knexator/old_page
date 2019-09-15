@@ -467,20 +467,20 @@ PacketEditor.prototype.ijkAtXY = function(_x,_y) {
   return cube_round(q, r, -q-r);
 }
 
-PacketEditor.prototype.mousePress = function(_x,_y) {
-  if (mouseButton === "center") return;
+PacketEditor.prototype.mousePress = function(_x,_y) {  
   let x = _x - this.offsetX;
   let y = _y - this.offsetY;
   let q = (1./2. * x  -  Math.sqrt(3)/6 * y) / tileApot;
   let r = (              Math.sqrt(3)/3 * y) / tileApot;
   let [i,j,k] = cube_round(q, r, -q-r);
   let tile = this.tiles.get([i,j,k]);
-  if (!tile) {
+  if (!tile && mouseButton != "center") {
     this.tiles.set([i,j,k], new Tile([0,0,0,0,0,0]));
     return;
   }
   if (mouseButton == "center") {
     this.tiles.delete([i,j,k]);
+    return;
   }
   //console.log(i,j,k);
   //console.log(i-q,j-r,k+q+r);
