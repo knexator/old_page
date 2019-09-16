@@ -1,0 +1,130 @@
+let bars = [[0,2], [0,3], [0,5], [0,7], [0,11]];
+let numbers = [];
+let instructions = [];
+let textArea;
+
+function resetBars() {
+  bars = [[0,2], [0,3], [0,5], [0,7], [0,11]];
+}
+
+function changeCode() {
+  eval(textArea.value);
+}
+
+function highlightLine(n) {
+  let lines = textArea.value.split("\n");
+  let line = lines.splice(n)[0];
+  let a = lines.join("\n").length+1;
+  let b = line.length;
+  textArea.setSelectionRange(a,a+b);
+}
+
+function setup() {
+  var cnv = createCanvas(windowWidth, windowHeight);
+  cnv.style('display', 'block');
+  document.addEventListener('contextmenu', event => event.preventDefault());
+  
+  textArea = document.querySelector("textarea");
+  textArea.addEventListener("change", event => {
+    console.log("asdfasdfjñlkasdg");
+  });  
+  for (let i=0; i<Math.pow(2,bars.length); i++) {
+    instructions[i] = NOP();
+    textArea.value += "instructions["+i.toString()+"] = NOP()\n";
+  }
+  textArea.value += "\n\n\n/*NOP(), GRW(n) and SML(n), INC(n) and DEC(n)*/"
+  /*
+  Starting with 2,3,5,7,11 and all at 0, this will get them all to 3 and stable:
+  instructions[16] = GRW(0);
+  instructions[8] = SML(3);
+  instructions[20] = SML(4);
+  instructions[10] = DEC(0);
+  instructions[24] = SML(3);
+  instructions[26] = SML(4);
+  instructions[1] = INC(4);
+  instructions[27] = SML(2);
+  instructions[4] = INC(2);*/
+}
+
+function draw() {
+  background(32);
+  for (let i=0; i<bars.length; i++) {
+    for (let j=0; j<bars[i][1]; j++) {
+      fill(bars[i][0] == j ? 128 : 255);
+      rect(50+j*60, 50+i*60, 60, 50);
+    }
+  }
+  fill(128);
+  rect(0,0,40,40);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+
+function mousePressed() {
+  if (mouseX <= 40 && mouseY <= 40) {
+    step();
+  }
+}
+
+function keyPressed() {  
+  if (keyCode == CONTROL) step();
+}
+
+function step() {
+  let n = getNum();
+  instructions[n]();
+  highlightLine(n);
+  advanceBars();
+  console.log(n);
+  numbers.push(n);
+}
+
+function getNum() {
+  let n = 0;
+  for (let i=0; i<bars.length; i++) {
+    n*=2;
+    if (bars[i][0] == 0) {
+      n+=1;
+    }
+  }
+  return n;
+}
+
+function advanceBars() {
+  for (let i=0; i<bars.length; i++) {
+    bars[i][0] += 1;
+    bars[i][0] %= bars[i][1];
+  }
+}
+
+function NOP() {
+  return () => {};
+}
+
+function GRW(bar) {
+  return () => {bars[bar][1] += 1};
+}
+
+function SML(bar) {
+  return () => {
+    if (bars[bar][1] > 1) {
+      bars[bar][1] -= 1;
+    }
+  }
+}
+
+function INC(bar) {
+  return () => {
+    bars[bar][0] += 1;
+    bars[bar][0] %= bars[bar][1];
+  }
+}
+
+function DEC(bar) {
+  return () => {
+    bars[bar][0] += bars[bar][1] - 1;
+    bars[bar][0] %= bars[bar][1];
+  }
+}

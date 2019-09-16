@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+    <title>p5.js example</title>
+    <style>
+    body {padding: 0; margin: 0;} 
+    div {
+      position: absolute;
+      left: 50%;
+      top: 150px;
+    }
+    
+    div textarea {
+      display: block;
+    }
+    
+    div button {
+      width: 100px;
+      height: 60px;
+    }
+    </style>
+    <script src="p5.min.js"></script>
+    <script src="p5.dom.min.js"></script>
+    <script src="simple.js"></script>
+  </head>
+  <body>
+    <div>      
+      <button type="button" onclick="changeCode()">Recode</button>
+      <button type="button" onclick="resetBars()">Reset</button>
+      <textarea name="message" rows="40" cols="50"></textarea>
+    </div>
+  </body>
+</html>
