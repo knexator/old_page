@@ -26,11 +26,11 @@ function setup() {
   new BinaryMemoryPanel(4, 50, 30);
   new ConstPanel(200, 120, 100);
   new ConstPanel(260, 220, 0);
-  new RythmStripPanel(500, 500);
-  new ClockPanel(700, 700, 500);  
-  new AndPanel(760, 700, 500);  
-  new OrPanel(330, 700, 500);  
-  new NotPanel(500, 700, 500);  
+  new RythmStripPanel(500, 40);
+  new ClockPanel(700, 800, 500);  
+  new AndPanel(760, 700);  
+  new OrPanel(330, 500);  
+  new NotPanel(500, 700);
 }
 
 function draw() {
@@ -41,6 +41,37 @@ function draw() {
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
+}
+
+function keyPressed(event) {
+  let x = mouseX-baseGUI.offsetX;
+  let y = mouseY-baseGUI.offsetY;
+  switch(event.key) {
+    case '1':
+      new ConstPanel(x, y, 100);
+      break;
+    case '2':
+      new ReadPanel(x, y);
+      break;
+    case '3':
+      new ClockPanel(x, y, 500);
+      break;
+    case '4':
+      new AndPanel(x, y);
+      break;
+    case '5':
+      new OrPanel(x, y);
+      break;
+    case '6':
+      new NotPanel(x, y);
+      break;
+    case '7':
+      new BinaryMemoryPanel(4, x, y);
+      break;
+    case '8':
+      new RythmStripPanel(x, y);
+      break;
+  }
 }
 
 //function keyPressed(event) {baseGUI.mouseEvent(event); return false;}
