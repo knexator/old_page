@@ -1,17 +1,21 @@
-let bars = [[0,2], [0,3], [0,5], [0,7], [0,11]];
+//let bars = [[0,2], [0,3], [0,5], [0,7], [0,11]];
+let bars = [[1,5], [2,7], [0, 3], [1, 7]];
 let numbers = [];
 let instructions = [];
 let textArea;
+let oscillators;
+let soundEnabled = false;
 
 function resetBars() {
-  bars = [[0,2], [0,3], [0,5], [0,7], [0,11]];
+  //bars = [[0,2], [0,3], [0,5], [0,7], [0,11]];
+  bars = [[1,5], [2,7], [0, 3], [1, 7]];
 }
 
 function changeCode() {
   eval(textArea.value);
 }
 
-function highlightLine(n) {
+function highlightLine(n) {  
   let lines = textArea.value.split("\n");
   let line = lines.splice(n)[0];
   let a = lines.join("\n").length+1;
@@ -19,10 +23,40 @@ function highlightLine(n) {
   textArea.setSelectionRange(a,a+b);
 }
 
+function initSounds() {
+  if (oscillators) return;
+  oscillators = [];
+  for (let i=0; i<bars.length; i++) {
+    let osc = new p5.Oscillator();
+    osc.setType('sine');
+    //osc.freq(240*bars[i][1]);
+    osc.freq(getFreq(bars[i][1]));
+    osc.amp(0);
+    osc.start();
+    oscillators.push(osc); 
+  }
+}
+
+function getFreq(n) {
+  if (n==0) return 240;
+  return getFreq(n-1) * 3 / 2;
+}
+
+function playSound() {
+  if (!soundEnabled) return;
+  for (let i=0; i<bars.length; i++) {
+    let osc = oscillators[i];
+    if (bars[i][0] == 0) {
+      osc.amp(4, 0.02);
+      osc.amp(0, 0.02, 0.25);
+    }
+  }
+}
+
 function setup() {
   var cnv = createCanvas(windowWidth, windowHeight);
   cnv.style('display', 'block');
-  document.addEventListener('contextmenu', event => event.preventDefault());
+  document.addEventListener('contextmenu', event => event.preventDefault());  
   
   textArea = document.querySelector("textarea");
   textArea.addEventListener("change", event => {
@@ -66,16 +100,18 @@ function mousePressed() {
   if (mouseX <= 40 && mouseY <= 40) {
     step();
   }
+  initSounds();
 }
 
 function keyPressed() {  
-  if (keyCode == CONTROL) step();
+  if (keyCode == ESCAPE) step();
 }
 
 function step() {
   let n = getNum();
   instructions[n]();
   highlightLine(n);
+  playSound();
   advanceBars();
   console.log(n);
   numbers.push(n);
@@ -103,28 +139,43 @@ function NOP() {
   return () => {};
 }
 
-function GRW(bar) {
-  return () => {bars[bar][1] += 1};
+function GRW(bar, n) {
+  if (!n) n = 1;
+  return () => {bars[bar][1] += n};
 }
 
-function SML(bar) {
+function SML(bar,n) {
+  if (!n) n = 1;
   return () => {
-    if (bars[bar][1] > 1) {
-      bars[bar][1] -= 1;
+    bars[bar][1] -= n;
+    if (bars[bar][1] <= 1) {
+      bars[bar][1] = 1;
     }
   }
 }
 
-function INC(bar) {
+function INC(bar, n) {
+  if (!n) n=1;
   return () => {
-    bars[bar][0] += 1;
+    bars[bar][0] += n;
     bars[bar][0] %= bars[bar][1];
   }
 }
 
-function DEC(bar) {
+function DEC(bar,n) {
+  if (!n) n=1;
   return () => {
-    bars[bar][0] += bars[bar][1] - 1;
+    bars[bar][0] += Math.abs(n)*bars[bar][1] - n;
     bars[bar][0] %= bars[bar][1];
+  }
+}
+
+function MANY() {
+  // The [0] is complete bonkers or dark magic, but it works
+  let args = [].concat.call(arguments)[0];
+  return () => {
+    for (var i = 0; i < args.length; i++) {
+      args[i]();
+    }
   }
 }
