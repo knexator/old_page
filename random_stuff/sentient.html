@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0">
+    <title>sentient testing</title>
+    <style>
+    body {padding: 0; margin: 0;} 
+    </style>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/sentient-lang/0.0.0-alpha.41/sentient.js"></script>
+  </head>
+  <body>
+  <textarea id="code" rows="10" cols="30"></textarea>
+  <textarea id="assigments" rows="10" cols="20"></textarea>
+  <input type="number" id="solutionCount" value=1>
+  <button type="button" onclick="compile()">Compile</button>
+  <button type="button" onclick="run()">Run</button>
+  <button type="button" onclick="compileAndRun()">Compile And Run</button>
+  <button type="button" onclick="saveCurrent()">Save</button>
+  <script>
+    textArea = document.getElementById("code");
+    solutionCount = document.getElementById("solutionCount");
+    assigments = document.getElementById("assigments");
+    loadLast();
+    function compile() {
+      program = Sentient.compile(textArea.value);
+    }
+    function run() {
+      console.log("results: ");
+      results = Sentient.run({program: program, number: Number(solutionCount.value), callback: console.log, assignments: getAssigments()});
+    }
+    function compileAndRun() {
+      compile();
+      run();
+    }
+    function getAssigments() {
+      if (assigments.value == "") return {};
+      return JSON.parse(assigments.value);
+    }
+    function saveCurrent() {
+      localStorage.setItem('lastCode', textArea.value);
+      localStorage.setItem('count', solutionCount.value);
+      localStorage.setItem('assigns', assigments.value);
+    }
+    function loadLast() {
+      textArea.value = localStorage.getItem('lastCode');
+      solutionCount.value = localStorage.getItem('count');
+      assigments.value = localStorage.getItem('assigns');
+    }
+  </script>
+  </body>
+</html>
