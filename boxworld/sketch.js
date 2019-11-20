@@ -200,7 +200,7 @@ Level.prototype.directInput = function(di, dj) {
 
 Level.prototype.queueAdvance = function() {
   if (this.isWon()) {
-    if (this.n < levelStrings.length - 2) {
+    if (this.n < levelStrings.length - 1) {
       curLevel = new Level(this.n + 1);
     }
   }
