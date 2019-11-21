@@ -316,20 +316,16 @@ Level.prototype.findPlayer = function() {
 
 function mousePressed() {
   curLevel.click(mouseX, mouseY);
-  if (!fullscreen()) {
+  //document.documentElement.requestFullscreen();
+  /*if (!fullscreen()) {
     fullscreen(true);
+  }*/
+  if(navigator.userAgent.match(/Android/i)){
+    window.scrollTo(0,1);
   }
 }
 
 function keyPressed() {
-  /*if (key == 'w') curLevel.handleDirection( 0,-1);
-  if (key == 'a') curLevel.handleDirection(-1, 0);
-  if (key == 's') curLevel.handleDirection( 0, 1);
-  if (key == 'd') curLevel.handleDirection( 1, 0);*/
-  /*if (key == 'w') curLevel.moveQueue.push([ 0,-1]);
-  if (key == 'a') curLevel.moveQueue.push([-1, 0]);
-  if (key == 's') curLevel.moveQueue.push([ 0, 1]);
-  if (key == 'd') curLevel.moveQueue.push([ 1, 0]);*/
   if (key == 'w') curLevel.directInput( 0,-1);
   if (key == 'a') curLevel.directInput(-1, 0);
   if (key == 's') curLevel.directInput( 0, 1);
