@@ -316,6 +316,9 @@ Level.prototype.findPlayer = function() {
 
 function mousePressed() {
   curLevel.click(mouseX, mouseY);
+  if (!fullscreen()) {
+    fullscreen(true);
+  }
 }
 
 function keyPressed() {
