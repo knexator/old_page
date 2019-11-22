@@ -316,7 +316,7 @@ Level.prototype.findPlayer = function() {
   }
 }
 
-function mousePressed() {
+function mouseReleased() {
   curLevel.click(mouseX, mouseY);
   //document.documentElement.requestFullscreen();
   /*if (!fullscreen()) {
@@ -325,6 +325,7 @@ function mousePressed() {
   if(navigator.userAgent.match(/Android/i)){
     window.scrollTo(0,1);
   }
+  return false;
 }
 
 function keyPressed() {
