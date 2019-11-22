@@ -147,18 +147,20 @@ Level.prototype.draw = function() {
 
 Level.prototype.click = function(x, y) {
   let i = Math.floor(x / this.tileSize);
-  let j = Math.floor(y / this.tileSize);  
+  let j = Math.floor(y / this.tileSize);
   if (i<this.width && j<this.height) {
-    let di = i - this.pi;
-    let dj = j - this.pj;
-    let b = this.data[i][j];
-    if (Math.abs(di) + Math.abs(dj) == 1) {
-      this.directInput(di, dj);
-    } else if (b == 0 || b == 5) {
-      path = this.findPlayerPathTo(i, j);
-      if (path) {
-        this.moveQueue = this.moveQueue.concat(path);
-        this.queueAdvance();
+    if (this.moveQueue.length == 0) {
+      let di = i - this.pi;
+      let dj = j - this.pj;
+      let b = this.data[i][j];
+      if (Math.abs(di) + Math.abs(dj) == 1) {
+        this.directInput(di, dj);
+      } else if (b == 0 || b == 5) {
+        path = this.findPlayerPathTo(i, j);
+        if (path) {
+          this.moveQueue = this.moveQueue.concat(path);
+          this.queueAdvance();
+        }
       }
     }
   } else {
