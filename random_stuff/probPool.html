@@ -40,15 +40,22 @@ function setMouse (e) {
   mouse.y = e.clientY - rect.top
 }
 
-canvas.onmousedown = (e) => {
+//canvas.onmousedown = (e) => {
+canvas.onpointerdown = (e) => {
   mouse.button = e.which
   mouse.down = true
   setMouse(e)
 }
 
-canvas.onmousemove = setMouse
+//canvas.onmousemove = setMouse
+canvas.onpointermove = setMouse
 
-canvas.onmouseup = () => (mouse.down = false)
+//canvas.onmouseup = () => (mouse.down = false)
+canvas.onpointerup = () => (mouse.down = false)
+
+/*ontouchstart
+ontouchend
+ontouchmove*/
 
 canvas.oncontextmenu = (e) => e.preventDefault()
 
