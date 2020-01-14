@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <title>Universal Puzzle</title>
+    <style>
+#chain {
+  font-size:xx-large;
+}
+
+#rules div:hover {
+  background-color: cyan;
+}
+    </style>
+    <script type="text/javascript" src="anagrams.js"></script>
+  </head>
+  <body>
+  <p>Select a group of letters to change them by any of their anagrams</p>
+  <textarea id="chain" readonly>SALVATIONJOYTRUTHTRUTHJOYVICTORIOUSASCETICFAITHSELFMADNESSENDLESSLOVEMADNESSINEXPEDIENTPHILOSOPHYETERNALRETURNGAINSPHILOSOPHYFAITHOVERCOMEFAITHFULINTENTIONSAVERSIONULTIMATESTRONGENDLESSPHILOSOPHYDECREPITSOCIETYCHRISTIANINTENTIONSGOODNOBLEASCETICUBERMENSCHFAITHULTIMATESALVATIONSALVATIONPREJUDICEDERIVEZARATHUSTRABATTLETRUTHAGAINSTFAITHINTENTIONSHOLIESTFEARFULSELFISHHATREDOFSALVATIONMORALITYINSOFARHORROROCEANGAINSPASSIONOCEANPIOUSCHRISTIANITYSALVATIONSPIRITASCETICFAITHJOYMARVELOUSFREEMERCIFULJOYDECEPTIONSDEPTHSFAITHFULPASSIONTRANSVALUATIONPHILOSOPHYULTIMATETRUTHDISGUSTGAINSHOLIESTENLIGHTENMENTDISGUSTIDEALPIOUSSUPERIORITYDISGUSTMADNESSSPIRITSTRONGPINNACLEULTIMATECHAOSFREEDECIEVEOFVICTORIOUSSTRONGCONVICTIONSLOVESPIRITJUSTICESUICIDESEAHOLIESTDECREPITRIGHTDISGUSTSOCIETYMADNESSHORRORVIRTUESPASSIONFAITHGRANDEURMORALZARATHUSTRASELFISHFEARFULASCETICAVERSIONJUSTICEPREJUDICEREVALUATIONREVALUATIONAVERSIONMARVELOUSRIGHTJOYINSOFARDECIEVEULTIMATEMADNESSGOODOFPHILOSOPHYHORRORHOPEENLIGHTENMENTDECEPTIONSGAINSWILLTRUTHPASSIONMARVELOUSFAITHMORALITYINTENTIONSPINNACLE</textarea>
+  <div id="rules">
+  </div>
+  <script>
+let chainArea = document.getElementById("chain");
+let rulesArea = document.getElementById("rules");
+
+document.addEventListener('selectionchange', handleSelection);
+
+function handleSelection() {
+  const activeElement = document.activeElement
+  if (activeElement && activeElement.id === 'chain') {
+    updateVisuals();
+  }
+}
+
+function updateVisuals() {
+  let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+  let selected = chainArea.value.slice(from, to);
+    
+  while (rulesArea.firstChild) {
+    rulesArea.removeChild(rulesArea.firstChild);
+  }
+  
+  let options = findAnagrams(selected);
+  for (let i=0; i<options.length; i++) {
+    var node = document.createElement("DIV");
+    var textnode = document.createTextNode(options[i]);
+    node.appendChild(textnode);
+    rulesArea.appendChild(node);
+  }
+}
+
+function replaceSelection(word) {
+  let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+  chainArea.value = chainArea.value.slice(0, from) + word + chainArea.value.slice(to);
+}
+
+function findAnagrams(word) {
+  let sortedWord = Array.from(word.toLowerCase()).sort().join('');
+  let results = anagrams[sortedWord] || [];
+  return results.map(v => v.toUpperCase());
+}
+
+rulesArea.addEventListener("click", function(event){
+  replaceSelection(event.target.innerText);
+  chainArea.focus();
+});
+
+
+updateVisuals();
+  </script>
+  </body>
+</html>

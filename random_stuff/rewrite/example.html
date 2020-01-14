@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <title>Universal Puzzle</title>
+    <style>
+#chain {
+  font-size:xx-large;
+}
+.rule {
+  opacity: 25%;
+}
+.rule:hover {
+  background-color: cyan;
+}
+    </style>
+  </head>
+  <body>
+  <p>Select the letters to change and then click a rule to apply it.
+  Rules in red can be applied somewhere. Bold rules can be applied to the current selection.
+  Right click a red rule to select somewhere where it can be applied;
+    right click it again to jump to other places.</p>
+  <!-- Only change this -->
+  <textarea id="chain" readonly>#...AAA#</textarea>
+  <div class="rule">#AAA...#->VICTORY</div>
+  <div class="rule">..->AAA</div>
+  <div class="rule">AA->.</div>
+  <div class="rule">..AAA->AA..A</div>
+  <div class="rule">.AAA->...A</div>
+
+  <!-- No need to change more -->
+  <script>
+let chainArea = document.getElementById("chain");
+ruleDivs = document.getElementsByClassName("rule");
+leftRules = [];
+rightRules = [];
+for (let k=0; k<ruleDivs.length; k++) {
+  let [left, right] = ruleDivs[k].textContent.split("->");
+  leftRules.push(left);
+  rightRules.push(right);
+  ruleDivs[k].onclick = function () {
+    let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+    let selected = chainArea.value.slice(from, to);
+    if (selected == leftRules[k]) {
+      chainArea.value = chainArea.value.slice(0, from) + rightRules[k] + chainArea.value.slice(to);
+      chainArea.selectionStart = from;
+      chainArea.selectionEnd = from + rightRules[k].length;
+    }
+    chainArea.focus();
+  }
+  ruleDivs[k].oncontextmenu = function (event) {
+    validPlaces = whereCanItBeApplied(leftRules[k]);
+    if (validPlaces.length > 0) {
+      let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+      let i = validPlaces.indexOf(from);
+      // If it already is a correct selection, jump to the next one
+      if (to - from == leftRules[k].length && i>-1) {
+        i = (i+1)%validPlaces.length;
+        chainArea.selectionStart = validPlaces[i];
+        chainArea.selectionEnd = validPlaces[i] + leftRules[k].length;
+      } else {
+        chainArea.selectionStart = validPlaces[0];
+        chainArea.selectionEnd = validPlaces[0] + leftRules[k].length;
+      }
+      chainArea.focus();
+      //console.log(to, from);
+    }
+    //chainArea.focus();
+    event.preventDefault();
+  }
+}
+
+function whereCanItBeApplied(leftRule) {
+  let n = leftRule.length;
+  let str = chainArea.value;
+  let places = [];
+  for (let k=0; k<=str.length-n; k++) {
+    if (chainArea.value.slice(k, k+n) == leftRule) {
+      places.push(k);
+    }
+  }
+  return places;
+}
+
+document.addEventListener('selectionchange', handleSelection);
+
+function handleSelection() {
+  const activeElement = document.activeElement
+  if (activeElement && activeElement.id === 'chain') {
+    updateVisuals();    
+  }
+}
+
+function updateVisuals() {
+  let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+  let selected = chainArea.value.slice(from, to);
+  for (let k=0; k<ruleDivs.length; k++) {
+    if (leftRules[k] == selected) {
+      ruleDivs[k].style.opacity = "100%";
+      ruleDivs[k].style.color = "red";
+    } else if (chainArea.value.includes(leftRules[k])) {
+      ruleDivs[k].style.opacity = "25%";
+      ruleDivs[k].style.color = "red";
+    } else {
+      ruleDivs[k].style.opacity = "25%";
+      ruleDivs[k].style.color = "black";
+    }
+  }
+}
+
+updateVisuals();
+
+  </script>   
+  </body>
+</html>

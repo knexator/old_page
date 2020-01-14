@@ -17,13 +17,17 @@ function setup() {
 }
 
 function f(x, y, dt) {
-  let a = 0.4;
+  return [x + y*dt,
+          y + (x*(5+3*x-2*x*x))*dt];
+  //return [x + (y+x*(1-x*x-y*y))*dt,
+  //        y + (-x+y*(1-x*x-y*y))*dt];
+  /*let a = 0.4;
   let b = 0.4;
   let c = 0.4;
   let d = 0.4;
   let xr = 0.2;
   return [x + (a*x - b*y*(x-xr))*dt,
-          y + (c*y*(x-xr) - d*y)*dt];
+          y + (c*y*(x-xr) - d*y)*dt];*/
   
   /*let r = 3.48;
   return [x + (-r*x*y + y)*dt,
