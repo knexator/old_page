@@ -1,4 +1,5 @@
 let eps = 0.1;
+let _dt = 1/20;
 
 let oX = 0;
 let oY = 0;
@@ -14,11 +15,14 @@ function setup() {
   oX = width/2;
   oY = height/2;
   stroke(255);
+  //frameRate(1);
 }
 
 function f(x, y, dt) {
   return [x + y*dt,
-          y + (x*(5+3*x-2*x*x))*dt];
+          y - Math.sin(x)*dt];
+  //return [x + y*dt,
+  //        y + (x*(5+3*x-2*x*x))*dt];
   //return [x + (y+x*(1-x*x-y*y))*dt,
   //        y + (-x+y*(1-x*x-y*y))*dt];
   /*let a = 0.4;
@@ -93,8 +97,9 @@ function sign(x) {
 function draw() {
   background(32);
   translate(oX, oY);
-  let dt = 1/2400;
-  for (let k=0; k<100; k++) {
+  //let dt = 1/2400;
+  let dt = 1/2400;  
+  for (let k=0; k<200; k++) {
     for (let i=0; i<points.length; i++) {
       let p = points[i];
       points[i] = f(p[0], p[1], dt);
@@ -109,10 +114,10 @@ function draw() {
     let p = s2w(...curPoints[i]);
     ellipse(p[0]*z, p[1]*z, 20, 20);
   }
-  dt = 1/240;
+  dt = _dt;
   let x = (mouseX-oX)/z;
   let y = (mouseY-oY)/z;
-  for (let i=0; i<3000; i++) {
+  for (let i=0; i<50/_dt; i++) {
     /*let nx = x + y*dt;
     let ny = y - Math.sin(x)*dt;*/
     [nx, ny] = f(x, y, dt);
