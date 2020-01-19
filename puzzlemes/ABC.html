@@ -1,24 +1,55 @@
 <!DOCTYPE html>
 <html lang="">
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">    
     <title>Universal Puzzle</title>
     <style>
+body {
+  font-size: 60%;
+}
+
 #chain {
-  font-size:xx-large;
+  //font-size:xx-large;
+  //font-size:64pt;
+  font-size:7em;
 }
 .rule {
   opacity: 25%;
+  //font-size:xx-large;
+  //font-size:54pt;
+  font-size:6em;
 }
 .rule:hover {
   background-color: cyan;
 }
+
+button {
+  //font-size:xx-large;
+  //font-size:44pt;
+  font-size:4em;
+}
+
+p {
+  font-size:4em;
+}
+
+@media screen and (max-width: 480px) {
+  .rule:hover {
+    background-color: red;
+  }
+  body {
+    font-size: 40%;
+  }
+}
+
     </style>
   </head>
   <body>
   <p>Select the letters to change and then click a rule to apply it.<br>
   Rules in red can be applied somewhere. Bold rules can be applied to the current selection.<br>
   Right click a red rule to select somewhere where it can be applied;<br>
-    right click it again to jump to other places.</p>
+    right click it again to jump to other places.<br>
+  On touchscreen, long press instead of right click</p>
   <button onclick="undo()">Undo</button>
   <button onclick="reset()">Reset</button>
   <br><br>
@@ -30,8 +61,9 @@
   <!-- the meat of this puzzle, as in Microban 1, is that fixing one breaks the other -->
   <!-- hopefully the player tries to fully fix each letter in some order; -->
   <!-- the trick is to 'half fix' C, then fix A, then finish fixing C -->
-  <textarea id="chain" readonly>#ABC#</textarea>
-  <div class="rule">#ABBCCC#->VICTORY</div>
+  <textarea id="chain" readonly cols="10">#ABC#</textarea>
+  <div class="rule">#ABBCCC#->Win!</div>
+  <br>
   <!-- C can be fixed when B is fixed (right box can move if it's too right) -->
   <div class="rule">BBCC->BBCCC</div>  
   <!-- A is easy to fix if B is broken (left box is can move down if right is far) -->
