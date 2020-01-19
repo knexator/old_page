@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <title>Universal Puzzle</title>
+    <style>
+#chain {
+  font-size:xx-large;
+}
+.rule {
+  opacity: 25%;
+}
+.rule:hover {
+  background-color: cyan;
+}
+    </style>
+  </head>
+  <body>
+  <p>Select the letters to change and then click a rule to apply it.<br>
+  Rules in red can be applied somewhere. Bold rules can be applied to the current selection.<br>
+  Right click a red rule to select somewhere where it can be applied;<br>
+    right click it again to jump to other places.</p>
+  <button onclick="undo()">Undo</button>
+  <button onclick="reset()">Reset</button>
+  <br><br>
+  <!-- Microban level 1, translated as a string rewritting puzzle -->
+  <!-- The level has two crates -->
+  <!-- the left crate's position corresponds to the number of As (starts right) -->
+  <!-- the right crate's horizontal position corresponds to the number of Bs -->
+  <!-- the right crate's vertical position corresponds to the number of Cs -->
+  <!-- the meat of this puzzle, as in Microban 1, is that fixing one breaks the other -->
+  <!-- hopefully the player tries to fully fix each letter in some order; -->
+  <!-- the trick is to 'half fix' C, then fix A, then finish fixing C -->
+  <textarea id="chain" readonly>#ABC#</textarea>
+  <div class="rule">#ABBCCC#->VICTORY</div>
+  <!-- C can be fixed when B is fixed (right box can move if it's too right) -->
+  <div class="rule">BBCC->BBCCC</div>  
+  <!-- A is easy to fix if B is broken (left box is can move down if right is far) -->
+  <!-- this should be a single rule, AABC→ABC, but that introduces unwanted unelegant solutions -->
+  <div class="rule">AABC#->ABC#</div>
+  <div class="rule">AABCC#->ABCC#</div>
+  <!-- B is always easy fix and break (right box can always move horizontally) -->
+  <div class="rule">B->BB</div>
+  <div class="rule">BB->B</div>
+  <!-- C can be half-fixed if A is broken (right box can move up if the left one is broken) -->
+  <div class="rule">AABBC->AABBCC</div>  
+  <!-- A is always easy to break (left box is always easy to move up) -->
+  <div class="rule">A->AA</div>
+  
+  <script>
+let chainArea = document.getElementById("chain");
+ruleDivs = document.getElementsByClassName("rule");
+leftRules = [];
+rightRules = [];
+for (let k=0; k<ruleDivs.length; k++) {
+  let [left, right] = ruleDivs[k].textContent.split("->");
+  leftRules.push(left);
+  rightRules.push(right);
+  ruleDivs[k].onclick = function () {
+    let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+    let selected = chainArea.value.slice(from, to);
+    if (selected == leftRules[k]) {
+      chainArea.value = chainArea.value.slice(0, from) + rightRules[k] + chainArea.value.slice(to);
+      chainArea.selectionStart = from;
+      chainArea.selectionEnd = from + rightRules[k].length;
+      history.push(chainArea.value);
+    }
+    chainArea.focus();
+  }
+  ruleDivs[k].oncontextmenu = function (event) {
+    validPlaces = whereCanItBeApplied(leftRules[k]);
+    if (validPlaces.length > 0) {
+      let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+      let i = validPlaces.indexOf(from);
+      // If it already is a correct selection, jump to the next one
+      if (to - from == leftRules[k].length && i>-1) {
+        i = (i+1)%validPlaces.length;
+        chainArea.selectionStart = validPlaces[i];
+        chainArea.selectionEnd = validPlaces[i] + leftRules[k].length;
+      } else {
+        chainArea.selectionStart = validPlaces[0];
+        chainArea.selectionEnd = validPlaces[0] + leftRules[k].length;
+      }
+      chainArea.focus();
+    }
+    //chainArea.focus();
+    event.preventDefault();
+  }
+}
+
+function whereCanItBeApplied(leftRule) {
+  let n = leftRule.length;
+  let str = chainArea.value;
+  let places = [];
+  for (let k=0; k<=str.length-n; k++) {
+    if (chainArea.value.slice(k, k+n) == leftRule) {
+      places.push(k);
+    }
+  }
+  return places;
+}
+
+document.addEventListener('selectionchange', handleSelection);
+
+function handleSelection() {
+  const activeElement = document.activeElement
+  if (activeElement && activeElement.id === 'chain') {
+    updateVisuals();    
+  }
+}
+
+function updateVisuals() {
+  let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+  let selected = chainArea.value.slice(from, to);
+  for (let k=0; k<ruleDivs.length; k++) {
+    if (leftRules[k] == selected) {
+      ruleDivs[k].style.opacity = "100%";
+      ruleDivs[k].style.color = "red";
+    } else if (chainArea.value.includes(leftRules[k])) {
+      ruleDivs[k].style.opacity = "40%";
+      ruleDivs[k].style.color = "red";
+    } else {
+      ruleDivs[k].style.opacity = "40%";
+      ruleDivs[k].style.color = "black";
+    }
+  }
+}
+
+updateVisuals();
+let history = [chainArea.value];
+
+function reset() {
+  chainArea.value = history[0];
+  history.push(history[0]);
+  updateVisuals();
+}
+
+function undo() {
+  if (history.length>1) {
+    history.pop();
+    chainArea.value = history[history.length-1];
+  }
+  updateVisuals();
+}
+
+  </script>   
+  </body>
+</html>
