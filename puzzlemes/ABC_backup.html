@@ -4,69 +4,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">    
     <title>Universal Puzzle</title>
     <style>
-
-html, body { 
-  font-size: 80%;  
-  margin: 0;
-  padding: 0;
-  width: 100%; 
-  height: 100%;
+body {
+  font-size: 60%;
 }
 
 #chain {
-  font-size:4em;
-  height: 20%;
-  width: 100%;
-  display: block;
-  box-sizing: border-box;
-  resize: none;
+  //font-size:xx-large;
+  //font-size:64pt;
+  font-size:7em;
 }
-
-#rules {
-  font-size:1em;
-  overflow: auto;
-  //overflow: hidden;
-  height: 70%;
-  display: block;
-  white-space: nowrap;
-}
-
-#footer {
-  height: 10%;
-  display: block;
-}
-
-#footer button {
-  height: 100%;
-  width: 33.333333%;
-  font-size:2em;
-  margin: 0;
-  padding: 0;
-}
-
 .rule {
-  opacity: 50%;
-  font-size: 3em;
+  opacity: 25%;
+  //font-size:xx-large;
+  //font-size:54pt;
+  font-size:6em;
 }
 .rule:hover {
-  background-color: lightcyan;
+  background-color: cyan;
 }
 
 button {
-  //font-size:4em;
+  //font-size:xx-large;
+  //font-size:44pt;
+  font-size:4em;
 }
 
 p {
-  //font-size:4em;
+  font-size:4em;
 }
 
-input {
-  font-family: inherit;
+@media screen and (max-width: 480px) {
+  body {
+    font-size: 40%;
+  }
 }
 
     </style>
   </head>
   <body>
+  <p>Select the letters to change and then click a rule to apply it.<br>
+  Rules in red can be applied somewhere. Bold rules can be applied to the current selection.<br>
+  Right click a red rule to select somewhere where it can be applied;<br>
+    right click it again to jump to other places.<br>
+  On touchscreen, long press instead of right click</p>
+  <button onclick="undo()">Undo</button>
+  <button onclick="reset()">Reset</button>
+  <br><br>
   <!-- Microban level 1, translated as a string rewritting puzzle -->
   <!-- The level has two crates -->
   <!-- the left crate's position corresponds to the number of As (starts right) -->
@@ -75,44 +58,33 @@ input {
   <!-- the meat of this puzzle, as in Microban 1, is that fixing one breaks the other -->
   <!-- hopefully the player tries to fully fix each letter in some order; -->
   <!-- the trick is to 'half fix' C, then fix A, then finish fixing C -->
-  <textarea id="chain" readonly>#ABC#</textarea>
-  <div id="rules">
-    <div class="rule">#ABBCCC#⇒Win!</div>
-    <br><br><br>
-    <!-- C can be fixed when B is fixed (right box can move if it's too right) -->
-    <div class="rule">BBCC⇒BBCCC</div>  
-    <!-- A is easy to fix if B is broken (left box is can move down if right is far) -->
-    <!-- this should be a single rule, AABC→ABC, but that introduces unwanted unelegant solutions -->
-    <div class="rule">AABC#⇒ABC#</div>
-    <div class="rule">AABCC#⇒ABCC#</div>
-    <!-- B is always easy fix and break (right box can always move horizontally) -->
-    <div class="rule">B⇒BB</div>
-    <div class="rule">BB⇒B</div>
-    <!-- C can be half-fixed if A is broken (right box can move up if the left one is broken) -->
-    <div class="rule">AABBC⇒AABBCC</div>  
-    <!-- A is always easy to break (left box is always easy to move up) -->
-    <div class="rule">A⇒AA</div>
-  </div>
-  <div id="footer">
-    <button onclick="reset()">Reset</button><button onclick="apply()">Apply</button><button onclick="undo()">Undo</button>
-  </div>
+  <textarea id="chain" readonly cols="10">#ABC#</textarea>
+  <div class="rule">#ABBCCC#->Win!</div>
+  <br>
+  <!-- C can be fixed when B is fixed (right box can move if it's too right) -->
+  <div class="rule">BBCC->BBCCC</div>  
+  <!-- A is easy to fix if B is broken (left box is can move down if right is far) -->
+  <!-- this should be a single rule, AABC→ABC, but that introduces unwanted unelegant solutions -->
+  <div class="rule">AABC#->ABC#</div>
+  <div class="rule">AABCC#->ABCC#</div>
+  <!-- B is always easy fix and break (right box can always move horizontally) -->
+  <div class="rule">B->BB</div>
+  <div class="rule">BB->B</div>
+  <!-- C can be half-fixed if A is broken (right box can move up if the left one is broken) -->
+  <div class="rule">AABBC->AABBCC</div>  
+  <!-- A is always easy to break (left box is always easy to move up) -->
+  <div class="rule">A->AA</div>
+  
   <script>
 let chainArea = document.getElementById("chain");
 ruleDivs = document.getElementsByClassName("rule");
 leftRules = [];
 rightRules = [];
-let selectedRule = -1;
-/*chainArea.onclick = function () {
-  selectedRule = -1;
-}*/
-document.addEventListener("click", function (event) {
-  if (event.target.className != "rule") selectedRule = -1;
-}, false);
 for (let k=0; k<ruleDivs.length; k++) {
-  let [left, right] = ruleDivs[k].textContent.split("⇒");
+  let [left, right] = ruleDivs[k].textContent.split("->");
   leftRules.push(left);
   rightRules.push(right);
-  ruleDivs[k].oncontextmenu = function (event) {
+  ruleDivs[k].onclick = function () {
     let from = chainArea.selectionStart, to = chainArea.selectionEnd;
     let selected = chainArea.value.slice(from, to);
     if (selected == leftRules[k]) {
@@ -122,10 +94,8 @@ for (let k=0; k<ruleDivs.length; k++) {
       history.push(chainArea.value);
     }
     chainArea.focus();
-    event.preventDefault();
   }
-  ruleDivs[k].onclick = function (event) {
-    selectedRule = k;
+  ruleDivs[k].oncontextmenu = function (event) {
     validPlaces = whereCanItBeApplied(leftRules[k]);
     if (validPlaces.length > 0) {
       let from = chainArea.selectionStart, to = chainArea.selectionEnd;
@@ -143,21 +113,6 @@ for (let k=0; k<ruleDivs.length; k++) {
     }
     //chainArea.focus();
     event.preventDefault();
-  }
-}
-
-function apply() {
-  if (selectedRule != -1) {
-    let k = selectedRule;
-    let from = chainArea.selectionStart, to = chainArea.selectionEnd;
-    let selected = chainArea.value.slice(from, to);
-    if (selected == leftRules[k]) {
-      chainArea.value = chainArea.value.slice(0, from) + rightRules[k] + chainArea.value.slice(to);
-      chainArea.selectionStart = from;
-      chainArea.selectionEnd = from + rightRules[k].length;
-      history.push(chainArea.value);
-    }
-    chainArea.focus();
   }
 }
 
