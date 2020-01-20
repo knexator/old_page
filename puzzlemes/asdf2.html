@@ -2,7 +2,7 @@
 <html lang="">
   <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">    
-    <title>Zeno Rogue's Hydra Slayer Lite</title>
+    <title>Jack Lance's asdf2</title>
     <style>
 
 html, body { 
@@ -87,33 +87,69 @@ input {
     </style>
   </head>
   <body>
-  <!-- A game by knexator -->
-  <div id="top"><span>A game by <a href="https://twitter.com/knexator">knexator</a></span><button onclick="menu()">Menu</button></div>
-  <!-- Microban level 1, translated as a string rewritting puzzle -->
-  <!-- The level has two crates -->
-  <!-- the left crate's position corresponds to the number of As (starts right) -->
-  <!-- the right crate's horizontal position corresponds to the number of Bs -->
-  <!-- the right crate's vertical position corresponds to the number of Cs -->
-  <!-- the meat of this puzzle, as in Microban 1, is that fixing one breaks the other -->
-  <!-- hopefully the player tries to fully fix each letter in some order; -->
-  <!-- the trick is to 'half fix' C, then fix A, then finish fixing C -->
-  <textarea id="chain" readonly>#ABC#</textarea>
+  <!-- A game by Jack Lance -->
+  <div id="top"><span>A game by <a href="https://twitter.com/Jack_L_Lance">Jack Lance</a></span><button onclick="menu()">Menu</button></div>
+  <textarea id="chain" readonly>#6#</textarea>
   <div id="rules">
-    <div class="rule">#ABBCCC#⇒Win!</div>
-    <br><br><br>
-    <!-- C can be fixed when B is fixed (right box can move if it's too right) -->
-    <div class="rule">BBCC⇒BBCCC</div>  
-    <!-- A is easy to fix if B is broken (left box is can move down if right is far) -->
-    <!-- this should be a single rule, AABC→ABC, but that introduces unwanted unelegant solutions -->
-    <div class="rule">AABC#⇒ABC#</div>
-    <div class="rule">AABCC#⇒ABCC#</div>
-    <!-- B is always easy fix and break (right box can always move horizontally) -->
-    <div class="rule">B⇒BB</div>
-    <div class="rule">BB⇒B</div>
-    <!-- C can be half-fixed if A is broken (right box can move up if the left one is broken) -->
-    <div class="rule">AABBC⇒AABBCC</div>  
-    <!-- A is always easy to break (left box is always easy to move up) -->
-    <div class="rule">A⇒AA</div>
+    <div class="rule">#SIX#⇒VICTORY!</div>
+    <br><br>
+    <div class="rule">ONE⇒1</div>
+    <div class="rule">TWO⇒2</div>
+    <div class="rule">THREE⇒3</div>
+    <div class="rule">FOUR⇒4</div>
+    <div class="rule">FIVE⇒5</div>
+    <div class="rule">SIX⇒6</div>
+    <div class="rule">SEVEN⇒7</div>
+    <div class="rule">EIGHT⇒8</div>
+    <div class="rule">NINE⇒9</div>
+    <div class="rule">NONE⇒0</div>
+    <br><br>
+    <div class="rule">1⇒ONE</div>
+    <div class="rule">2⇒TWO</div>
+    <div class="rule">3⇒THREE</div>
+    <div class="rule">4⇒FOUR</div>
+    <div class="rule">5⇒FIVE</div>
+    <div class="rule">6⇒(...THAT WOULD BE JUST TOO EASY)</div>
+    <div class="rule">7⇒SEVEN</div>
+    <div class="rule">8⇒EIGHT</div>
+    <div class="rule">9⇒NINE</div>
+    <div class="rule">0⇒NONE</div>
+    <br><br>
+    <div class="rule">1⇒I</div>
+    <div class="rule">2⇒II</div>
+    <div class="rule">3⇒III</div>
+    <div class="rule">4⇒IV</div>
+    <div class="rule">5⇒V</div>
+    <div class="rule">6⇒VI</div>
+    <div class="rule">7⇒VII</div>
+    <div class="rule">8⇒VIII</div>
+    <div class="rule">9⇒IX</div>
+    <div class="rule">10⇒X</div>
+    <br><br>
+    <div class="rule">I⇒1</div>
+    <div class="rule">II⇒2</div>
+    <div class="rule">III⇒3</div>
+    <div class="rule">IV⇒4</div>
+    <div class="rule">V⇒5</div>
+    <div class="rule">VI⇒6</div>
+    <div class="rule">VII⇒7</div>
+    <div class="rule">VIII⇒8</div>
+    <div class="rule">IX⇒9</div>
+    <div class="rule">X⇒10</div>
+    <br><br>
+    <div class="rule">1⇒I</div>
+    <div class="rule">2⇒Z</div>
+    <div class="rule">5⇒S</div>
+    <div class="rule">6⇒G</div>
+    <div class="rule">8⇒B</div>
+    <div class="rule">0⇒O</div>
+    <br><br>
+    <div class="rule">I⇒1</div>
+    <div class="rule">Z⇒2</div>
+    <div class="rule">S⇒5</div>
+    <div class="rule">G⇒6</div>
+    <div class="rule">B⇒8</div>
+    <div class="rule">O⇒0</div>
   </div>
   <div id="footer">
     <button onclick="reset()">Reset</button><button onclick="apply()">Apply</button><button onclick="undo()">Undo</button>
@@ -124,6 +160,9 @@ ruleDivs = document.getElementsByClassName("rule");
 leftRules = [];
 rightRules = [];
 let selectedRule = -1;
+/*chainArea.onclick = function () {
+  selectedRule = -1;
+}*/
 document.addEventListener("click", function (event) {
   if (event.target.className != "rule") selectedRule = -1;
 }, false);
