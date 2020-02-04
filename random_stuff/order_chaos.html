@@ -1,0 +1,130 @@
+<html>
+<head>
+<style>
+.row {
+	//background: red;
+}
+
+button {
+	width: 50px;
+	height: 50px;
+}
+</style>
+</head>
+<body>
+<div id="board">
+</div>
+<div id="result"></div>
+<script>
+// board[i][j] is row i, col j
+let w = 5;
+let h = 5;
+let win = 4;
+let board = [];
+let boardButtons = [];
+let boardElement = document.getElementById("board");
+for (let i=0; i<h; i++) {
+	let temp = [];
+	let temp2 = [];
+	let row = document.createElement("div");
+	row.className = "row";
+	for (let j=0; j<w; j++) {
+		let btn = document.createElement("BUTTON");   // Create a <button> element
+		btn.innerHTML = "-";                   // Insert text
+		btn.setAttribute("id", i+","+j);
+		btn.onclick = function() {
+			pressButton(true, i,j, this);
+		}
+		btn.oncontextmenu = function() {
+			pressButton(false, i,j, this);
+			return false;
+		}
+		row.appendChild(btn);
+		temp.push(btn);
+		temp2.push(0);
+	}
+	boardElement.appendChild(row);
+	boardButtons.push(temp);
+	board.push(temp2);
+}
+
+function pressButton(b, i, j, btn) {
+	if (b) {
+		btn.innerHTML = "X";
+		board[i][j] = 1;
+	} else {
+		btn.innerHTML = "O";
+		board[i][j] = -1;
+	}
+	btn.disabled = true;
+	
+	let w = checkWin();
+	if (w == 1) {
+		document.getElementById("result").innerHTML = "Order Wins";
+	} else if (w == -1) {
+		document.getElementById("result").innerHTML = "Chaos Wins";
+	}
+}
+
+function checkWin() {
+	// order 1, chaos -1, none 0
+	if (win <= w) {
+		for (let i=0; i<h; i++) {
+			for (let j=0; j<=w-win; j++) {
+				let ordered = true;
+				let o = board[i][j];
+				if (o==0) continue;
+				for (let k=0; k<win; k++) {
+					if (board[i][j+k] != o) {
+						ordered = false;
+						break;
+					}
+				}
+				if (ordered) return 1;
+			}
+		}
+	}
+	if (win <= h) {
+		for (let j=0; j<w; j++) {
+			for (let i=0; i<=h-win; i++) {
+				let ordered = true;
+				let o = board[i][j];
+				if (o==0) continue;
+				for (let k=0; k<win; k++) {
+					if (board[i+k][j] != o) {
+						ordered = false;
+						break;
+					}
+				}
+				if (ordered) return 1;
+			}
+		}
+	}
+	if (win <= Math.min(w, h)) {
+		for (let i=0; i<=h-win; i++) {
+			for (let j=0; j<=w-win; j++) {
+				let ordered = true;
+				let o = board[i][j];
+				if (o==0) continue;
+				for (let k=0; k<win; k++) {
+					if (board[i+k][j+k] != o) {
+						ordered = false;
+						break;
+					}
+				}
+				if (ordered) return 1;
+			}
+		}
+	}
+	
+	for (let i=0; i<h; i++) {
+		for (let j=0; j<w; j++) {
+			if (board[i][j] == 0) return 0;
+		}
+	}
+	
+	return -1;
+}
+</script>
+</body>
+</html>
