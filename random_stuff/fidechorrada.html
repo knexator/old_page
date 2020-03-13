@@ -13,18 +13,19 @@ html, body {
 }
 
 div {
-  height: 80%;
+  height: 90%;
   font-size:5em;
+  //position: absolute;
 }
 
 button {
-  height: 20%;
+  height: 10%;
   width: 100%;
   font-size:2em;
   margin: 0;
   padding: 0;
-  position: absolute;
-  bottom: 0px;
+  //position: absolute;
+  top: 0px;
 }
     </style>
   </head>
@@ -32,11 +33,11 @@ button {
 <!--
 <div contenteditable="true" id="textArea">de momento tengo la geometría hecha solo, ahora tengo que hacer el mallado, y luego preparar los calculos y todo que tengo que elegir métodos de turbulencia y toda la pesca luego ya tendre lineas de corriente y eso y videos tendré que investigar como se hacen</div>
 -->
+<button type="button" onclick='fullPipeline()'>Click Me!</button>
 <div contenteditable="true" id="textArea">
 <!--Cela, entiendela... No ve la comoung en ero-proteico-->
 Al entrar te pregunta algunas cosas generales:  qué nivel de dificultad de recetas quieres, si vives solo, los alimentos que no te gustan, etc.
 </div>
-<button type="button" onclick='fullPipeline()'>Click Me!</button>
 <script>
 //let words = new Set();
 let words = [];
