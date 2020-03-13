@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">    
+    <title>FideChorrada</title>
+    <style>
+html, body { 
+  font-size: 80%;  
+  margin: 0;
+  padding: 0;
+  width: 100%; 
+  height: 100%;
+}
+
+div {
+  height: 80%;
+  font-size:5em;
+}
+
+button {
+  height: 20%;
+  width: 100%;
+  font-size:2em;
+  margin: 0;
+  padding: 0;
+  position: absolute;
+  bottom: 0px;
+}
+    </style>
+  </head>
+<body>
+<!--
+<div contenteditable="true" id="textArea">de momento tengo la geometría hecha solo, ahora tengo que hacer el mallado, y luego preparar los calculos y todo que tengo que elegir métodos de turbulencia y toda la pesca luego ya tendre lineas de corriente y eso y videos tendré que investigar como se hacen</div>
+-->
+<div contenteditable="true" id="textArea">
+<!--Cela, entiendela... No ve la comoung en ero-proteico-->
+Al entrar te pregunta algunas cosas generales:  qué nivel de dificultad de recetas quieres, si vives solo, los alimentos que no te gustan, etc.
+</div>
+<button type="button" onclick='fullPipeline()'>Click Me!</button>
+<script>
+//let words = new Set();
+let words = [];
+let loaded_words = 0;
+let target = 1;
+let maxLen = 0;
+myUrl = "https://raw.githubusercontent.com/javierarce/palabras/master/listado-general.txt";
+
+function getWordList(url, callback) {
+  let req = new XMLHttpRequest();
+  req.addEventListener("load", callback);
+  req.open("GET", url, true);
+  req.send();
+}
+
+function getSpanishWords() {
+  getWordList(
+    "https://raw.githubusercontent.com/javierarce/palabras/master/listado-general.txt",
+    function() {
+      let spWords = this.responseText.split('\n').map(x => x.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+      words = words.concat(spWords);
+      //words = new Set([...words, ...spWords])
+      console.log("Spanish words loaded");
+      loaded_words += 1;
+      if (loaded_words == target) allLoaded();
+    });
+}
+
+function getEnglishWords() {
+  getWordList(
+    "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt",
+    function() {
+      let enWords = this.responseText.split('\n').map(x => x.trim());
+      words = words.concat(enWords);
+      //words = new Set([...words, ...enWords])
+      console.log("English words loaded");
+      loaded_words += 1;      
+      if (loaded_words == target) allLoaded();
+    });
+}
+
+function removeDuplicates(array) {
+  let x = {};
+  array.forEach(function(i) {
+    if(!x[i]) {
+      x[i] = true
+    }
+  })
+  return Object.keys(x)
+};
+
+function allLoaded() {
+  //words = removeDuplicates(words);
+  words = words.filter(x => x.length > 1).concat(['a', 'o', 'e', 'i', 'y', 'n']);
+  words = new Set(words)
+  //words = new Set(words.filter(x => x.length > 1).concat(['a', 'o', 'e', 'i', 'y', 'n']));
+  console.log("all loaded!");
+}
+
+function allHeads(str) {
+  let possibles = [];
+  for (let i=1; i<=str.length; i++) {
+    let sub = str.substring(0, i);
+    //if (words.indexOf(sub) != -1) {
+    if (words.has(sub)) {
+      possibles.push([sub, str.substring(i, str.length)]);
+    }
+  }
+  return possibles;
+}
+
+function getRandomPartition(str) {
+  //str = str.replace(/[^a-z]/gi, '').toLowerCase();
+  let res = [];
+  while (str.length > 0) {
+    let heads = allHeads(str);
+    if (heads.length > 0) {
+      [cur, str] = sample(heads);
+      res.push(cur);
+    } else {
+      let i = Math.floor(Math.random() * 10) + 6;
+      i = Math.min(str.length, i);
+      [cur, str] = [str.substring(0, i), str.substring(i, str.length)];
+      res.push(cur);
+    }
+  }
+  return res;
+}
+
+function partitionScore(arr, original) {
+  let avgLen = arr.map(x => x.length).reduce((a, b) => a + b) / arr.length;
+  let commonWords = intersect(arr, original).length;
+  if (commonWords == arr.length) {
+    return Number.NEGATIVE_INFINITY;
+  }
+  let realWords = arr.map(x => words.has(x)).reduce((a, b) => a + b)
+  return realWords * 6 + avgLen * 2 - commonWords * 3;
+}
+
+function getGoodPartition(str, original, n=10) {
+  let best = getRandomPartition(str);
+  let bestSc = partitionScore(best, original);
+  for (let i=0; i<n; i++) {
+    let cur = getRandomPartition(str);
+    let curSc = partitionScore(cur, original);
+    if (curSc > bestSc) {
+      best = cur;
+      bestSc = curSc;
+    }
+  }
+  return best;
+}
+
+function beautifyWord(str) {
+  //if (str == 'n') return '(n.)'.italics();
+  if (words.has(str) && Math.random() < 0.95) {
+    return str;
+  } else {
+    if (Math.random() < 0.05) return '(' + str + '.)'.italics();
+    if (Math.random() < 0.10) str = str.charAt(0).toUpperCase() + str.slice(1);
+    if (Math.random() < 0.05) str = "'" + str + "'";
+    if (Math.random() < 0.05) str = '(' + str + ')';
+    if (str.length > 3 && Math.random()) {
+      let i = Math.floor(str.length/2 + Math.random()*3-2); 
+      str = str.substring(0, i) + "' " + str.substring(i, str.length)
+    }
+    if (Math.random() < 0.05) return str.italics();
+    if (Math.random() < 0.05) return str.bold();
+    return str;
+  }
+}
+
+function joinPartition(arr) {
+  let res = "";
+  let openExclamation = false;
+  let openQuestion = false;
+  let openQuotes = false;
+  let capitalize = false;
+  for (let i=0; i<arr.length; i++) {
+    let curWord = beautifyWord(arr[i]);
+    if (capitalize) curWord = curWord.charAt(0).toUpperCase() + curWord.slice(1);
+    capitalize = false;
+    
+    if (!openQuotes && Math.random() < 0.04) {
+      res += '"';
+      openQuotes = true;
+    }
+    if (!openQuestion && Math.random() < 0.02) {
+      res += '¿';
+      openQuestion = true;
+    }
+    if (!openExclamation && Math.random() < 0.02) {
+      res += '¡';
+      openExclamation = true;
+    }
+    
+    res += curWord;
+    
+    if (Math.random() < 0.05) {
+      if (!openQuestion && !openExclamation && i!=arr.length-1 && Math.random() < 0.5) {
+        res += '.';
+        if (Math.random() < 0.05) res += '..';
+        capitalize = true;
+        if (openQuotes && Math.random() < 0.40) {
+          res += '"';
+          openQuotes = false;
+        }
+      } else {
+        res += ',';
+      }
+    } else {
+      if (openExclamation && Math.random() < 0.10) {
+        res += '!';
+        openExclamation = false;
+        capitalize = true;        
+      }
+      if (openQuestion && Math.random() < 0.10) {
+        res += '?';
+        openQuestion = false;
+        capitalize = true;
+      }
+    }
+    if (openQuotes && Math.random() < 0.10 && res[res.length-1] != ',') {
+      res += '"';
+      openQuotes = false;
+    }
+    
+    if (i != arr.length-1) res += ' ';
+  }
+  if (openExclamation) res += '!'
+  if (openQuestion) res += '?'
+  if (openQuotes) res += '"'
+  let c = res[res.length-1];
+  if (c != '.' && c != '?' && c != '!') {
+    res += '.';
+    if (Math.random() < 0.05) res += '..';
+  }
+  return res;
+}
+
+function fullPipeline() {
+  let textArea = document.getElementById("textArea");
+  let str = textArea.innerText;
+  str = str.replace(/[^a-z ]/gi, '').toLowerCase();
+  str = str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  let original = str.split(' ');
+  str = str.replace(/ /gi, '');
+  let partition = getGoodPartition(str, original, 250);
+  textArea.innerHTML = joinPartition(partition);
+}
+
+function intersect(a, b) {
+  let setB = new Set(b);
+  return [...new Set(a)].filter(x => setB.has(x));
+}
+
+function sample(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+//getEnglishWords();
+getSpanishWords();
+</script>
+</body>
