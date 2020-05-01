@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html, body {
+  font-size: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.linea {
+  font-size:3em;
+}
+
+.linea > input {
+  font-size:1em;
+}
+
+.n_acciones {
+  width: 4em;
+}
+
+.boton {
+  /*width: 1em;
+  height: 1em;*/
+  font-size:1em;
+}
+
+.resultado {
+  width: 6em;
+}
+
+.final {
+  font-size:3em;
+}
+
+.final > input {
+  font-size:1em;
+}
+
+</style>
+<script src="https://code.jquery.com/jquery-3.5.0.min.js" integrity="sha256-xNzN2a4ltkB44Mc/Jz3pT4iU1cmeR0FkXs4pru/JxaQ=" crossorigin="anonymous"></script>
+<script>
+
+$(document).ready(function(){
+  
+  let apikey = "152B128C3F88MKU0";
+  
+  load();
+  
+  $("button").click(function() {
+    let that = this;
+    let cantidad = Number($(this).siblings(".n_acciones").val());
+    let symbol = $(this).siblings(".nombre").val();
+    let url = "https://www.alphavantage.co/query?function=TIME_SERIES_DAILY_ADJUSTED&symbol=" + symbol + "&apikey=" + apikey;
+    $.getJSON(url, function(data) {
+      let last_ref = data["Meta Data"]["3. Last Refreshed"];
+      let precio = Number(data["Time Series (Daily)"][last_ref]["4. close"]);
+      $(that).siblings(".resultado").val((cantidad * precio).toFixed(2));
+      updateTotal();
+      store();
+    });
+  });
+  
+});
+
+function updateTotal() {  
+  let totales = $(".resultado").map(function(){
+    return Number($(this).val());
+  }).get();
+  let total = totales.reduce((a, b) => a + b, 0)
+  $("#resultado_total").val(total.toFixed(2));
+}
+
+function store() {
+  let datos = $(".linea").map(function(){
+    let cantidad = $(this).children(".n_acciones").val();
+    let nombre = $(this).children(".nombre").val();
+    return {cantidad: cantidad, nombre: nombre};
+  }).get();
+  window.localStorage.setItem('datos', JSON.stringify(datos));
+}
+
+function load() {
+  let datos = JSON.parse(window.localStorage.getItem('datos'));
+  if (datos == null) return;
+  let k = 0;
+  $(".linea").map(function(){
+    $(this).children(".n_acciones").val(datos[k].cantidad);
+    $(this).children(".nombre").val(datos[k].nombre);
+    k++;
+  });
+}
+</script>
+</head>
+<body>
+
+<div class="lineas">
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+<div class="linea">
+Tengo <input type="number" class="n_acciones" value="0"> acciones de <input type="text" class="nombre" value="???" size="7"> <button class="boton">Calcular</button> Son <input type="number" class="resultado" value="0" disabled> euros
+</div>
+</div>
+<br></br>
+<div class="final">
+En total, <input type="number" id="resultado_total" value="0" disabled> euros.
+</div>
+
+
+</body>
+</html>
