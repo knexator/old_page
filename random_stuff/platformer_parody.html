@@ -1,0 +1,142 @@
+<html>
+<head>
+<style>
+canvas {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstat/1.9.3/jstat.min.js"></script>
+<script>
+let obstacles_mean = [0.1, 0.1, 0.6, 0.1, 0.1];
+let obstacles_vari = [8, 8, 8, 6, 8];
+let player_pos = 0;
+let w = 400;
+let h = 100;
+let game_won = false;
+
+function init() {
+  body = document.getElementsByTagName("body")[0];
+  canvases = [];
+  ctxs = [];
+  for (let i = 0; i < obstacles_mean.length; i++) {
+    let canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    body.appendChild(canvas);
+    canvases.push(canvas);
+    ctxs.push(canvas.getContext("2d"));
+    draw(i);
+  }
+  document.body.addEventListener('keypress', play);
+}
+
+/*function draw_empty(n) {
+  let a = obstacles_mean[n];
+  let b = obstacles_vari[n];
+  let alfa = a*(b-2) + 1;
+  let beta = (1-a)*(b-2) + 1;
+  let s = h / 6.0;
+  let ctx = ctxs[n];
+  ctx.clearRect(0, 0, w, h);
+  ctx.beginPath();
+  ctx.moveTo(0, h - s * jStat.beta.pdf(0, alfa, beta));
+  for (let i = 0; i <= w; i+=4) {
+    ctx.lineTo(i, h - s * jStat.beta.pdf(i / w, alfa, beta));
+  }
+  ctx.stroke();
+  ctx.moveTo(w/2, 0);
+  ctx.lineTo(w/2, h);
+  ctx.stroke();
+}*/
+
+function draw(n) {
+  let a = obstacles_mean[n];
+  let b = obstacles_vari[n];
+  let alfa = a*(b-2) + 1;
+  let beta = (1-a)*(b-2) + 1;
+  let s = h / 4.0;
+  let ctx = ctxs[n];
+  ctx.clearRect(0, 0, w, h);
+  if (n == player_pos) {
+    ctx.rect(0, 0, w, h);
+    ctx.fillStyle = "green";
+    ctx.fill();
+  }  
+  ctx.beginPath();
+  ctx.moveTo(0, h - s * jStat.beta.pdf(0, alfa, beta));
+  for (let i = 0; i <= w; i+=4) {
+    ctx.lineTo(i, h - s * jStat.beta.pdf(i / w, alfa, beta));
+  }
+  ctx.stroke();
+  ctx.moveTo(w/2, 0);
+  ctx.lineTo(w/2, h);
+  ctx.stroke();
+}
+
+function get_value(n) {
+  let a = obstacles_mean[n];
+  let b = obstacles_vari[n];
+  let alfa = a*(b-2) + 1;
+  let beta = (1-a)*(b-2) + 1;
+  return jStat.beta.sample(alfa, beta);
+}
+
+function play() {
+  if (game_won) return;
+  for (let i = 0; i < obstacles_mean.length; i++) {
+    draw(i);
+  }
+  let x = get_value(player_pos);
+  let ctx = ctxs[player_pos];
+  ctx.beginPath();
+  ctx.strokeStyle = "red";
+  ctx.moveTo(x*w, 0);
+  ctx.lineTo(x*w, h);
+  ctx.stroke();
+  ctx.strokeStyle = "black";
+  let a = obstacles_mean[player_pos];
+  let b = obstacles_vari[player_pos];
+  a = Math.max(a, lerp(a, x, 0.2));
+  b *= .999;
+  b = Math.max(4, b);
+  obstacles_mean[player_pos] = a;
+  obstacles_vari[player_pos] = b;
+  if (x >= 0.5) {
+    player_pos += 1;
+    if (player_pos >= obstacles_mean.length) victory();
+  } else {
+    player_pos = 0;
+  }
+}
+
+function cosa() {
+  let a = Number(alfa_element.value);
+  let b = Number(beta_element.value);
+  let alfa = a*(b-2) + 1;
+  let beta = (1-a)*(b-2) + 1;
+  let x = jStat.beta.sample(alfa, beta);
+  console.log(x);
+  alfa_element.value = Math.max(alfa_element.value, lerp(alfa_element.value, x, 0.2));
+  beta_element.value *= .99;
+  //alfa_element.value = Math.max(alfa_element.value, lerp(alfa_element.value, x, ));
+  valueChanged();
+}
+
+function lerp(a,b,t) {
+  return a*(1-t) + b*t;
+}
+
+function victory() {
+  alert("Victory!");
+}
+
+</script>
+</head>
+<body onload="init();">
+<!--input type="number" id="alfa" min="0" step="0.02" value=".5" oninput="valueChanged()">
+<input type="number" id="beta" min="0" step="0.1" value="6" oninput="valueChanged()">
+<canvas id="canvas" width="400" height="400"></canvas-->
+</body>
+</html>
