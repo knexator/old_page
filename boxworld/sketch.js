@@ -36,7 +36,10 @@ function setup() {
   var cnv = createCanvas(windowWidth, windowHeight);
   cnv.style('display', 'block');
   
-  curLevel = new Level(0);
+  const urlParams = new URLSearchParams(window.location.search);
+  const levelParam = Number(urlParams.get('level'));
+    
+  curLevel = new Level(levelParam);
   /*window.setInterval(function() {
     if (curLevel.moveQueue.length > 0) {
       console.log(curLevel.moveQueue)
