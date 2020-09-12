@@ -6,12 +6,26 @@
   <option value="4">monday bass</option>
 </select>
 
-<select id="ppSelect">
-  <option value="0">no pickup-putdown</option>
-  <option value="1">basic chords</option>
-  <option value="2" selected="selected">pp 1</option>
-  <option value="3">pp 2</option>
-  <option value="4">pp 3</option>
+<select id="pickupSelect">
+  <option value="0">no pickup</option>
+  <option value="1">basic chord</option>
+  <option value="2" selected="selected">pickup 1</option>
+  <option value="3">pickup 2</option>
+  <option value="4">pickup 3</option>
+  <option value="5">pickup 1 - var 1</option>
+  <option value="6">pickup 1 - var 2</option>
+  <option value="7">pickup 1 - var 3</option>
+  <option value="8">pickup 1 - var 4</option>
+  <option value="9">pickup 1 - var 5</option>
+</select>
+
+<select id="putdownSelect">
+  <option value="0">no putdown</option>
+  <option value="1">basic chord</option>
+  <option value="2" selected="selected">putdown 1</option>
+  <option value="3">putdown 2</option>
+  <option value="4">putdown 3</option>
+  <option value="5">putdown 4</option>
 </select>
 
 <script src="https://unpkg.com/tone"></script>
@@ -31,7 +45,8 @@ document.getElementById("start-button").addEventListener("click", async function
   Tone.Transport.start();
   
   bassLines[Number(bassSelect.value)].probability = 1;
-  pickup_putdowns[Number(ppSelect.value)].probability = 1;
+  pickups[Number(pickupSelect.value)].probability = 1;
+  putdowns[Number(putdownSelect.value)].probability = 1;
 });
 
 const bassSelect = document.getElementById("bassSelect");
@@ -43,13 +58,22 @@ bassSelect.addEventListener("change", function() {
   console.log("changed bass");
 })
 
-const ppSelect = document.getElementById("ppSelect");
-ppSelect.addEventListener("change", function() {
-  for (let i = 0; i < pickup_putdowns.length; i++) {
-    pickup_putdowns[i].probability = 0;
+const pickupSelect = document.getElementById("pickupSelect");
+pickupSelect.addEventListener("change", function() {
+  for (let i = 0; i < pickups.length; i++) {
+    pickups[i].probability = 0;
   }  
-  pickup_putdowns[Number(ppSelect.value)].probability = 1;
-  console.log("changed pp");
+  pickups[Number(pickupSelect.value)].probability = 1;
+  console.log("changed pickup");
+})
+
+const putdownSelect = document.getElementById("putdownSelect");
+putdownSelect.addEventListener("change", function() {
+  for (let i = 0; i < putdowns.length; i++) {
+    putdowns[i].probability = 0;
+  }  
+  putdowns[Number(putdownSelect.value)].probability = 1;
+  console.log("changed putdown");
 })
 
 nullBass   =   create_seq(bass_loop([[], [], [], [], [], [], [], []]));
@@ -65,44 +89,56 @@ bassLines = [nullBass, simpleBass, deathRayBass, walkingBass, mondayBass];
 
 thing = [[7, 12], 0, [], [], [], [7, 12], 3, 4];
 pickup_1_variations = [
-  [null, 3, 4],
-  [0, 3, 4],
-  [7, 3, 4],
-  [[7, 12], 3, 4],
-  [7, [2,9], 3],
-  [null, 7, 8],
-  [4, 7, 8],
-  [7, 3, 4]
+  
 ]; // page 13-4
-pickups = [
+
+let pickups = [
+  [[], [], []],
+  [],
   [[7, 12], 3, 4],
   [7, [12, 16], [14, 17]],
+  [7, [2,9], 3],
+  
+  [[], 3, 4],
+  [0, 3, 4],
+  [7, 3, 4],
+  [[], 7, 9],
+  [4, 7, 9],
 ];
-putdowns = [
+
+for (let i = 0; i < pickups.length; i++) {
+  if (i == 1) continue;
+  pickups[i] = create_seq(offset(make_pickup(pickups[i]), 24));
+}
+let simple_chords_pickup = create_seq(offset(join(
+     repeat(make_pickup([[4, 7, 9, 12], [], []]), 4), //C
+     repeat(make_pickup([[3, 7, 9, 12], [], []]), 2), //F
+     repeat(make_pickup([[4, 7, 9, 12], [], []]), 2), //C
+     repeat(make_pickup([[5, 7, 11, 14],[], []]), 2), //G
+     repeat(make_pickup([[4, 7, 9, 12], [], []]), 2), //C
+), 24));
+pickups[1] = simple_chords_pickup;
+
+let putdowns = [
+  [[], []],
+  [],
   [[7, 12], 0],
   [[15, 18], [16, 19]],
   [4, [4, 7, 9, 12]],
+  [[5, 9], [3, 7]],
 ];
-
-let pickup_putdowns = [
-  [[], [], [], [], []],
-  [],
-  [[7, 12], 3, 4, [7, 12], 0],
-  [7, [12, 16], [14, 17], [15, 18], [16, 19]],
-  [7, [2,9], 3, 4, [4, 7, 9, 12]],
-];
-
-for (let i = 0; i < pickup_putdowns.length; i++) {
+for (let i = 0; i < putdowns.length; i++) {
   if (i == 1) continue;
-  pickup_putdowns[i] = create_seq(offset(naive_pp(pickup_putdowns[i]), 24));
+  putdowns[i] = create_seq(offset(make_putdown(putdowns[i]), 24));
 }
-let simple_chords = create_seq(offset(join(repeat(naive_pp([[4, 7, 9, 12], [], [], [4, 7, 9, 12], []]), 4), //C
-     repeat(naive_pp([[3, 7, 9, 12], [], [], [3, 7, 9, 12], []]), 2), //F
-     repeat(naive_pp([[4, 7, 9, 12], [], [], [4, 7, 9, 12], []]), 2), //C
-     repeat(naive_pp([[5, 7, 11, 14],[], [], [5, 7, 11, 14],[]]), 2), //G
-     repeat(naive_pp([[4, 7, 9, 12], [], [], [4, 7, 9, 12], []]), 2), //C
+let simple_chords_putdown = create_seq(offset(join(
+     repeat(make_putdown([[4, 7, 9, 12], []]), 4), //C
+     repeat(make_putdown([[3, 7, 9, 12], []]), 2), //F
+     repeat(make_putdown([[4, 7, 9, 12], []]), 2), //C
+     repeat(make_putdown([[5, 7, 11, 14],[]]), 2), //G
+     repeat(make_putdown([[4, 7, 9, 12], []]), 2), //C
 ), 24));
-pickup_putdowns[1] = simple_chords;
+putdowns[1] = simple_chords_putdown;
 
 
 function join() {
@@ -131,6 +167,14 @@ function naive_pickup_putdown(pickup, putdown) {
 
 function naive_pp(pp) {
   return naive_pickup_putdown([pp[0], pp[1], pp[2]], [pp[3], pp[4]]);
+}
+
+function make_pickup(pickup) {
+  return join([[], [], [], [], []], pickup);
+}
+
+function make_putdown(putdown) {
+  return join(putdown, [[], [], [], [], [], []]);
 }
 
 function bass_loop(line) {
