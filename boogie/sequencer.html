@@ -1,0 +1,359 @@
+<body style=margin:0>
+<script src="https://unpkg.com/tone"></script>
+<button id="start-button" style="position:absolute;width:100%;height:100%">CLICK ME (and wait a bit)</button>
+<canvas id="canvas"></canvas>
+<script>
+const synth = new Tone.PolySynth({"polyphony": 12}).toDestination();
+let shouldIgnore = true;
+
+document.getElementById("start-button").addEventListener("click", async function() {
+  await Tone.start();
+  console.log("audio is ready");
+  
+  let button = document.getElementById("start-button");
+  button.parentNode.removeChild(button);
+  
+  Tone.Transport.swing = 0.4;
+  Tone.Transport.start();
+  
+  pp_sequences[0][2][0].probability = 1;
+  pp_sequences[1][2][0].probability = 1;
+  pp_sequences[2][0][0].probability = 1;
+  pp_sequences[2][2][0].probability = 1;
+  pp_sequences[3][2][0].probability = 1;
+  pp_sequences[4][1][0].probability = 1;
+  pp_sequences[5][2][0].probability = 1;
+  pp_sequences[6][0][0].probability = 1;
+  pp_sequences[6][2][0].probability = 1;
+  pp_sequences[7][2][2].probability = 1;
+  pp_sequences[8][2][3].probability = 1;
+  pp_sequences[9][2][0].probability = 1;
+  pp_sequences[10][0][0].probability = 1;
+  pp_sequences[10][2][0].probability = 1;
+  pp_sequences[11][2][0].probability = 1;
+  
+  pp_selected[0][2][0] = true;
+  pp_selected[1][2][0] = true;
+  pp_selected[2][0][0] = true;
+  pp_selected[2][2][0] = true;
+  pp_selected[3][2][0] = true;
+  pp_selected[4][1][0] = true;
+  pp_selected[5][2][0] = true;
+  pp_selected[6][0][0] = true;
+  pp_selected[6][2][0] = true;
+  pp_selected[7][2][2] = true;
+  pp_selected[8][2][3] = true;
+  pp_selected[9][2][0] = true;
+  pp_selected[10][0][0] = true;
+  pp_selected[10][2][0] = true;
+  pp_selected[11][2][0] = true;
+});
+
+let pp_n = 4;
+let bass_n = 6;
+
+let pp_selected = [];   // pp_selected[bar][space][pp] = true/false
+let bass_selected = []; // bass_selected[bar] = 0/1/2...
+
+let pp_sequences = [];
+let bass_sequences = [];
+
+let pp_data = [
+  ["G4/C5", "Eb4", "E4", "G4/C5", "C4"],
+  ["G4", "C5/E5", "D5/F5", "Eb5/Gb5", "E5/G5"],
+  ["G4", "D4/A4", "Eb4", "E4", "E4/G4/A4/C5"],
+  [["A4", "G4"], "D4", "D#4", "E4", "E4/G4/A4/C5"]
+]
+
+for (let i = 0; i < 12; i++) {
+  let cur_bar = [];
+  for (let j = 0; j < 4; j++) {
+    let cur_space = [];
+    for (let k = 0; k < pp_n; k++) {
+      cur_space.push(false);
+    }
+    cur_bar.push(cur_space);
+  }
+  pp_selected.push(cur_bar);
+}
+
+for (let i = 0; i < 12; i++) {
+  let cur_bar = [];
+  for (let j = 0; j < 4; j++) {
+    let cur_space = [];
+    for (let k = 0; k < pp_n; k++) {
+      cur_space.push(create_pp_seq(pp_data[k], i*4 + j));
+    }
+    cur_bar.push(cur_space);
+  }
+  pp_sequences.push(cur_bar);
+}
+
+for (let i = 0; i < 12; i++) {
+  bass_selected.push(0);
+  
+  let cur_bass_seqs = [];
+  for (let j = 0; j < bass_n; j++) {
+    cur_bass_seqs.push(create_bass_seq(bass_line(j, i), i));
+  }
+  bass_sequences.push(cur_bass_seqs);
+}
+
+function create_pp_seq(pp, slot) { // slot = 0..3 on first bar, 4..7 on second bar, etc
+  let full_list = new Array(8*12).fill(null);
+  let k = slot * 2;
+  for (let i = 0; i < 5; i++) {
+    full_list[mod(k + i + 1, 8*12)] = pp[i];
+  }
+  let seq = new Tone.Sequence((time, note) => {
+    if (note !== null) {
+      synth.triggerAttackRelease(note.split('/'), '8n', time);
+    }
+  }, full_list).start(0);
+  seq.probability = 0;
+  return seq; 
+}
+
+function chord(bar) {
+  if (bar == 4 || bar == 5) {
+    return "F";
+  } else if (bar == 8 || bar == 9) {
+    return "G";
+  } else {
+    return "C";
+  }
+}
+
+function bass_line(bass, bar) {
+  let deathRayBass = [["C2", "C2", "Eb2", "E2", "G2", "C2", "A2", "G2"],
+                      ["F2", "F2", "Ab2", "A2", "C3", "F2", "D3", "C3"],
+                      ["G2", "G2", "Bb2", "B2", "D3", "G2", "E3", "D3"]];
+                      
+  let walkingBass  = [["C2", "C3", "E2", "E3", "G2", "G3", "A2", "A3"], 
+                      ["Bb2", "Bb3", "A2", "A3", "G2", "G3", "E2", "E3"], 
+                      ["F2", "F3", "A2", "A3", "C3", "C4", "D3", "D4"], 
+                      ["Eb3", "Eb4", "D3", "D4", "C3", "C4", "A2", "A3"], 
+                      ["G2", "G3", "B2", "B3", "D3", "D4", "E3", "E4"], 
+                      ["F3", "F4", "E3", "E4", "D3", "D4", "B2", "B3"]];
+  
+  let mondayBass  =  [["C2", "C2", "C2/E2", "C2/F2", "C2/G2", "C2/G2", "C2/A2", "C2/G2"],
+                      ["F2", "F2", "F2/A2", "F2/Bb2","F2/C3", "F2/C3", "F2/D3", "F2/C3"],
+                      ["G2", "G2", "G2/B2", "G2/C3", "G2/D3", "G2/D3", "G2/E3", "G2/D3"]];
+  
+  let scalatingBass = [["C2", "C3", "E2", "F2", "Gb2", "G2", "G1", "G2"],
+                       ["F2", "F3", "A2", "Bb2", "B2", "C3", "C2", "C3"],
+                       ["G2", "G3", "B2", "C3", "Db3", "D3", "D2", "D3"]];
+  
+  let chopBass = [["C2/G2", "C2/G2", "C2/A2", "C2/A2", "C2/G2", "C2/G2", "C2/A2", "C2/A2"],
+                  ["F2/C3", "F2/C3", "F2/D3", "F2/D3", "F2/C3", "F2/C3", "F2/D3", "F2/D3"],
+                  ["G2/D3", "G2/D3", "G2/E3", "G2/E3", "G2/D3", "G2/D3", "G2/E3", "G2/E3"]];
+  
+  let hugBass = [["C2", "C2", "Eb2/A2", "C2", "E2/G2", "C2", "F2/A2", "E2/G2"],
+                 ["F2", "F2", "Ab2/D3", "F2", "A2/C3", "F2", "Bb2/D3", "A2/C3"],
+                 ["G2", "G2", "Bb2/E3", "G2", "B2/D3", "G2", "C3/E3", "B2/D3"]];
+  
+  let basses = [chopBass, deathRayBass, scalatingBass, mondayBass, hugBass];
+  let cur_chord = chord(bar);
+  
+  if (bass == bass_n-1) {  // walkingBass is a special case
+    if (cur_chord == "F") {
+      return walkingBass[2 + bar%2];
+    } else if (cur_chord == "G") {
+      return walkingBass[4 + bar%2];
+    } else {
+      return walkingBass[bar%2];
+    }
+  } else {
+    if (cur_chord == "F") {
+      return basses[bass][1];
+    } else if (cur_chord == "G") {
+      return basses[bass][2];
+    } else {
+      return basses[bass][0];
+    }
+  }
+}
+
+function create_bass_seq(bass, bar) {
+  let full_list = new Array(8*12).fill(null);
+  let k = bar * 8;
+  for (let i = 0; i < 8; i++) {
+    full_list[(k + i) % (8*12)] = bass[i];
+  }
+  let seq = new Tone.Sequence((time, note) => {
+    if (note !== null) {
+      synth.triggerAttackRelease(note.split('/'), '8n', time);
+    }
+  }, full_list).start(0);
+  seq.probability = 0;
+  return seq; 
+}
+
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  //draw();
+});
+
+window.addEventListener("load", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  window.requestAnimationFrame(draw);
+  
+  for (let i = 0; i < 12; i++) {
+    bass_sequences[i][bass_selected[i]].probability = 1;
+  }
+});
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  let h = canvas.height;
+  let w = canvas.width;
+  
+  // Inner bar divisions
+  let pp_h =   (h/3) / (pp_n + 1);
+  let pp_w =   (w/4) / 4;
+  let bass_w = (w/4) / bass_n;
+  
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = "#000000";
+  for (let i = 0; i < 12; i++) {
+    let bar_x = (i%4) * w/4;
+    let bar_y = Math.floor(i / 4) * h/3;
+    for (let j = 0; j < 4; j++) {
+      for (let k = 0; k < pp_n; k++) {        
+        if (pp_selected[i][j][k]) {
+          ctx.fillStyle = "#8b71d9";
+        } else {
+          ctx.fillStyle = "#4e256b";
+        }
+        ctx.fillRect(  bar_x + j*pp_w, bar_y + k*pp_h, pp_w, pp_h);
+        ctx.strokeRect(bar_x + j*pp_w, bar_y + k*pp_h, pp_w, pp_h);
+      }      
+    }
+    for (let j = 0; j < bass_n; j++) {
+      if (j == bass_selected[i]) {
+        ctx.fillStyle = "#c9a728";
+      } else {
+        ctx.fillStyle = "#6b4f25";
+      }
+      ctx.fillRect(  bar_x + j*bass_w, bar_y + pp_n*pp_h, bass_w, pp_h);
+      ctx.strokeRect(bar_x + j*bass_w, bar_y + pp_n*pp_h, bass_w, pp_h);
+    }
+  }
+  
+  ctx.fillStyle = "#FFFFFF";
+  for (let i = 0; i < 12; i++) {
+    let bar_x = (i%4) * w/4;
+    let bar_y = Math.floor(i / 4) * h/3;
+    for (let j = 0; j < 4; j++) {
+      for (let k = 0; k < pp_n; k++) {
+        if (pp_selected[i][j][k]) {
+          let off = (j%2)/2;
+          ctx.fillRect(  bar_x + (2*j+1)*(w/32), bar_y + (k+off)*pp_h, w*5/32, pp_h/2);
+          ctx.strokeRect(bar_x + (2*j+1)*(w/32), bar_y + (k+off)*pp_h, w*5/32, pp_h/2);
+          if (i%4 == 3 && j >= 2) {
+            let n_i = mod(i+1, 12);
+            let n_j = j - 4;
+            let n_bar_x = (n_i%4) * w/4;
+            let n_bar_y = Math.floor(n_i / 4) * h/3;
+            ctx.fillRect(  n_bar_x + (2*n_j+1)*(w/32), n_bar_y + (k+off)*pp_h, w*5/32, pp_h/2);
+            ctx.strokeRect(n_bar_x + (2*n_j+1)*(w/32), n_bar_y + (k+off)*pp_h, w*5/32, pp_h/2);
+            /*if (j == 2) {
+              ctx.fillRect(  n_bar_x + (2*j+1)*(w/32), n_bar_y + (k+off)*pp_h, w*5/32, pp_h/2);
+              ctx.strokeRect(n_bar_x + (2*j+1)*(w/32), n_bar_y + (k+off)*pp_h, w*5/32, pp_h/2);
+            } else if (j == 3) {
+            
+            }*/
+          }          
+        }
+      }      
+    }
+  }
+  
+  // Time bar
+  let time = Tone.Transport.position.split(':');
+  let bar = Number(time[0]) % 12;
+  let percent = Number(time[1]) + Number(time[2])/4;
+  let bar_x = (bar%4) * w/4;
+  let bar_y = Math.floor(bar / 4) * h/3;
+  let time_x = bar_x + percent*pp_w;  
+  ctx.beginPath();
+  ctx.strokeStyle = "#770000";
+  ctx.lineWidth = 3;
+  ctx.moveTo(time_x, bar_y);
+  ctx.lineTo(time_x, bar_y + h/3);
+  ctx.stroke();
+
+  // Main divisions
+  ctx.beginPath();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#000000";
+  // Horizontal lines
+  ctx.moveTo(0, h/3);
+  ctx.lineTo(w, h/3);
+  ctx.moveTo(0, h*2/3);
+  ctx.lineTo(w, h*2/3);  
+  // Bars
+  ctx.moveTo(w/4, 0);
+  ctx.lineTo(w/4, h);
+  ctx.moveTo(w/2, 0);
+  ctx.lineTo(w/2, h);
+  ctx.moveTo(w*3/4, 0);
+  ctx.lineTo(w*3/4, h);
+  ctx.stroke();
+  
+  window.requestAnimationFrame(draw);
+}
+
+window.addEventListener('mousedown', e => {
+  if (shouldIgnore) {
+    shouldIgnore = false;
+    return;
+  }
+
+  let h = canvas.height;
+  let w = canvas.width;
+  let pp_h = (h/3) / (pp_n + 1);
+  let pp_w = (w/4) / 4;
+  let bass_w = (w/4) / bass_n;
+  
+  let x = e.offsetX;
+  let y = e.offsetY;
+  
+  let b_i = Math.floor(x / (w/4));
+  let b_j = Math.floor(y / (h/3));
+  let b_x = x % Math.floor(w/4);
+  let b_y = y % Math.floor(h/3);
+  
+  let l_i = Math.floor(b_x / pp_w);
+  let l_j = Math.floor(b_y / pp_h);
+  let bass_i = Math.floor(b_x / bass_w);
+  
+  let bar = b_i + b_j * 4;
+  if (l_j < pp_n) { // Click on pp
+    let was_selected = pp_selected[bar][l_i][l_j];
+    if (was_selected) {
+      pp_sequences[bar][l_i][l_j].probability = 0;
+    } else {
+      pp_sequences[bar][l_i][l_j].probability = 1;
+    }
+    pp_selected[bar][l_i][l_j] = !was_selected;
+  } else { // Click on bass line
+    bass_sequences[bar][bass_selected[bar]].probability = 0;
+    bass_selected[bar] = bass_i;
+    bass_sequences[bar][bass_selected[bar]].probability = 1;
+  }
+  
+  //draw();
+  return false;
+});
+
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+</script>
