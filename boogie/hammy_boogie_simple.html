@@ -1,0 +1,105 @@
+<script src="https://unpkg.com/tone"></script>
+<script src="Tonejs-Instruments.js"></script>
+<button id="start-button">START SONG</button>
+<script>
+if (Math.random() < 0.5) {
+  synth = SampleLibrary.load({
+    instruments: "piano"
+  }).toDestination();
+} else {
+  synth = new Tone.PolySynth().toDestination();
+}
+
+document.getElementById("start-button").addEventListener("click", async function() {
+  this.disabled = true;
+  await Tone.start();
+  console.log("audio is ready");
+  
+  let main_riff_A = "G5/C6 A5/C6 G5/C6 C5 F5/A5 D#5}E5/G5 C5";  // 7 to 5
+  let main_riff_B = "C5/G4 F4 D#4/C5 E4/C5 C4 D#4 E4/C5 z z";   // 6 to 6
+  let main_riff = [main_riff_A, main_riff_B].join(" ");         // 7 to 6 (2)
+  
+  let main_riff_B_f = "C5/G4 C5/F4 C4 D#4/C5 C4 D4 D#4/C5 z z";
+  let main_riff_f = [main_riff_A, main_riff_B_f].join(" ");
+  
+  let turnaround_A = "D#5}E5/G5 G4 D#5}E5/G5 D5/F5 z z z z";                  // 7 to 6
+  let turnaround_B = "D#5}E5/G5 G4 D#5}E5/G5 F5/A5 E5/G5 C5 G4 F4 D#4 E4";    // 7 to 8 (2)
+  let turnaround_C = transpose(main_riff.split(" ").slice(2).join(" "), -12); // 1 to 6 (2)
+  let turnaround =  [turnaround_A, turnaround_B, turnaround_C].join(" ");
+  
+  let chorus_main = [main_riff, main_riff, main_riff_f, main_riff, turnaround].join(" "); // 7 to 6 (many)
+  let bass_main = bar2chorusBass("C2/G2 C2/G2 C2/A2 C2/A2 C2/G2 C2/G2 C2/A2 C2/A2");
+  //let bass_main = bar2chorusBass("C2 C2 D#2 E2 G2 C2 A2 G2");
+  
+  let intro_chord = "G3/B3/D4/F4/G4/B4/D#5/G5"
+  let intro = [intro_chord, intro_chord, intro_chord, "z", intro_chord, "z", "z"].join(" ");
+  
+  str2sequence(intro, false).start("0:0:0");
+  str2sequence(chorus_main, true).start("0:3:0");
+  str2sequence(bass_main, true).start("1:0:0");
+  
+  Tone.Transport.swing = 0.4;
+  Tone.Transport.start();
+});
+
+function str2sequence(str, loop) {
+  notes = str.split(' ');
+  let seq = new Tone.Sequence((time, note) => {
+    if (note == 'z') {
+      return;
+    }
+    if (note.search("}") != -1) {
+      [grace, note] = note.split("}");
+      let grace_duration = 4 / Tone.Transport.bpm.value;
+      synth.triggerAttackRelease(grace.split('/'), '32n', time - grace_duration);
+    }
+    synth.triggerAttackRelease(note.split('/'), '8n', time);
+  }, notes);
+  seq.loop = loop;
+  return seq;
+}
+
+//"[C4 G4] D#4 E4 [C4 G4] C3"
+
+// "[G5 C6] [A5 C6] [G5 C6] C5 [F5 A5] {D#5}[E5 G5] C5 [C5 G4] F4 [D#4 C5] [E4 C5] C4 D#4 [E4 C5]"
+// "G5/C6 A5/C6 G5/C6 C5 F5/A5 D#5}E5/G5 C5 C5/G4 F4 D#4/C5 E4/C5 C4 D#4 E4/C5"
+
+// "C2 C2 D#2 E2 G2 C2 A2 G2"
+
+function bar2chorusBass(bar) {
+  let barC = bar;
+  let barF = transpose(bar, 5);
+  let barG = transpose(bar, 7);
+  return [
+    barC, barC, barC, barC,
+    barF, barF, barC, barC,
+    barG, barG, barC, barC
+  ].join(" ");
+}
+
+function transpose(str, up) {
+  return str.replace(/([A-G])(#|b)?(\d)/g, (match, note, accidental, octave) => {
+    let num = note2num(note, accidental, octave);
+    return num2note(num + up);
+  });
+}
+
+function note2num(note, accidental, octave) {
+  let note_nums = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11};
+  let note_num = note_nums[note];
+  if (accidental == '#') note_num += 1;
+  if (accidental == 'b') note_num -= 1;
+  note_num += (Number(octave) + 1) * 12;
+  return note_num;
+}
+
+function num2note(num) {
+  let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "B#"];
+  return notes[mod(num, 12)] + (Math.floor(num / 12) - 1);
+}
+
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
+</script>
