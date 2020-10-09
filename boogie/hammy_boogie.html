@@ -1,0 +1,191 @@
+<script src="https://unpkg.com/tone"></script>
+<script src="Tonejs-Instruments.js"></script>
+<button id="start-button">START SONG</button>
+<script>
+if (Math.random() < 0.5) {
+  synth = SampleLibrary.load({
+    instruments: "piano"
+  }).toDestination();
+} else {
+  synth = new Tone.PolySynth({maxPolyphony: 64}).toDestination();
+}
+//synth = new Tone.PolySynth({maxPolyphony: 64}).toDestination();
+/*synth = SampleLibrary.load({
+  instruments: "piano"
+}).toDestination();*/
+
+document.getElementById("start-button").addEventListener("click", async function() {
+  this.disabled = true;
+  await Tone.start();
+  console.log("audio is ready");
+  
+  let bass_main = bar2chorusBass("C2/G2 C2/G2 C2/A2 C2/A2 C2/G2 C2/G2 C2/A2 C2/A2");
+  bass_main = silence(repeat(bass_main, 5), 3*12*8-8, 4*12*8-8*8);
+  bass_main = silence(bass_main, 5*12*8-24, 5*12*8);
+  
+  let intro_chord = "G3/B3/D4/F4/G4/B4/D#5/G5"
+  let intro = [intro_chord, intro_chord, intro_chord, "z", intro_chord, "z", "z"].join(" ");
+  
+  let main_riff_A = "G5/C6 A5/C6 G5/C6 C5 F5/A5 D#5}E5/G5 C5";  // 7 to 5
+  let main_riff_B = "C5/G4 F4 D#4/C5 E4/C5 C4 D#4 E4/C5 z z";   // 6 to 6
+  let main_riff = [main_riff_A, main_riff_B].join(" ");         // 7 to 6 (2)
+  
+  let main_riff_B_f = "C5/G4 C5/F4 C4 D#4/C5 C4 D4 D#4/C5 z z";
+  let main_riff_f = [main_riff_A, main_riff_B_f].join(" ");
+  
+  let turnaround_A = "D#5}E5/G5 G4 D#5}E5/G5 D5/F5 z z z z";                  // 7 to 6
+  let turnaround_B = "D#5}E5/G5 G4 D#5}E5/G5 F5/A5 E5/G5 C5 G4 F4 D#4 E4";    // 7 to 8 (2)
+  let turnaround_C = transpose(main_riff.split(" ").slice(2).join(" "), -12); // 1 to 6 (2)
+  let turnaround =  [turnaround_A, turnaround_B, turnaround_C].join(" ");
+  
+  let turnaround_terry = [
+    "z z D#5}E5/G5 G4 D#5}E5/G5 D5/F5 z z", 
+    "D#5}E5/G5 G4 D#5/G5 E5/G5 F5/A5 D#5/G5 E5 D5-C5-G4 F4/C5 D#4/C5 E4",
+    "G4/C5 F4/A4 D#4/G4 E4 D4-C4-G3 F3/C4 D#3/C4 E3/C3 C3 D#3/C4 E3/C3 z z"
+  ].join(" ");
+  
+  let chorus_main = [main_riff, main_riff, main_riff_f, main_riff, turnaround].join(" "); // 7 to 6 (many)  
+  
+  let main_riff_A_v2 = "G5/C6 A5/C6 G5/C6 C5 F5/A5 G5/G4 D#5-D5-C5";  // 7 to 5
+  let main_riff_B_v2 = "G4 F4/C5 D#4/C5 E4 G4 A4 C4/E4/G4/C5 z";      // 6 to 6
+  
+  let pinetop_F = "G#4 A4 F5/A5 D#5/G5 G4 D5/F5 F4 C5/D#5";
+  let pinetop_main = ["D#5 E5 G5/C6 z G5/G4 D#5-C5", main_riff_B_v2].join(" ");
+  
+  let turnaround_2 = "C4/E4 D4/F4 C4 D#4/F#4 E4/G4 D#4/F#4 D4 E4-D4 A3 A#3 B3 D#4/G4 C4 F4/A4 C4 F#4/C5 G4/C5"; //6 to 6
+  let turnaround_2_2 = "z C5/E5 D5/F5 C5 D#5/F#5 E5/G5 E5/G5 C5 D5 D#5 C5/C6 D#5 C5 C5/E5/C6"; //6 to 6
+  //let turnaround_2_2 = "C5/E5 D5/F5 C5 D#5/F#5 E5/G5 E5/G5 D#5/F#5 C5/E5 D5 D#5 E5 C5/C6 D#5 E5 C5/C6 z z"; //6 to 6
+  
+  let chorus_2 = [main_riff, main_riff_A_v2, main_riff_B_v2, "z z", pinetop_F, pinetop_F, pinetop_main, turnaround_2, turnaround_2_2].join(" ");
+  
+  let start_3 = "z A5-G5 D#5 C5 C5/G5/A#5 C5/G5/A#5 z C5/G5/A#5 z z z C5/G5/A#5 C5/G5/A#5 z F5/A5 G4/G5 D#5-D5-C5";  // 4 to 5
+  let main_riff_B_v3 = "G4 F4/C5 D#4 E4 C4/E4/G4/C5 z";
+  
+  let turnaround_3 = "C4/E4 D4/F4 C4 D#4/F#4 E4/G4 D#4/F#4 E4/G4 D#4/F#4 D4/G4 F4-E4-D4 A3 A#3 B3 D#4/G4 z F4/A4 C4 F#4/C5 G4/C5";
+  let turnaround_3_cont_naive = "F4/A4 G3/G4 D#4-D4-C4 " + transpose(main_riff_B_v2, -12);
+  let turnaround_3_cont = "F4/A4 G3/G4 D#4-D4-C4 G3 F3/C4 D#3/C4 E3 G3 A3 G3/C3 C4 A3-G3-D#3 z C3";
+  let chorus_3 = [start_3, main_riff_B_v3, transpose("G5/G4 D#5-D5-C5 " + main_riff_B_v3, -12), "z z z z", pinetop_F, pinetop_F, "D#5 E5 C6/E5 z G5/G4 D#5-D5-C5", main_riff_B_v3, turnaround_3, turnaround_3_cont].join(' ');
+  
+  let break_1 = "C5/D#5/F#5 C5/E5/G5/C6 C5/E5/G5/C6 C5/E5/G5/C6/C4/E4/G4 C5/E5/G5 C5/D#5/F#5 C5/E5/G5/C4/E4/G4";
+  let break_2 = [repeat("C4/E4/G4/C5/E5/G5/C6", 3), repeat("C4/D#4/A4/C5/D#5/A5/C6", 4)].join(" ");
+  let break_3 = [
+    repeat("C4/D#4/A4/C5/D#5/A5/C6", 3),
+    repeat("C4/E4/G4/C5/E5/G5/C6", 4),
+    repeat("C4/D#4/A4/C5/D#5/F#5/C6", 4),
+    repeat("C4/E4/G4/C5/E5/G5/C6", 2),
+    repeat("C4/D#4/A4/C5/D#5/F#5/C6", 2),
+    repeat("C4/E4/G4/C5/E5/G5/C6", 2)
+  ].join(" ");
+  let break_full = [break_1, "z", break_2, "z", break_3].join(" ");
+  
+  let chorus_4_a = "C4/E4/G4 C5 G#5}A5/C6 G#5}A5/C6";
+  let chorus_4_b = "G#5}A5/C6 z C5 G5/B5 C5 F5/A5 D#5}E5-G5 E5-G5 E5-G5 E5-G5 E5-G5 E5-G5 E5-G5";
+  let chorus_4_c = ["E5/G5 z C5 F5/A5 C5 F#5/A#5", repeat("G5/B5-D5/F5", 3), "z z z", "D5/F5/B5 G5 D5"].join(" ");
+  let chorus_4_d = "G5 D#6/G6 G5 D#6-E6-D6-C6 G5 F5/C5 D#5 E5/C6";
+  let chorus_4_e_naive = "C5/G5 F5/A5 G4/D#5/G5 E5-D#5-C5 G4 F4/C5 D#4/C5 E4 G4 A4 C4/E4/G4/C5 z"
+  let chorus_4_e = "C5/G5 F5/A5 G4/D#5/G5 E5-D#5-C5 G4 F4/C5 C4 D#4/F#4{E4/G4/C5 C4"
+  let chorus_4 = [chorus_4_a, "z z z z z z z", chorus_4_b, "z z z", chorus_4_c, "z", chorus_4_d, chorus_4_e].join(" ");  
+  
+  let main_riff_f_v2 = [main_riff_A_v2, main_riff_B_f].join(" ");
+  let turnaround_C_end = "G4/C5 C4 F4/A4 G4/G3 D#4-D4-C4 G3 C3 D#3}E3";
+  let turnaround_end = [turnaround_A, turnaround_B, turnaround_C_end].join(" ");
+  let final_chord_1 = "C#2/G#2/C#3/F3/G#3/B3/D#4";
+  let final_chord_2 = "C2/G2/C3/E3/G3/A#3/D4";
+  let chorus_end = [main_riff, main_riff, main_riff_f_v2, main_riff, turnaround_end].join(" "); // 7 to 6 (many)  
+  
+  str2sequence(intro, false).start("0:0:0");
+  str2sequence(chorus_main, false).start("0:3:0");
+  str2sequence(chorus_2, false).start("12:3:0");
+  str2sequence(chorus_3, false).start("24:2:0");
+  str2sequence(break_full, false).start("36:2:2");
+  str2sequence(chorus_4, false).start("40:3:0");
+  str2sequence(chorus_end, false).start("48:3:0");
+  str2sequence(bass_main, false).start("1:0:0");
+  synth.triggerAttackRelease(final_chord_1.split('/'), '8n', "60:1:2");
+  synth.triggerAttackRelease(final_chord_2.split('/'), '2n', "60:2:2");
+  
+  //Tone.Transport.bpm.value = 50;
+  Tone.Transport.swing = 0.4;
+  Tone.Transport.start();
+});
+
+function str2sequence(str, loop) {
+  notes = str.split(' ');
+  notes = notes.map(function(x) {
+    let r = x.split('-');
+    if (r.length == 1) {
+      return x;
+    }
+    return r;
+  });
+  let seq = new Tone.Sequence((time, note) => {
+    if (note == 'z') {
+      return;
+    }
+    if (note.search("}") != -1) {
+      [grace, note] = note.split("}");
+      let grace_duration = 4 / Tone.Transport.bpm.value;
+      synth.triggerAttackRelease(grace.split('/'), '32n', time - grace_duration);
+    }
+    synth.triggerAttackRelease(note.split('/'), '8n', time);
+  }, notes);
+  seq.loop = loop;
+  return seq;
+}
+
+//"[C4 G4] D#4 E4 [C4 G4] C3"
+
+// "[G5 C6] [A5 C6] [G5 C6] C5 [F5 A5] {D#5}[E5 G5] C5 [C5 G4] F4 [D#4 C5] [E4 C5] C4 D#4 [E4 C5]"
+// "G5/C6 A5/C6 G5/C6 C5 F5/A5 D#5}E5/G5 C5 C5/G4 F4 D#4/C5 E4/C5 C4 D#4 E4/C5"
+
+// "C2 C2 D#2 E2 G2 C2 A2 G2"
+
+function bar2chorusBass(bar) {
+  let barC = bar;
+  let barF = transpose(bar, 5);
+  let barG = transpose(bar, 7);
+  return [
+    barC, barC, barC, barC,
+    barF, barF, barC, barC,
+    barG, barG, barC, barC
+  ].join(" ");
+}
+
+function transpose(str, up) {
+  return str.replace(/([A-G])(#|b)?(\d)/g, (match, note, accidental, octave) => {
+    let num = note2num(note, accidental, octave);
+    return num2note(num + up);
+  });
+}
+
+function repeat(thing, count) {
+  return Array(count).fill(thing).flat().join(" ");
+}
+
+function silence(thing, start, end) {
+  let list = thing.split(" ");
+  for (let i = start; i < end; i++) {
+    list[i] = "z";
+  }
+  return list.join(" ");
+}
+
+function note2num(note, accidental, octave) {
+  let note_nums = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11};
+  let note_num = note_nums[note];
+  if (accidental == '#') note_num += 1;
+  if (accidental == 'b') note_num -= 1;
+  note_num += (Number(octave) + 1) * 12;
+  return note_num;
+}
+
+function num2note(num) {
+  let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "B#"];
+  return notes[mod(num, 12)] + (Math.floor(num / 12) - 1);
+}
+
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
+</script>
