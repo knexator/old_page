@@ -1,0 +1,152 @@
+<script src="https://unpkg.com/tone"></script>
+<button id="start-button">START SOUND</button>
+<select id="ornament_intro" onchange="changeSel(this)">
+<option value="z G5/C6 A5/C6">original intro v1</option>
+<option value="C5 G5/C6 A5/C6">original intro v2</option>
+<option value="z z z">silence</option>
+<option value="z E5/G5/A5/C6 z">single chord on 2</option>
+</select>
+<select id="figure_1" onchange="changeSel(this)">
+<option value="G5/C6 C5 F5/A5 D#5}E5/G5 C5"   >original fig1 v1</option>
+<option value="G5/C6 C5 F5/A5 G4/G5 D#5-D5-C5">original fig1 v2</option>
+<option value="G5/C6 F5 D#5/C6 E5/C6 C5"      >original fig2 v1</option>
+<option value="G5 F5/C6 D#5 E5 G5"            >original fig2 v2</option>
+<option value="G5/C6 D#5 E5 G5/C6 C5"         >5-block 1</option>
+<option value="A5-G5 D5 D#5 E5 E5/G5/A5/C6"   >5-block 2</option>
+<option value="E5/G5/A5/C6 z z E5/G5/A5/C6 z" >chords</option>
+</select>
+<select id="figure_2" onchange="changeSel(this)">
+<option value="G4/C5 F4 D#4/C5 E4/C5 C4"      >original fig2 v1</option>
+<option value="G4 F4/C5 D#4 E4 G4"            >original fig2 v2</option>
+<option value="G4/C5 C4 F4/A4 D#4}E4/G4 C4"   >original fig1 v1</option>
+<option value="G4/C5 C4 F4/A4 G3/G4 D#4-D4-C4">original fig1 v2</option>
+<option value="G4/C5 D#4 E4 G4/C4 C4"         >5-block 1</option>
+<option value="A4-G4 D4 D#4 E4 E4/G4/A4/C5"   >5-block 2</option>
+<option value="E5/G5/A5/C6 z z E5/G5/A5/C6 z" >chords</option>
+</select>
+<select id="ornament_outro" onchange="changeSel(this)">
+<option value="D#4 E4/C5">original outro v1</option>
+<option value="A4 E4/G4/C5">original outro v2</option>
+<option value="D#4/F#4 E4/G4">outro v1 v2</option>
+<option value="z z">silence</option>
+</select>
+
+<script>
+synth = new Tone.PolySynth({maxPolyphony: 64}).toDestination();
+
+let sequences = {};
+let ids = ["ornament_intro", "figure_1", "figure_2", "ornament_outro"];
+let offsets = ["0:2:2", "1:0:0", "1:2:2", "2:1:0"];  
+for (let i = 0; i < ids.length; i++) {
+  sequences[ids[i]] = [];
+  let select = document.getElementById(ids[i]);
+  for (let j = 0; j < select.length; j++) {
+    let seq = str2sequence(select.options[j].value);
+    seq.probability = 0;
+    seq.start(offsets[i]);
+    sequences[ids[i]].push(seq);      
+  }
+  sequences[ids[i]].push(select.selectedIndex);
+  sequences[ids[i]][select.selectedIndex].probability = 1;
+}
+
+function changeSel(selectObject) {
+  let id = selectObject.id;
+  let seqs = sequences[id];
+  let last_sel = seqs[seqs.length-1];
+  seqs[last_sel].probability = 0;
+  let new_sel = selectObject.selectedIndex;
+  seqs[new_sel].probability = 1;
+  seqs[seqs.length-1] = new_sel;
+}
+
+document.getElementById("start-button").addEventListener("click", async function() {
+  this.disabled = true;
+  await Tone.start();
+  console.log("audio is ready");
+  
+  let bass = "C2 C2 D#2 E2 G2 C2 A2 G2 C2 C2 D#2 E2 G2 C2 A2 G2";
+  str2sequence(bass).start("1:0:0");
+  
+  //Tone.Transport.bpm.value = 50;
+  Tone.Transport.swing = 0.4;
+  Tone.Transport.position = "0:2:0";
+  Tone.Transport.start();
+});
+
+function str2sequence(str) {
+  notes = str.split(' ');
+  notes = notes.map(function(x) {
+    let r = x.split('-');
+    if (r.length == 1) {
+      return x;
+    }
+    return r;
+  });
+  while (notes.length < 16) {
+    notes.push("z");
+  }
+  let seq = new Tone.Sequence((time, note) => {
+    if (note == 'z') {
+      return;
+    }
+    if (note.search("}") != -1) {
+      [grace, note] = note.split("}");
+      let grace_duration = 4 / Tone.Transport.bpm.value;
+      synth.triggerAttackRelease(grace.split('/'), '32n', time - grace_duration);
+    }
+    synth.triggerAttackRelease(note.split('/'), '8n', time);
+  }, notes);
+  seq.loop = true;
+  return seq;
+}
+
+function bar2chorusBass(bar) {
+  let barC = bar;
+  let barF = transpose(bar, 5);
+  let barG = transpose(bar, 7);
+  return [
+    barC, barC, barC, barC,
+    barF, barF, barC, barC,
+    barG, barG, barC, barC
+  ].join(" ");
+}
+
+function transpose(str, up) {
+  return str.replace(/([A-G])(#|b)?(\d)/g, (match, note, accidental, octave) => {
+    let num = note2num(note, accidental, octave);
+    return num2note(num + up);
+  });
+}
+
+function repeat(thing, count) {
+  return Array(count).fill(thing).flat().join(" ");
+}
+
+function silence(thing, start, end) {
+  let list = thing.split(" ");
+  for (let i = start; i < end; i++) {
+    list[i] = "z";
+  }
+  return list.join(" ");
+}
+
+function note2num(note, accidental, octave) {
+  let note_nums = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11};
+  let note_num = note_nums[note];
+  if (accidental == '#') note_num += 1;
+  if (accidental == 'b') note_num -= 1;
+  note_num += (Number(octave) + 1) * 12;
+  return note_num;
+}
+
+function num2note(num) {
+  let notes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B", "B#"];
+  return notes[mod(num, 12)] + (Math.floor(num / 12) - 1);
+}
+
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
+</script>
