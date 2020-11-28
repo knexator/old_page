@@ -1,0 +1,124 @@
+<style>
+.gridButton {
+  height:50px;
+  width:50px;
+  margin:0px;
+}
+
+buttonRow {
+  margin:0px;
+}
+
+.buttonRow > button {
+  height:50px;
+  width:50px;
+
+
+}
+
+</style>
+
+<!--audio id='audio1' src="mp3/0_0.mp3" type="audio/mp3" preload="auto" autobuffer controls></audio-->
+<button id="start-button">START SONG</button>
+
+<!--div>
+<button id="0_0" class="gridButton">0 0</button>
+<button id="0_1" class="gridButton">0 1</button>
+<button id="0_2" class="gridButton">0 2</button>
+</div-->
+
+<div id="buttonGrid">
+<div class="buttonRow">
+<button id="0_0">0 0</button><button id="0_1">0 1</button><button id="0_2">0 2</button><button id="0_3">0 3</button><button id="0_4">0 4</button>
+</div>
+<div class="buttonRow">
+<button id="1_0">1 0</button><button id="1_1">1 1</button><button id="1_2">1 2</button><button id="1_3">1 3</button><button id="1_4">1 4</button>
+</div>
+<div class="buttonRow">
+<button id="2_0">2 0</button><button id="2_1">2 1</button><button id="2_2">2 2</button><button id="2_3">2 3</button><button id="2_4">2 4</button>
+</div>
+<div class="buttonRow">
+<button id="3_0">3 0</button><button id="3_1">3 1</button><button id="3_2">3 2</button><button id="3_3">3 3</button><button id="3_4">3 4</button>
+</div>
+<div class="buttonRow">
+<button id="4_0">4 0</button><button id="4_1">4 1</button><button id="4_2">4 2</button><button id="4_3">4 3</button><button id="4_4">4 4</button>
+</div>
+</div>
+
+<script>
+
+/*let sounds = [];
+for (let i=0; i<5; i++) {
+  sounds.push([]);
+  for (let j=0; j<5; j++) {
+    if (i!=0&&i!=4&&j!=0&&j!=4) {
+      sounds[i].push(null);
+    } else {
+      sounds[i].push(new Audio("mp3/" + i + "_" + j + ".mp3"));
+      sounds[i][j].volume = 0;
+    }    
+  }
+}*/
+let sounds = {};
+for (let i=0; i<5; i++) {
+  for (let j=0; j<5; j++) {
+    if (i!=0&&i!=4&&j!=0&&j!=4) continue;
+    let sound = new Audio("mp3/" + i + "_" + j + ".mp3");
+    sound.volume = 0;
+    sounds[i + "_" + j] = sound;
+  }
+}
+let bass = new Audio("mp3/bass_v1.mp3");
+
+let curPlaying = null;
+
+let buttons = document.querySelectorAll('#buttonGrid button');
+for (let i=0; i<buttons.length; i++) {
+  buttons[i].addEventListener('click', function(asdf) {
+    if (sounds[this.id]) {
+      sounds[this.id].volume = 1;
+      this.disabled = true;
+      if (curPlaying) {
+        sounds[curPlaying].volume = 0;
+        document.querySelector('#\\3' + curPlaying).disabled = false;
+      }
+      curPlaying = this.id;
+    }
+  });
+  /*if (!sounds[buttons[i].id]) {
+    buttons[i].disabled = true;
+  }*/
+  buttons[i].disabled = true;
+}
+
+
+document.getElementById("start-button").addEventListener("click", async function() {
+  this.disabled = true;
+  for (let i=0; i<buttons.length; i++) {
+    if (sounds[buttons[i].id]) {
+      buttons[i].disabled = false;
+    }
+  }
+  playAll();
+});
+
+function playAll() {
+  console.log('playAll');
+  for (let i=0; i<5; i++) {
+    for (let j=0; j<5; j++) {
+      if (i!=0&&i!=4&&j!=0&&j!=4) continue;
+      stopSound(sounds[i + '_' + j])
+      sounds[i + '_' + j].play();
+    }
+  }
+  stopSound(bass);
+  bass.play();
+  setTimeout(playAll, 24000);
+}
+
+function stopSound(sound) {
+  sound.pause();
+  sound.currentTime = 0;
+}
+
+</script>
