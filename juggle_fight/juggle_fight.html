@@ -1,0 +1,224 @@
+<style>
+#keyboard {
+    height: 33%;
+    position: absolute;
+    bottom: 0%;  /* position the top  edge of the element at the middle of the parent */
+    left: 50%; /* position the left edge of the element at the middle of the parent */
+
+    transform: translate(-50%, 0%); /* This is a shorthand of
+                                         translateX(-50%) and translateY(-50%) */
+}
+</style>
+<body style=margin:0>
+<canvas id="canvas"></canvas>
+<div style="display:none;">
+  <img id="rock" src="rock.png">
+  <img id="scissors" src="scissors.png">
+  <img id="paper" src="paper.png">
+</div>
+<img id="keyboard" src="keyboard.png">
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+let rock = document.getElementById('rock');
+let paper = document.getElementById('paper');
+let scissors = document.getElementById('scissors');
+
+let images = [rock, paper, scissors];
+
+let states = [
+  [1, 2, 3, 0, 0, 0, 0],
+  [1, 2, 3, 0, 0, 0, 0]
+];
+let selected = [3, 3];
+let score = [0, 0];
+
+let start_t = Date.now();
+let last_turn = 0;
+
+let maxThrow = 6;
+let bpm = 120;
+
+let rad = 150;
+let spa = 150;
+let rt2 = 1.41421356237;
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  spa = innerWidth / (rt2 * 9);
+  rad = spa;
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function draw() {
+  let time = (Date.now() - start_t) * 0.001 * bpm / 60;
+  let turn = Math.floor(time);
+  let t = time % 1;
+  
+  if (turn > last_turn) {
+    last_turn = turn;
+    if (wins(states[0][0], states[1][0])) {
+      score[0] += 1;
+    }
+    if (wins(states[1][0], states[0][0])) {
+      score[1] += 1;
+    }
+
+    for (let k=0; k<=1; k++) {
+      states[k] = update_state(states[k], selected[k]);
+      let moves = valid_moves(states[k]);
+      selected[k] = moves[0];
+    }
+  }
+  
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  let t1 = smoothstep(0,0.3,t);  
+  for (let p=0; p<=1; p++) {  
+    let s = 1 - p*2;
+    ctx.save()
+    ctx.translate( canvas.width/2, canvas.height/2 );
+    ctx.rotate(s * 45 * Math.PI / 180);
+
+    for (let k=0; k<7; k++) {
+      [x,y] = b(k, s);
+      draw_place(x, y, k>0 && selected[p] == k ? states[p][0] : null, s);
+    }
+    
+    for (let k=0; k<7; k++) {
+      [cx,cy] = b(k, s);
+      [nx,ny] = b(k+1, s);
+      let x = lerp(nx, cx, t1);
+      let y = lerp(ny, cy, t1);
+      draw_symbol(x, y, states[p][k], s);
+    }    
+    ctx.restore();
+  }
+  
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = "center";
+  ctx.font = "80px Arial";
+  ctx.fillText(score[0], canvas.width/2 - spa*rt2*7/4, canvas.height/2 - spa*rt2/4);
+  ctx.fillText(score[1], canvas.width/2 + spa*rt2*7/4, canvas.height/2 - spa*rt2/4);
+  ctx.fillText(symbol(states[0][0], states[1][0]), canvas.width/2, canvas.height/2+spa*rt2/2);
+  
+  
+  window.requestAnimationFrame(draw);
+}
+
+function wins(a, b) {
+  if (a == 0) return false;
+  if (b == 0) return false;
+  if (a%3 == (b+1)%3) return true;
+  return false;
+}
+
+function symbol(a, b) {
+  if (a == 0 || b == 0) return '';
+  if (a == b) return '=';
+  if (a%3 == (b+1)%3) return '>';
+  if (b%3 == (a+1)%3) return '<';
+  console.log("ERROR TERRIBLE", a, b);
+}
+
+function b(k, s) {
+  let sX = spa/2;
+  let sY = spa/2;
+  let pX = spa*2;
+  let pY = spa/2;
+  
+  if (k == 0) return [-s*sX, sY];
+  let i = Math.floor(k / 2);
+  let j = Math.floor((k-1) / 2);
+  return [-s * (pX + spa*i), pY + spa*j];
+}
+
+function draw_symbol(x, y, s, sign) {
+  if (s == 0) return;
+  //ctx.fillRect(x-50, y-50, 100, 100);
+  
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(-sign * 45 * Math.PI / 180);
+  ctx.drawImage(images[s-1], -rad/2, -rad/2, rad, rad);
+  //ctx.drawImage(rock, -50, -50, 100, 100);
+  ctx.restore();
+}
+
+function draw_place(x, y, hover, sign) {
+  if (hover !== null) {
+    //ctx.fillRect(x-50, y-50, 100, 100);
+    ctx.globalAlpha = 0.3;
+    draw_symbol(x, y, hover, sign)
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x-rad/2, y-rad/2, rad, rad);
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
+  } else {
+    ctx.strokeRect(x-rad/2, y-rad/2, rad, rad);
+  }
+}
+
+function valid_moves(state, max=maxThrow) {  
+  if (state[0] == 0) return [0];
+  let res = [];
+  for (let i=1; i<max; i++) {
+    if (state[i] == 0) {
+      res.push(i);
+    }
+  }
+  res.push(max);
+  return res;
+}
+
+function update_state(state, move) {
+  let new_state = [];
+  for (let i=1; i<state.length; i++) {
+    new_state.push(state[i]);
+  }
+  new_state.push(0);
+  if (move != 0) {
+    new_state[move-1] = state[0];
+  }  
+  return new_state;
+}
+
+function lerp(a, b, t) {
+  return a*(1-t) + b*t;
+}
+
+function smoothstep(min, max, value) {
+  var x = Math.max(0, Math.min(1, (value-min)/(max-min)));
+  return x*x*(3 - 2*x);
+};
+
+window.addEventListener('keydown', e => {
+  [p, n] = mapKeys(e.code);
+  if (p !== null) {
+    let moves = valid_moves(states[p])
+    if (moves.indexOf(n) != -1) {
+      selected[p] = n;
+    }
+  }
+});
+
+function mapKeys(k) {
+  let m1 = ['KeyC', 'KeyD', 'KeyX', 'KeyS', 'KeyZ', 'KeyA'].indexOf(k);
+  if (m1 != -1) {
+    return [0, m1 + 1];
+  }
+  let m2 = ['KeyM', 'KeyK', 'Comma', 'KeyL', 'Period', 'Semicolon'].indexOf(k);
+  if (m2 != -1) {
+    return [1, m2 + 1];
+  }
+  return [null, null];
+}
+
+</script>
