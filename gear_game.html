@@ -313,7 +313,6 @@ function draw() {
 }
 
 window.addEventListener('mousemove', e => {
-  console.log(e);
   mx = e.clientX - canvas.width/2;
   my = e.clientY - canvas.height/2;
   mx = Math.max(-gs*3, Math.min(mx, gs*3));
