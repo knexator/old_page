@@ -1,0 +1,392 @@
+<body style=margin:0>
+<div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; top: 20; pointer-events:none;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
+Mouse to drag and drop pieces. Q/E or mouse wheel to rotate them. Place all pieces on a 3x3 square<br>
+</div>
+<div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 20;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
+<a href="https://www.myminifactory.com/object/3d-print-gearblock-puzzle-67963">Original physical puzzle</a> by <a href=" https://twitter.com/qwfles">qwaffles</a> and <a href="https://rotemeshet.itch.io/">Rotem Eshet</a>, ported by <a href="https://twitter.com/knexator">knexator</a>
+</div>
+<canvas id="canvas"></canvas>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+let lastRot = Date.now();
+let rotDur = 100;
+
+let gs = 100;
+let pr = gs * Math.sqrt(2) / 2;
+let ir = 30;
+let tr = pr / 12;
+
+let gearData = [
+  [40, 0],
+  [50, 0],
+  [59.7241, 5.74696],
+  [58.8471, 11.7054],
+  [57.3772, 17.5459],
+  [46.1940, 19.1342],
+  [36.9552, 15.3073],
+  [33.2588, 22.2228],
+  [28.2843, 28.2843]
+];
+
+let mx = 0;
+let my = 0;
+let grabbed = null;
+let grabbedBad = false;
+let angleOff = 0;
+let angling = null;
+
+let dis = [1, 0, -1, 0];
+let djs = [0, 1, 0, -1];
+
+let pieces = [
+  new Piece(-3, -3, 0, [false, false, false, true]),
+  new Piece( 0, -3, 0, [true, true, true, true]),
+  new Piece( 3, -3, 0, [true, false, false, true]),
+  new Piece(-3,  0, 0, [false, true, false, true]),
+  new Piece( 3,  0, 0, [false, true, false, true]),
+  new Piece(-3,  3, 0, [true, false, true, true]),
+  new Piece(-1,  3, 0, [true, false, true, true]),
+  new Piece( 1,  3, 0, [true, false, true, true]),
+  new Piece( 3,  3, 0, [true, false, true, true]),
+];
+
+if (Math.random() < 0.01) {
+  pieces = [
+    new Piece(-3, 3, 0, [true, true, false, true]),
+    new Piece(-1, 3, 0, [false, true, true, true]),
+    new Piece( 1, 3, 0, [true, true, false, true]),
+    new Piece( 3, 3, 0, [false, true, true, true]),
+    new Piece(-2, 2, 0, [true, false, true, false]),
+    new Piece( 0, 2, 0, [true, true, true, true]),
+    new Piece( 2, 2, 0, [true, false, true, false]),
+    new Piece(-1, 1, 0, [false, false, false, true]),
+    new Piece( 1, 1, 0, [true, false, false, true]),
+  ];
+  alert("SECRET CRAB");
+}
+
+function Piece(i, j, k, d) {
+  this.i = i;
+  this.j = j;
+  this.k = k % 4;
+  this.d = d;
+  this.lr = 0;
+  this.fr = 0;
+}
+
+Piece.prototype.draw = function(n) {
+  let a = piece_ang(this);
+  if (grabbed != n) {
+    let x = this.i * gs;
+    let y = this.j * gs;
+    draw_piece(x, y, this.d, this.k, a);
+  } else {
+    if (grabbedBad) {
+      let x = this.i * gs;
+      let y = this.j * gs;
+      draw_piece(x, y, this.d, this.k, a, true, true, false);
+    } else {
+      let i = Math.round(mx / gs);
+      let j = Math.round(my / gs);
+      let x = i * gs;
+      let y = j * gs;
+      let wrong = !valid_pos(i, j, this.d, this.k, n);
+      draw_piece(x, y, this.d, this.k, a, true, wrong, true);
+      draw_piece(mx, my, this.d, this.k, a, false, false, true);
+    }
+  }
+}
+
+function draw_piece(x, y, d, k, a=0, ghost=false, wrong=false, grabbed=false) {
+  ctx.globalAlpha = ghost ? 0.3 : 1;
+  let color = wrong ? "red" : "black";
+  ctx.fillStyle = color;
+  ctx.strokeStyle = "white"; //color;
+  if (grabbed) draw_gear(x,y,a,wrong);
+  for (let n=0; n<4; n++) {
+    let r = d[n] ? pr : ir;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.arc(x, y, r, -Math.PI/4 + a + n * Math.PI / 2, - Math.PI/4 + a + (n + 1) * Math.PI / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = "black";
+}
+
+function draw_gear(x, y, a, wrong=false) {  
+  ctx.save()
+  ctx.translate(x,y);
+  ctx.beginPath();  
+  ctx.rotate(a);
+  ctx.moveTo(gearData[0][0] * gs / 100, gearData[0][1] * gs / 100);
+  for (let r=0; r<8; r++) {
+    for (let p=1; p<gearData.length; p++) {
+      ctx.lineTo(gearData[p][0] * gs / 100, gearData[p][1] * gs / 100);
+    }
+    ctx.rotate(Math.PI/4);
+  }
+  //ctx.fillStyle = wrong ? "red" : "white";
+  ctx.fillStyle = "white";
+  ctx.fill();
+  ctx.strokeStyle = wrong ? "red" : "black";
+  ctx.stroke();
+  ctx.restore();
+}
+
+function valid_pos(i, j, d, k, e=-1) {
+  for (let n=0; n<pieces.length; n++) {
+    if (n == e) continue;
+    let di = pieces[n].i - i;
+    let dj = pieces[n].j - j;
+    if (Math.abs(di) + Math.abs(dj) == 0) return false;
+    if (Math.abs(di) + Math.abs(dj) != 1) continue;    
+    let s = (1 - di) * Math.abs(di) + (2 - dj) * Math.abs(dj);
+    if (pieces[n].d[(s+6-pieces[n].k)%4]) return false;    
+  }
+  return true;
+}
+
+function piece_at(i,j) {
+  for (let n=0; n<pieces.length; n++) {
+    if (pieces[n].i == i && pieces[n].j == j) return n;    
+  }
+  return -1;
+}
+
+function grabbable(n) {
+  for (let s=0; s<4; s++) {
+    let i = pieces[n].i + dis[s];
+    let j = pieces[n].j + djs[s];
+    let m = piece_at(i,j);
+    if (m != -1) {
+      if (pieces[m].d[(s+6-pieces[m].k)%4]) return false;
+    }
+  }
+  return true;
+}
+
+function connected(n) {
+  let res = [n];
+  for (let m=0; m<res.length; m++) {
+    let p = pieces[res[m]];
+    for (let d=0; d<4; d++) {
+      let q = piece_at(p.i + dis[d], p.j + djs[d]);
+      if (q != -1 && res.indexOf(q) == -1) {
+        res.push(q);
+      }
+    }
+  }
+  return res;
+}
+
+function rotate(n, cw) {
+  if (Date.now() - lastRot < rotDur) return;
+  lastRot = Date.now();
+  for (let i=0; i<pieces.length; i++) {
+    pieces[i].lr = 0;
+    pieces[i].fr = 0;
+  }
+  let valid_rot = true;
+  let group = connected(n);
+  let par = (pieces[n].i + pieces[n].j + cw + 1000) % 2;
+  for (let i=0; i<group.length; i++) {
+    for (let j=i+1; j<group.length; j++) {
+      if (!canPairRot(group[i], group[j], par)) valid_rot = false;
+    }
+  }
+  if (valid_rot) {
+    for (let i=0; i<group.length; i++) {
+      let p = pieces[group[i]];
+      let cw2 = (p.i + p.j + par + 1000)%2;
+      p.k = (p.k + 12 + cw2*2-1) % 4;
+      p.lr = (cw2*2-1);
+    }
+  } else {
+    for (let i=0; i<group.length; i++) {
+      let p = pieces[group[i]];
+      let cw2 = (p.i + p.j + par + 1000)%2;
+      p.fr = (cw2*2-1);
+    }
+  }
+}
+
+function canRot(n, cw) {
+  let group = connected(n);
+  let par = (pieces[n].i + pieces[n].j + cw + 1000) % 2;
+  for (let i=0; i<group.length; i++) {
+    for (let j=i+1; j<group.length; j++) {
+      if (!canPairRot(group[i], group[j], par)) return false;
+    }
+  }
+  return true;
+}
+
+function canPairRot(n, m, par) {
+  let a = pieces[n];
+  let b = pieces[m];
+  let di = b.i - a.i;
+  let dj = b.j - a.j;
+  if (Math.abs(di) + Math.abs(dj) != 1) return true;
+  let s = (1 - di) * Math.abs(di) + (2 - dj) * Math.abs(dj);  
+  let p1 = ((a.i + a.j + 1 + par + 1000) % 2) * 2 - 1;
+  let p2 = ((b.i + b.j + 1 + par + 1000) % 2) * 2 - 1;
+  return !(a.d[(s + p1 + 8 - a.k)%4] && b.d[(s + p2 + 6 - b.k)%4]);
+}
+
+function piece_ang(p) {
+  if (Date.now() - lastRot >= rotDur) return p.k * Math.PI/2;
+  let t = (Date.now() - lastRot) / rotDur;
+  if (p.fr != 0) {
+    let k = lerp(p.k, p.k + p.fr, t*(1-t));
+    return k * Math.PI/2;
+  } else {
+    let k = lerp(p.k - p.lr, p.k, t);
+    return k * Math.PI/2;
+  }
+}
+
+function lerp(a,b,t) {
+  return a*(1-t)+b*t;
+}
+
+function handRotate(n, cw) {
+  if (Date.now() - lastRot < rotDur) return;
+  lastRot = Date.now();
+  for (let i=0; i<pieces.length; i++) {
+    pieces[i].lr = 0;
+    pieces[i].fr = 0;
+  }
+  let par = (pieces[n].i + pieces[n].j + cw + 1000) % 2;
+  let p = pieces[n];
+  let cw2 = (p.i + p.j + par + 1000)%2;
+  p.k = (p.k + 12 + cw2*2-1) % 4;
+  p.lr = (cw2*2-1);
+}
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  ctx.translate(canvas.width/2, canvas.height/2);
+  gs = Math.min(canvas.height / 10, canvas.width / 10);
+  pr = gs * Math.sqrt(2) / 2;
+  ir = gs * .3;
+  tr = pr / 12;
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function draw() {
+  ctx.clearRect(-canvas.width/2,-canvas.height/2,canvas.width,canvas.height);
+  ctx.strokeStyle = "black";
+  ctx.fillStyle = "black";
+  for (let i=-3; i<=3; i++) {
+    for (let j=-3; j<=3; j++) {
+      let x = i * gs;
+      let y = j * gs;
+      ctx.beginPath();
+      ctx.arc(x, y, tr, 0, Math.PI * 2);
+      if (Math.max(Math.abs(i), Math.abs(j)) <= 1) {
+        ctx.fill();
+      }
+      ctx.stroke();
+    }
+  }
+  for (let n=0; n<pieces.length; n++) {
+    if (n == grabbed && !grabbedBad) continue;
+    let x = pieces[n].i * gs;
+    let y = pieces[n].j * gs;
+    draw_gear(x, y, piece_ang(pieces[n]), n == grabbed && grabbedBad);
+  }
+  for (let n=0; n<pieces.length; n++) {
+    pieces[n].draw(n);
+  }
+  if (grabbed !== null) pieces[grabbed].draw(grabbed);  
+  window.requestAnimationFrame(draw);
+}
+
+window.addEventListener('mousemove', e => {
+  console.log(e);
+  mx = e.clientX - canvas.width/2;
+  my = e.clientY - canvas.height/2;
+  mx = Math.max(-gs*3, Math.min(mx, gs*3));
+  my = Math.max(-gs*3, Math.min(my, gs*3));
+  return false;
+});
+
+window.addEventListener('mousedown', e => {
+  mx = e.clientX - canvas.width/2;
+  my = e.clientY - canvas.height/2;
+  mx = Math.max(-gs*3, Math.min(mx, gs*3));
+  my = Math.max(-gs*3, Math.min(my, gs*3));
+  if (Date.now() - lastRot < rotDur) return;
+  for (let n=0; n<pieces.length; n++) {
+    let x = pieces[n].i * gs;
+    let y = pieces[n].j * gs;
+    if (Math.hypot(mx - x, my - y) < pr) {
+      grabbed = n;
+      grabbedBad = !grabbable(n);
+    }
+  }
+  
+  return false;
+});
+
+window.addEventListener('mouseup', e => {
+  mx = e.clientX - canvas.width/2;
+  my = e.clientY - canvas.height/2;
+  mx = Math.max(-gs*3, Math.min(mx, gs*3));
+  my = Math.max(-gs*3, Math.min(my, gs*3));
+  if (grabbed !== null) {
+    let i = Math.round(mx / gs);
+    let j = Math.round(my / gs);
+    if (valid_pos(i, j, pieces[grabbed].d, pieces[grabbed].k, grabbed) && !grabbedBad) {
+      pieces[grabbed].i = i;
+      pieces[grabbed].j = j;
+    }
+  }
+  grabbed = null;
+  grabbedBad = false;
+  return false;
+});
+
+window.addEventListener('keydown', e => {
+  let d = e.key == 'e' ? 1 : e.key == 'q' ? 0 : -1;
+  if (grabbed !== null && !grabbedBad) {
+    handRotate(grabbed, d);
+    return;
+  }  
+  if (d != -1) {
+    let i = Math.round(mx / gs);
+    let j = Math.round(my / gs);
+    let m = piece_at(i,j);
+    if (m != -1) {
+      rotate(m, d);
+    }
+  }
+});
+
+window.addEventListener('wheel', e => {
+  let d = e.deltaY > 0 ? 1 : 0;
+  if (grabbed !== null && !grabbedBad) {
+    handRotate(grabbed, d);
+    return;
+  }  
+  if (d != -1) {
+    let i = Math.round(mx / gs);
+    let j = Math.round(my / gs);
+    let m = piece_at(i,j);
+    if (m != -1) {
+      rotate(m, d);
+    }
+  }
+});
+
+</script>
