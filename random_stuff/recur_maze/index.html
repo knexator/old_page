@@ -245,6 +245,7 @@ function fix_cam() {
   if (cam_s > 1.0) cam_s = 1.0;
   
   for (let k=0; k<4; k++) {
+    if (k == 2) continue;
     let cx = xs[k];
     let cy = ys[k];
     if ((cam_x - cam_s) > cx - SCALE && (cam_x + cam_s) < cx + SCALE
