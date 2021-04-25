@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+.stack {
+    position:relative;
+}
+
+.stack canvas {
+    position:absolute;
+    left:0;
+    top:0;
+}
+
+</style>
+<body style="margin: 0; overflow: hidden;">
+<div class="stack">
+  <canvas id="canvas_gl" style="z-index:1;"></canvas>
+  <canvas id="canvas_draw" style="z-index:2;"></canvas>
+</div>
+<script>
+let SCALE = 0.2; // each small maze is SCALE times the size of the big maze
+let LINE_DEPTH = 4;
+
+let fragmentSource = `#version 300 es
+
+precision highp float;
+
+uniform vec3 camera;
+
+uniform sampler2D uSampler;
+
+in vec2 texCoord;
+
+out vec4 fragmentColor;
+
+#define SCALE ${SCALE}
+
+vec2 recurse_uv(vec2 uv) {
+    int depth = 0;
+    while (depth < 5) {  
+        vec2 frac = fract(uv)-.5;
+        vec2 dis = abs(frac);
+        if (dis.x > SCALE || dis.y > SCALE) {
+            return uv;
+        }
+        uv = frac / SCALE;
+        depth += 1;
+    }
+    return uv;
+}
+
+void main(void) {
+    
+    //fragmentColor = texture(uSampler, texCoord);
+
+    vec2 uv = 2. * (texCoord - .5);
+    uv *= camera.z;
+    uv.x += camera.x;
+    uv.y += camera.y;
+    
+    if (uv.x > 0.0 || uv.y > 0.0) {
+      uv = recurse_uv(uv);
+    }
+    uv = uv / 2.0 + 0.5;
+    fragmentColor = texture(uSampler, vec2(uv.x, 1.-uv.y));
+    //fragmentColor = vec4(uv.x, uv.y, 0.0, 1.0);
+}`;
+
+let vertexSource = `#version 300 es
+
+precision highp float;
+
+out vec2 texCoord;
+
+void main(void) {
+    float x = float((gl_VertexID & 1) << 2);
+    float y = float((gl_VertexID & 2) << 1);
+    texCoord.x = x * 0.5;
+    texCoord.y = y * 0.5;
+    gl_Position = vec4(x - 1.0, y - 1.0, 0, 1);
+}`;
+
+let canvas_gl = document.getElementById("canvas_gl");
+let gl = canvas_gl.getContext('webgl2');
+let program = createProgram(vertexSource, fragmentSource);
+
+let canvas_draw = document.getElementById("canvas_draw");
+let ctx = canvas_draw.getContext('2d');
+
+//const texture = loadTexture(gl, 'https://i.stack.imgur.com/TKkA1.png');
+//const texture = loadTexture(gl, 'alice_maze.png');
+//const texture = loadTexture(gl, 'electrical.png');
+const texture = loadTexture(gl, 'maze.png');
+//const texture = loadTexture(gl, 'https://localhost:8888/thingy1.png');
+//const texture = loadTexture(gl, 'https://knexator.github.io/juggle_fight/rock.png');
+
+// Tell WebGL we want to affect texture unit 0
+gl.activeTexture(gl.TEXTURE0);
+
+// Bind the texture to texture unit 0
+gl.bindTexture(gl.TEXTURE_2D, texture);
+
+// Tell the shader we bound the texture to texture unit 0
+let uSampler = program.createUniform('1i', 'uSampler');
+//gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+
+window.addEventListener("resize", e => {
+  let side = Math.min(window.innerWidth, window.innerHeight);
+  /*canvas_gl.width = window.innerWidth;
+  canvas_gl.height = window.innerHeight;*/
+  canvas_gl.width = side;
+  canvas_gl.height = side;
+  gl.viewport(0, 0, canvas_gl.width, canvas_gl.height);
+  
+  /*canvas_draw.width = window.innerWidth;
+  canvas_draw.height = window.innerHeight;*/
+  canvas_draw.width = side;
+  canvas_draw.height = side;
+  
+  render();
+});
+
+window.addEventListener("load", e => {
+  gl.useProgram(program);
+  camera(cam_x, cam_y, cam_s);  
+  uSampler(0);
+  window.dispatchEvent(new Event('resize'));  
+  //window.requestAnimationFrame(draw);
+});
+
+
+
+let camera = program.createUniform('3f', 'camera');
+
+let cam_coors = [];
+
+let cam_x = 0;
+let cam_y = 0;
+let cam_s = 1;
+
+let mouse_down = false;
+let mx = 0;
+let my = 0;
+
+let xs = [-.5, .5, -.5,  .5];
+let ys = [ .5, .5, -.5, -.5];
+
+let drawn_lines_tree = [[], [], [], [], []]; // [next_a, next_b, next_c, next_d, drawn_lines];
+/*let drawn_lines_tree = [[], [
+  [
+    [], [], [], [], [[-1, -1, 1, 1]]
+  ], [], [], [], []
+], [], [], []]; // [next_a, next_b, next_c, next_d, drawn_lines];*/
+
+function full_draw_lines() {
+  ctx.clearRect(0,0,canvas_gl.width,canvas_gl.height);
+  /*ctx.moveTo(0, 0);
+  ctx.lineTo(200, 500);
+  ctx.stroke();*/
+  /*for (let k=0; k<drawn_lines.length; k++) {
+    
+  }*/
+  /*let cur_tree = drawn_lines_tree;
+  while (true) {
+    let lines = cur_tree[4];
+    // draw current level lines
+    
+    let next_tree = cur_tree[cam_coors];
+    if (next_tree.length == 0) {
+      next_tree = [[], [], [], [], []];
+    }    
+  }*/
+  //DRAWN = 0;
+  ctx.beginPath();
+  ctx.lineWidth = 5;
+  draw_tree_line(drawn_lines_tree, []);
+  ctx.stroke();
+  //if (Math.random()>.99) console.log(DRAWN);
+}
+
+function draw_tree_line(tree, coors) {
+  let lines = tree[4];
+  
+  let l_cam_x = cam_x;
+  let l_cam_y = cam_y;
+  let l_cam_s = cam_s;
+  for (let k=cam_coors.length-1; k>=0; k--) {
+    let id = cam_coors[k];
+    l_cam_x = xs[id] + l_cam_x * SCALE;
+    l_cam_y = ys[id] + l_cam_y * SCALE;
+    l_cam_s = l_cam_s * SCALE;
+  }
+  /*let x = l_cam_x - l_cam_s;
+  let y = l_cam_y - l_cam_s;
+  x = (x + 1) / 2;
+  y = (-y - 1) / 2;
+  ctx.strokeRect(x*canvas_draw.width, y*canvas_draw.height, l_cam_s*canvas_draw.width, l_cam_s*canvas_draw.height);*/
+  for (let k=0; k<lines.length; k++) {
+    [px, py, nx, ny] = lines[k];
+    
+    //for (let k=0; k<coors.length; k++) {
+    for (let k=coors.length-1; k>=0; k--) {
+      px = px * SCALE + xs[coors[k]];
+      py = py * SCALE + ys[coors[k]];
+      nx = nx * SCALE + xs[coors[k]];
+      ny = ny * SCALE + ys[coors[k]];
+      //console.log(coors[k]);
+    }
+    
+    //console.log(px, py, nx, ny);
+    
+    px = (px - l_cam_x) / l_cam_s;
+    py = (py - l_cam_y) / l_cam_s;
+    nx = (nx - l_cam_x) / l_cam_s;
+    ny = (ny - l_cam_y) / l_cam_s;
+    
+    px = (px + 1) * canvas_gl.width / 2;
+    py = (1 - py) * canvas_gl.height / 2;
+    nx = (nx + 1) * canvas_gl.width / 2;
+    ny = (1 - ny) * canvas_gl.height / 2;
+    ctx.moveTo(px, py);
+    ctx.lineTo(nx, ny);
+    //DRAWN += 1;
+  }
+  if (coors.length < cam_coors.length) {   
+    //console.log(coors, cam_coors);
+    let k = cam_coors[coors.length];
+    //console.log(k);
+    if (tree[k].length != 0) {
+      draw_tree_line(tree[k], [...coors, k]);
+    }
+  } else if (coors.length < cam_coors.length + LINE_DEPTH) {
+    for (let k=0; k<4; k++) {
+      if (tree[k].length != 0) {
+        draw_tree_line(tree[k], [...coors, k]);
+      }
+    }    
+  }
+}
+
+function fix_cam() {
+  if (cam_s > 1.0) cam_s = 1.0;
+  
+  for (let k=0; k<4; k++) {
+    let cx = xs[k];
+    let cy = ys[k];
+    if ((cam_x - cam_s) > cx - SCALE && (cam_x + cam_s) < cx + SCALE
+     && (cam_y - cam_s) > cy - SCALE && (cam_y + cam_s) < cy + SCALE) {
+      cam_x = (cam_x - cx) / SCALE;
+      cam_y = (cam_y - cy) / SCALE;
+      cam_s /= SCALE;
+      cam_coors.push(k);
+    }
+  }  
+  
+  let bl_x = cam_x - cam_s;
+  let bl_y = cam_y - cam_s;
+  let tr_x = cam_x + cam_s;
+  let tr_y = cam_y + cam_s;
+  if (bl_x < -1 || tr_x > 1 || bl_y < -1 || tr_y > 1) {
+    if (cam_coors.length > 0) {
+      let k = cam_coors.pop();
+      cam_x = cam_x * SCALE + xs[k];
+      cam_y = cam_y * SCALE + ys[k];
+      cam_s *= SCALE;
+    } else {
+      if (bl_x < -1) {
+        cam_x -= 1 + bl_x;
+      } else if (tr_x > 1) {
+        cam_x -= tr_x - 1;
+      }
+      if (bl_y < -1) {
+        cam_y -= 1 + bl_y;
+      } else if (tr_y >  1) {
+        cam_y -= tr_y - 1;
+      }
+    }
+  }
+}
+
+function lerp(a,b,t) {
+  return a*(1-t)+b*t;
+}
+
+window.addEventListener('wheel', e => {
+  let d = e.deltaY > 0 ? 1 : -1;
+  
+  let x =  2 * (e.clientX / canvas_gl.width) - 1;
+  let y = -(2 * (e.clientY / canvas_gl.height) - 1);  
+  
+  let n_s = cam_s * (1 + d*.1)
+  cam_x = cam_x + cam_s * x - n_s * x;
+  cam_y = cam_y + cam_s * y - n_s * y;
+  cam_s = n_s;
+  
+  fix_cam();
+  camera(cam_x, cam_y, cam_s);
+  render();
+  
+  //e.preventDefault();
+  return false;
+});
+
+function add_to_tree(coors, line) {
+  let cur_tree = drawn_lines_tree;
+  for (let k=0; k<coors.length; k++) {
+    let next_tree = cur_tree[coors[k]];
+    if (next_tree.length == 0) {
+      cur_tree[coors[k]] = [[], [], [], [], []];
+      cur_tree = cur_tree[coors[k]];
+    } else {
+      cur_tree = next_tree;
+    }
+  }
+  
+  cur_tree[4].push(line);
+}
+
+window.addEventListener('mousemove', e => {
+  if (mouse_down) {    
+    let mx_n = e.clientX;
+    let my_n = e.clientY;
+    
+    if (e.which == 1) {
+      cam_x -= cam_s * 2 * (mx_n - mx) / canvas_gl.width;
+      cam_y += cam_s * 2 * (my_n - my) / canvas_gl.height;
+    } else {
+      let px = 2 * (mx / canvas_gl.width) - 1;
+      let py = -(2 * (my / canvas_gl.height) - 1);
+      let nx = 2 * (mx_n / canvas_gl.width) - 1;
+      let ny = -(2 * (my_n / canvas_gl.height) - 1);
+      
+      px = (px * cam_s) + cam_x;
+      py = (py * cam_s) + cam_y;
+      nx = (nx * cam_s) + cam_x;
+      ny = (ny * cam_s) + cam_y;
+      
+      add_to_tree(cam_coors, [px, py, nx, ny])
+    }
+    
+    
+    mx = mx_n;
+    my = my_n;
+    
+    fix_cam();
+    
+    camera(cam_x, cam_y, cam_s);
+    render();
+  }
+  //e.preventDefault();
+  return false;
+});
+
+window.addEventListener('mousedown', e => {
+  mouse_down = true;
+  mx = e.clientX;
+  my = e.clientY;
+  //e.preventDefault();
+  return false;
+});
+
+window.addEventListener('mouseup', e => {
+  mouse_down = false;
+  //e.preventDefault();
+  return false;
+});
+
+window.addEventListener('contextmenu', e => {
+  e.preventDefault();
+  return false;
+});
+
+function render(){
+    gl.drawArrays(gl.TRIANGLE_FAN, 0, 3);
+    full_draw_lines();
+}
+
+function createShader(source, type) {
+    var shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS))
+        throw new Error(gl.getShaderInfoLog(shader));
+    return shader;
+}
+
+function createProgram(vertex, fragment) {
+    var program = gl.createProgram();
+    gl.attachShader(program, createShader(vertex, gl.VERTEX_SHADER));
+    gl.attachShader(program, createShader(fragment, gl.FRAGMENT_SHADER));
+    gl.linkProgram(program);
+    
+    program.createUniform = function (type, name) {
+        var location = gl.getUniformLocation(program, name);
+        return function (v1, v2, v3, v4) {
+            gl['uniform' + type](location, v1, v2, v3, v4);
+        }
+    };
+    
+    return program;
+}
+
+//
+// Initialize a texture and load an image.
+// When the image finished loading copy it into the texture.
+//
+function loadTexture(gl, url) {
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+
+  // Because images have to be downloaded over the internet
+  // they might take a moment until they are ready.
+  // Until then put a single pixel in the texture so we can
+  // use it immediately. When the image has finished downloading
+  // we'll update the texture with the contents of the image.
+  const level = 0;
+  const internalFormat = gl.RGBA;
+  const width = 1;
+  const height = 1;
+  const border = 0;
+  const srcFormat = gl.RGBA;
+  const srcType = gl.UNSIGNED_BYTE;
+  const pixel = new Uint8Array([0, 0, 255, 255]);  // opaque blue
+  gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                width, height, border, srcFormat, srcType,
+                pixel);
+
+  const image = new Image();
+  //image.crossOrigin = "anonymous";
+  image.onload = function() {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                  srcFormat, srcType, image);
+
+    // WebGL1 has different requirements for power of 2 images
+    // vs non power of 2 images so check if the image is a
+    // power of 2 in both dimensions.
+    if (isPowerOf2(image.width) && isPowerOf2(image.height)) {
+       // Yes, it's a power of 2. Generate mips.
+       gl.generateMipmap(gl.TEXTURE_2D);
+    } else {
+       // No, it's not a power of 2. Turn off mips and set
+       // wrapping to clamp to edge
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    }
+  };
+  image.src = url;
+
+  return texture;
+}
+
+function isPowerOf2(value) {
+  return (value & (value - 1)) == 0;
+}
+</script>
+<body>
