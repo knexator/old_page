@@ -37,7 +37,10 @@ out vec4 fragmentColor;
 
 vec2 recurse_uv(vec2 uv) {
     int depth = 0;
-    while (depth < 5) {  
+    while (depth < 5) {
+        if (uv.x < 0.0 && uv.y < 0.0) {
+          return uv;
+        }
         vec2 frac = fract(uv)-.5;
         vec2 dis = abs(frac);
         if (dis.x > SCALE || dis.y > SCALE) {
