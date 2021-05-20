@@ -1,0 +1,208 @@
+<body style=margin:0>
+<canvas id="canvas"></canvas>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+// juice factory
+let pH = 0.25; // player height;
+let H = 0.75; // board half height
+let bs = 0.05; // ball size
+let INIT_VEL_X = .8; // ball initial velocity
+let INIT_VEL_Y = .6; // ball initial velocity
+let vel_transmit = 0.2; // when player hits the ball, give it some velocity
+let enemyControl = 0.5; // how much can you move the enemy
+
+function updatePlayer(pos, vel, dir, dir2) {
+  vel = dir + dir2 * enemyControl;
+  pos += vel * 0.02;
+  pos = clamp(pos, -H + pH/2, H - pH/2);  
+  return [pos, vel];
+}
+
+function updateBall() {
+  
+  let dt = 0.02;
+  
+  let steps = 20;
+  let px = bpx;
+  let py = bpy;
+  for (let k=0; k<steps; k++) {
+    px += bvx * dt / steps;
+    py += bvy * dt / steps;
+    if (clamp(px, -1 + bs/2, 1 - bs/2) != px) {
+      //bvx *= -1;
+      ballWentBeyond(px, py);
+      if (lost) break;
+    }
+    if (clamp(py, -H + bs/2, H - bs/2) != py) {
+      bvy *= -1;
+    }
+  }
+  
+  bpx = px;
+  bpy = py;
+  
+  if (lost) {
+    bpx = 0;
+    bpy = 0;
+    bvx = INIT_VEL_X;
+    bvy = INIT_VEL_Y;
+    lost = false;
+  }
+}
+
+function ballWentBeyond(bx, by) {
+  ph = bx > 0 ? p2 : p1;
+  console.log(ph, by);
+  if (intervalsIntersect(ph-pH/2, ph+pH/2, by-bs/2, by+bs/2)) {
+    bvx *= -1;
+    pvy = bx > 0 ? v2 : v1;
+    bvy += pvy * vel_transmit;
+  } else {
+    lost = true;
+    if (bx > 0) {
+      score1 += 1;
+    } else {
+      score2 += 1;
+    }
+  }
+}
+
+// visuals
+
+let pW = pH / 5;
+
+// 0,0 at center of screen
+// board is 2x2H
+
+let bpx = 0;
+let bpy = 0;
+let bvx = INIT_VEL_X;
+let bvy = INIT_VEL_Y;
+
+let p1 = 0;
+let p2 = 0;
+let v1 = 0;
+let v2 = 0;
+
+let i_d1 = false;
+let i_u1 = false;
+let i_d2 = false;
+let i_u2 = false;
+
+let score1 = 0;
+let score2 = 0;
+
+let halfW = 100;
+
+let cW;
+let cH;
+
+let lost = false;
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  cW = innerWidth;
+  cH = innerHeight;
+  
+  halfW = cW / 4;
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function draw() {
+  //ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  [p1, v1] = updatePlayer(p1, v1, i_u1 - i_d1, i_u2 - i_d2);
+  [p2, v2] = updatePlayer(p2, v2, i_u2 - i_d2, i_u1 - i_d1);
+  
+  updateBall();
+  
+  draw_background();
+  draw_players();
+  draw_ball();
+  
+  ctx.textAlign = "center";
+  ctx.textBaseline = 'middle';
+  ctx.font = "60px Arial";
+  ctx.fillText(score1, cW/2 - halfW*0.5, cH/2 - halfW*H*.6);
+  ctx.fillText(score2, cW/2 + halfW*0.5, cH/2 - halfW*H*.6);
+  
+  window.requestAnimationFrame(draw);
+}
+
+function draw_background() {
+  ctx.fillStyle = "gray";
+  ctx.fillRect(0,0,cW,cH);
+  
+  ctx.fillStyle = "black";
+  ctx.fillRect(cW/2-halfW,cH/2-halfW*H,halfW*2,halfW*H*2);
+}
+
+function draw_players() {
+  ctx.fillStyle = "white";
+  ctx.fillRect(cW/2-halfW-pW*halfW, cH/2 - p1*halfW - pH*halfW/2, halfW*pW, halfW*pH);  
+  ctx.fillRect(cW/2+halfW, cH/2 - p2*halfW - pH*halfW/2, halfW*pW, halfW*pH);
+}
+
+function draw_ball() {
+  ctx.fillStyle = "white";
+  
+  ctx.fillRect(cW/2+halfW*bpx - (halfW*bs)/2, cH/2-halfW*bpy - (halfW*bs)/2, halfW * bs, halfW * bs);
+  
+  //ctx.fillRect(cW/2-halfW-pW*halfW, cH/2 - p1*halfW - pH*halfW/2, halfW*pW, halfW*pH);  
+  //ctx.fillRect(cW/2+halfW, cH/2 - p2*halfW - pH*halfW/2, halfW*pW, halfW*pH);
+}
+
+window.addEventListener('keydown', e => {
+  let k = e.key.toUpperCase();
+  
+  switch (k) {
+    case("W"):
+      i_u1 = true;
+      break;
+    case("S"):
+      i_d1 = true;
+      break;
+    case("I"):
+      i_u2 = true;
+      break;
+    case("K"):
+      i_d2 = true;
+      break;
+  }  
+});
+
+window.addEventListener('keyup', e => {
+  let k = e.key.toUpperCase();
+  
+  switch (k) {
+    case("W"):
+      i_u1 = false;
+      break;
+    case("S"):
+      i_d1 = false;
+      break;
+    case("I"):
+      i_u2 = false;
+      break;
+    case("K"):
+      i_d2 = false;
+      break;
+  }
+});
+
+function clamp(val, min, max) {
+  return Math.min(Math.max(val, min), max);
+};
+
+function intervalsIntersect(a,b,c,d) {
+  return clamp(c, a, b) == c || clamp(d, a, b) == d || clamp(a, c, d) == a || clamp(b, c, d) == b;
+}
+
+</script>
