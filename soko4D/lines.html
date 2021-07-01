@@ -1,0 +1,404 @@
+<body style=margin:0>
+<div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 60; pointer-events:none;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
+QWER/ASDF to move, Z/X to undo/restart, C/V for previous/next level<br>
+</div>
+<div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 20;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
+<a href="https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74">Original game</a> by <a href="https://beekie.itch.io/">Beekie</a>, with a level from <a href="https://twitter.com/corey_hardt">Corey Hardt</a>. Modification by <a href="https://twitter.com/knexator">knexator</a>, following <a href="https://zacharybarbanell.itch.io/">Zach</a>'s (joke?) suggestion
+
+</div>
+<canvas id="canvas"></canvas>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+let TILE = 100;
+let OFFX = TILE;
+let OFFY = TILE;
+
+const wallSpr = str2spr('#026B9C #028DBF',`\
+00010
+11111
+01000
+11111
+00010`)
+
+const playerSpr = str2spr('#ffd080 #fe546f', `\
+.000.
+.010.
+00000
+.000.
+.0.0.`)
+
+const crateSpr = str2spr('#fe546f', `\
+00000
+0...0
+0...0
+0...0
+00000`)
+
+const targetSpr = str2spr('#ff9e7d', `\
+.....
+..0..
+.000.
+..0..
+.....`)
+
+const floorSpr = str2spr('#803D7D #75366D', `\
+11111
+10101
+11011
+10101
+11111`)
+
+const floorWinSpr = str2spr('#507f3d #437737', `\
+11111
+10101
+11011
+10101
+11111`)
+
+const sprMap = [floorSpr, wallSpr, floorWinSpr, wallSpr];
+
+const level1 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$p...$####$....$....$
+$...o$####$....$....$
+$.*..$####$....$....$
+$....$####$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$####$....$....$....$
+$####$....$....$....$
+$####$....$....$....$
+$####$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level2 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$p#..$.#..$.#..$.#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$.#..$.#..$.#..$o#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$.#..$*#..$.#..$.#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$.#..$.#..$.#..$.#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level3 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$p...$....$....$
+$....$....$....$....$
+$....$.*..$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$...o$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level4 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$.p..$....$....$..o.$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$.*..$....$....$
+$....$....$....$....$
+$....$.o..$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$..*.$.*..$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$..o.$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level5 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$####$##.#$####$##.#$
+$####$##..$####$##.#$
+$####$.o..$##.#$##.#$
+$####$...#$####$####$
+$$$$$$$$$$$$$$$$$$$$$
+$####$.#.#$..#.$####$
+$####$.###$#.#.$####$
+$####$##.#$....$...#$
+$####$....$#...$####$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$.#..$....$
+$.p..$#*#.$.#..$....$
+$....$#.#.$#...$###.$
+$....$....$.#..$....$
+$$$$$$$$$$$$$$$$$$$$$
+$####$....$####$####$
+$####$.#..$####$####$
+$####$.#..$#.##$####$
+$####$....$#.##$####$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const levels = [level1, level2, level3, level4, level5];
+
+let curLevel = 0;
+let stateQueue = [levels[curLevel]];
+
+
+function str2spr(cols, str) {
+  str = str.split('\n');
+  let res = [];
+  for (let i=0; i<5; i++) {
+    let row = [];
+    for (let j=0; j<5; j++) {    
+      row.push(Number(str[j][i]));
+    }
+    res.push(row);
+  }  
+  return {colors: cols.split(' '), data: res};
+}
+
+function drawSpr(spr, i, j) {
+  for (let x=0; x<5; x++) {
+    for (let y=0; y<5; y++) {
+      if (!isNaN(spr.data[x][y])) {      
+        ctx.fillStyle = spr.colors[spr.data[x][y]];
+        ctx.fillRect((i+x*.2)*TILE+OFFX,(j+y*.2)*TILE+OFFY, TILE*.2, TILE*.2);
+      }
+    }
+  }
+}
+
+function drawRect(i,j,w,h) {
+  ctx.fillRect(i*TILE+OFFX,j*TILE+OFFY,w*TILE,h*TILE);
+}
+
+function str2lev(str, i=4, j=4, k=4, l=4) {
+  str = str.split('\n');
+  let res = [];
+  let player;
+  let crates = [];
+  let targets = [];
+  for (let x=0; x<i; x++) {
+    let cur_1 = [];
+    for (let y=0; y<j; y++) {
+      let cur_2 = [];
+      for (let z=0; z<k; z++) {
+        let cur_3 = [];
+        for (let w=0; w<l; w++) {
+          let chr = str[1+y*(l+1) + w][1+x*(k+1) + z];
+          switch (chr) {
+            case 'p':
+              player = [x,y,z,w];
+              cur_3.push(0);
+              break;
+            case '*':
+              crates.push([x,y,z,w]);
+              cur_3.push(0);
+              break;
+            case 'o':
+              targets.push([x,y,z,w]);
+              cur_3.push(0);
+              break;
+            case '@':
+              crates.push([x,y,z,w]);
+              targets.push([x,y,z,w]);
+              cur_3.push(0);
+              break;
+            case '#':
+              cur_3.push(1);
+              break;
+            default:
+              cur_3.push(0);
+          }
+        }
+        cur_2.push(cur_3);
+      }
+      cur_1.push(cur_2);
+    }
+    res.push(cur_1);
+  }
+  return {geo: res, player: player, crates: crates, targets: targets};
+}
+
+function solved(level) {
+  for (let t of level.targets) {
+    if (!level.crates.some(c => eq(c, t))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function stuff(level, delta) {
+  let newPlayer = add(level.player, delta);  
+  if (!wall(level, newPlayer)) {
+    if (!crate(level, newPlayer)) {
+      let newLevel = {geo: level.geo, player: newPlayer, crates: level.crates, targets: level.targets};
+      stateQueue.unshift(newLevel);
+    } else {
+      newCrate = add(newPlayer, delta);
+      if (wall(level, newCrate) || crate(level, newCrate)) {
+        //return level;
+      } else {
+        let newCrates = level.crates.map(c => {
+          if (!eq(c, newPlayer)) return c;
+          return newCrate;
+        });
+        let newLevel = {geo: level.geo, player: newPlayer, crates: newCrates, targets: level.targets};
+        stateQueue.unshift(newLevel);
+      }      
+    }
+  }
+}
+
+function crate(level, ind) {
+  return level.crates.some(c => eq(c, ind));
+}
+
+function wall(level, ind) {
+  let geo = level.geo;
+  for (const n of ind) {
+    if (n < 0 || n >= 4) return true;
+    geo = geo[n];
+  }
+  return geo == 1;
+}
+
+function access(arr, ind) {
+  for (const n of ind) {
+    arr = arr[n];
+  }
+  return arr;
+}
+
+function eq(arr1, arr2) {
+  for (let i=0; i<4; i++) {
+    if (arr1[i] != arr2[i]) return false;
+  }
+  return true;
+}
+
+function add(arr1, arr2) {
+  return arr1.map((x,n) => x + arr2[n]);
+}
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function draw() {
+  let curLevel = stateQueue[0];
+  let curWon = solved(curLevel);
+  
+  ctx.fillStyle = '#01cbcf';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  ctx.fillStyle = curWon ? '#c6ff0a' : '#0bffe6';
+  drawRect(0-.2, -.2, 1.4, 4.4);
+  drawRect(2-.2, -.2, 1.4, 4.4);
+  drawRect(4-.2, -.2, 1.4, 4.4);
+  drawRect(6-.2, -.2, 1.4, 4.4);
+  let i = curLevel.player[0];
+  let j = curLevel.player[1];
+  let k = curLevel.player[2];
+  let l = curLevel.player[3];
+
+  for (let p=0; p<4; p++) {
+    drawSpr(sprMap[curLevel.geo[p][j][k][l] + (curWon ? 2 : 0)], 0, p);
+    drawSpr(sprMap[curLevel.geo[i][p][k][l] + (curWon ? 2 : 0)], 2, p);
+    drawSpr(sprMap[curLevel.geo[i][j][p][l] + (curWon ? 2 : 0)], 4, p);
+    drawSpr(sprMap[curLevel.geo[i][j][k][p] + (curWon ? 2 : 0)], 6, p);
+  }
+  curLevel.crates.forEach(([x,y,z,w]) => {
+    if (x==i && y==j && z==k) drawSpr(crateSpr, 6, w);
+    if (x==i && y==j && w==l) drawSpr(crateSpr, 4, z);
+    if (x==i && z==k && w==l) drawSpr(crateSpr, 2, y);
+    if (y==j && z==k && w==l) drawSpr(crateSpr, 0, x)
+  });
+  curLevel.targets.forEach(([x,y,z,w]) => {
+    if (x==i && y==j && z==k) drawSpr(targetSpr, 6, w);
+    if (x==i && y==j && w==l) drawSpr(targetSpr, 4, z);
+    if (x==i && z==k && w==l) drawSpr(targetSpr, 2, y);
+    if (y==j && z==k && w==l) drawSpr(targetSpr, 0, x)
+  });
+  drawSpr(playerSpr, 0, i);
+  drawSpr(playerSpr, 2, j);
+  drawSpr(playerSpr, 4, k);
+  drawSpr(playerSpr, 6, l);
+  
+  window.requestAnimationFrame(draw);
+}
+
+window.addEventListener('keydown', e => {
+  let key = e.code;
+  
+  if (key == 'KeyZ' && stateQueue.length > 1) {
+    stateQueue.shift();
+  } else if (key == 'KeyX') {
+    stateQueue.unshift(stateQueue[stateQueue.length-1]);
+  } else if (key == 'KeyV') {
+    if (curLevel < levels.length - 1) {
+      curLevel += 1;
+      stateQueue = [levels[curLevel]];
+    }
+  } else if (key == 'KeyC') {
+    if (curLevel > 0) {
+      curLevel -= 1;
+      stateQueue = [levels[curLevel]];
+    }
+  } else {
+    let delta = [
+      key == 'KeyA' ? 1 : key == 'KeyQ' ? -1 : 0,
+      key == 'KeyS' ? 1 : key == 'KeyW' ? -1 : 0,
+      key == 'KeyD' ? 1 : key == 'KeyE' ? -1 : 0,
+      key == 'KeyF' ? 1 : key == 'KeyR' ? -1 : 0
+    ];
+    if (!eq(delta, [0,0,0,0])) {
+      stuff(stateQueue[0], delta);
+    }    
+  }
+});
+
+</script>
