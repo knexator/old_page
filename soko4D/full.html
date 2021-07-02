@@ -1,0 +1,513 @@
+<body style=margin:0>
+<div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 60; pointer-events:none;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
+Mouse hover to select board, WASD to move, F to change display mode, Z/R to undo/restart, Q/E for previous/next level<br>
+</div>
+<div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 20;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
+<a href="https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74">Original game</a> by <a href="https://beekie.itch.io/">Beekie</a>, with a level from <a href="https://twitter.com/corey_hardt">Corey Hardt</a>. Modification by <a href="https://twitter.com/knexator">knexator</a>, inspired by <a href="https://tilmannr.itch.io/">Tilmann</a>'s <a href="https://www.puzzlescript.net/play.html?p=0c0062d17fefe9d6d4e54d354b31edc2">variation</a>
+
+</div>
+<canvas id="canvas"></canvas>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+let TILE = 40;
+let OFFX = TILE;
+let OFFY = TILE;
+
+const wallSpr = str2spr('#026B9C #028DBF',`\
+00010
+11111
+01000
+11111
+00010`)
+
+const playerSpr = str2spr('#ffd080 #fe546f', `\
+.000.
+.010.
+00000
+.000.
+.0.0.`)
+
+const crateSpr = str2spr('#fe546f', `\
+00000
+0...0
+0...0
+0...0
+00000`)
+
+const targetSpr = str2spr('#ff9e7d', `\
+.....
+..0..
+.000.
+..0..
+.....`)
+
+const floorSpr = str2spr('#803D7D #75366D', `\
+11111
+10101
+11011
+10101
+11111`)
+
+const floorWinSpr = str2spr('#507f3d #437737', `\
+11111
+10101
+11011
+10101
+11111`)
+
+const sprMap = [floorSpr, wallSpr, floorWinSpr, wallSpr];
+
+const level2 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$p...$####$....$....$
+$...o$####$....$....$
+$.*..$####$....$....$
+$....$####$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$####$....$....$....$
+$####$....$....$....$
+$####$....$....$....$
+$####$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level1 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$p#..$.#..$.#..$.#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$.#..$.#..$.#..$o#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$.#..$*#..$.#..$.#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$.#..$.#..$.#..$.#..$
+$#...$#...$#...$#...$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level3 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$p...$....$....$
+$....$....$....$....$
+$....$.*..$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$...o$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level4 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$.p..$....$....$..o.$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$.*..$....$....$
+$....$....$....$....$
+$....$.o..$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$..*.$.*..$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$..o.$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const level5 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$####$##.#$####$##.#$
+$####$##..$####$##.#$
+$####$.o..$##.#$##.#$
+$####$...#$####$####$
+$$$$$$$$$$$$$$$$$$$$$
+$####$.#.#$..#.$####$
+$####$.###$#.#.$####$
+$####$##.#$....$...#$
+$####$....$#...$####$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$.#..$....$
+$.p..$#*#.$.#..$....$
+$....$#.#.$#...$###.$
+$....$....$.#..$....$
+$$$$$$$$$$$$$$$$$$$$$
+$####$....$####$####$
+$####$.#..$####$####$
+$####$.#..$#.##$####$
+$####$....$#.##$####$
+$$$$$$$$$$$$$$$$$$$$$`)
+
+const levels = [level1, level2, level3, level4, level5];
+
+let curLevel = 0;
+let stateQueue = [levels[curLevel]];
+
+// [a,b,c,d, f] = Board showing directions a & b will be shown at (c, d) (ignore f)
+let basic2 = [
+  [0, 1, 0, 0, false],
+  [2, 3, 5, 0, false],
+];
+
+let basic6 = [
+  [0, 1,  0,  0, false],
+  [0, 2,  0,  5, false],
+  [0, 3,  0, 10, false],
+  [3, 1,  5,  0, false],
+  [2, 1, 10,  0, false],
+  [2, 3,  5,  5, false],
+];
+
+let crazy7 = [
+  [0, 1,  0,  0, false],
+  [0, 2,  0,  5, false],
+  [3, 1,  5,  0, false],
+  [3, 2,  5,  5, false],
+  [1, 2, 10,  5, false],
+  [3, 0,  5, 10, false],
+  [1, 0, 10, 10, false],
+];
+
+let full16 = [
+  [0, 1,  0,  0, false],
+  [0, 2,  0,  5, false],
+  [0, 3,  0, 10, false],
+  [0, 0,  0, 15, false], // wrong
+  [1, 1,  5,  0, false], // wrong
+  [1, 2,  5,  5, false],
+  [1, 3,  5, 10, false],
+  [1, 0,  5, 15, false],
+  [2, 1, 10,  0, false],
+  [2, 2, 10,  5, false], // wrong
+  [2, 3, 10, 10, false],
+  [2, 0, 10, 15, false],
+  [3, 1, 15,  0, false],
+  [3, 2, 15,  5, false],
+  [3, 3, 15, 10, false], // wrong
+  [3, 0, 15, 15, false],
+];
+
+let compact12 = [
+  [0, 1,  0,  0, false],
+  [3, 1,  0,  5, false],
+  [2, 1,  0, 10, false],
+  [1, 2,  5,  0, false],
+  [0, 2,  5,  5, false],
+  [3, 2,  5, 10, false],
+  [2, 3, 10,  0, false],
+  [1, 3, 10,  5, false],
+  [0, 3, 10, 10, false],
+  [3, 0, 15,  0, false],
+  [2, 0, 15,  5, false],
+  [1, 0, 15, 10, false],
+];
+
+let displays = [basic2, basic6, crazy7, full16, compact12];
+let boardDisplayId = 0;
+let boardDisplay = displays[boardDisplayId];
+
+let mi = 0;
+let mj = 0;
+
+function str2spr(cols, str) {
+  str = str.split('\n');
+  let res = [];
+  for (let i=0; i<5; i++) {
+    let row = [];
+    for (let j=0; j<5; j++) {    
+      row.push(Number(str[j][i]));
+    }
+    res.push(row);
+  }  
+  return {colors: cols.split(' '), data: res};
+}
+
+function drawSpr(spr, i, j) {
+  for (let x=0; x<5; x++) {
+    for (let y=0; y<5; y++) {
+      if (!isNaN(spr.data[x][y])) {      
+        ctx.fillStyle = spr.colors[spr.data[x][y]];
+        ctx.fillRect((i+x*.2)*TILE+OFFX,(j+y*.2)*TILE+OFFY, TILE*.2, TILE*.2);
+      }
+    }
+  }
+}
+
+function drawRect(i,j,w,h) {
+  ctx.fillRect(i*TILE+OFFX,j*TILE+OFFY,w*TILE,h*TILE);
+}
+
+function str2lev(str, i=4, j=4, k=4, l=4) {
+  str = str.split('\n');
+  let res = [];
+  let player;
+  let crates = [];
+  let targets = [];
+  for (let x=0; x<i; x++) {
+    let cur_1 = [];
+    for (let y=0; y<j; y++) {
+      let cur_2 = [];
+      for (let z=0; z<k; z++) {
+        let cur_3 = [];
+        for (let w=0; w<l; w++) {
+          let chr = str[1+y*(l+1) + w][1+x*(k+1) + z];
+          switch (chr) {
+            case 'p':
+              player = [x,y,z,w];
+              cur_3.push(0);
+              break;
+            case '*':
+              crates.push([x,y,z,w]);
+              cur_3.push(0);
+              break;
+            case 'o':
+              targets.push([x,y,z,w]);
+              cur_3.push(0);
+              break;
+            case '@':
+              crates.push([x,y,z,w]);
+              targets.push([x,y,z,w]);
+              cur_3.push(0);
+              break;
+            case '#':
+              cur_3.push(1);
+              break;
+            default:
+              cur_3.push(0);
+          }
+        }
+        cur_2.push(cur_3);
+      }
+      cur_1.push(cur_2);
+    }
+    res.push(cur_1);
+  }
+  return {geo: res, player: player, crates: crates, targets: targets};
+}
+
+function solved(level) {
+  for (let t of level.targets) {
+    if (!level.crates.some(c => eq(c, t))) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function stuff(level, delta) {
+  let newPlayer = add(level.player, delta);  
+  if (!wall(level, newPlayer)) {
+    if (!crate(level, newPlayer)) {
+      let newLevel = {geo: level.geo, player: newPlayer, crates: level.crates, targets: level.targets};
+      stateQueue.unshift(newLevel);
+    } else {
+      newCrate = add(newPlayer, delta);
+      if (wall(level, newCrate) || crate(level, newCrate)) {
+        //return level;
+      } else {
+        let newCrates = level.crates.map(c => {
+          if (!eq(c, newPlayer)) return c;
+          return newCrate;
+        });
+        let newLevel = {geo: level.geo, player: newPlayer, crates: newCrates, targets: level.targets};
+        stateQueue.unshift(newLevel);
+      }      
+    }
+  }
+}
+
+function crate(level, ind) {
+  return level.crates.some(c => eq(c, ind));
+}
+
+function wall(level, ind) {
+  let geo = level.geo;
+  for (const n of ind) {
+    if (n < 0 || n >= 4) return true;
+    geo = geo[n];
+  }
+  return geo == 1;
+}
+
+function access(arr, ind) {
+  for (const n of ind) {
+    arr = arr[n];
+  }
+  return arr;
+}
+
+function eq(arr1, arr2) {
+  for (let i=0; i<4; i++) {
+    if (arr1[i] != arr2[i]) return false;
+  }
+  return true;
+}
+
+function add(arr1, arr2) {
+  return arr1.map((x,n) => x + arr2[n]);
+}
+
+function mul(arr, s) {
+  return arr.map(x => x * s);
+}
+
+function one_hot(ind, dim=4) {
+  let res = Array(dim).fill(0);
+  res[ind] = 1;
+  return res;
+}
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function draw() {
+  let curLevel = stateQueue[0];
+  let curWon = solved(curLevel);
+  //console.log(curWon);
+  
+  ctx.fillStyle = '#01cbcf';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+    
+  //drawBoard(curLevel, curWon, 2, 3, 10, 0);
+  //drawBoard(curLevel, curWon, 0, 1, 15, 0);
+  boardDisplay.forEach(bD => drawBoard(curLevel, curWon, ...bD)); 
+  
+  window.requestAnimationFrame(draw);
+}
+
+function drawBoard(level, won, horDir, verDir, a, b, highlight=false) {
+  if (horDir == verDir) return;
+  if (highlight) {
+    ctx.fillStyle = won ? '#c6ff0a' : '#0bffe6';
+    drawRect( a-.2, b-.2, 4.4, 4.4);
+  }
+  dx = one_hot(horDir);
+  dy = one_hot(verDir);
+  let neutral = mul(level.player, 1); // to copy the array lol
+  neutral[horDir] = 0;
+  neutral[verDir] = 0;
+  for (let p=0; p<4; p++) {
+    for (let q=0; q<4; q++) {
+      let curCoor = add(neutral, add(mul(dx, p), mul(dy, q)));
+      let curSpr = access(level.geo, curCoor);
+      drawSpr(sprMap[curSpr + (won ? 2 : 0)], a+p, b+q);
+      if (eq(level.player, curCoor)) drawSpr(playerSpr, a+p, b+q);
+      level.crates.forEach(c => {
+        if (eq(c, curCoor)) drawSpr(crateSpr, a+p, b+q);
+      });
+      level.targets.forEach(c => {
+        if (eq(c, curCoor)) drawSpr(targetSpr, a+p, b+q);
+      });
+    }
+  }  
+}
+
+window.addEventListener('mousemove', e => {
+  mx = (e.clientX-OFFX)/TILE;
+  my = (e.clientY-OFFY)/TILE;
+  
+  boardDisplay.forEach(bD => {
+    if (inRange(bD[2], mx-4, mx) && inRange(bD[3], my-4, my)) {
+      bD[4] = true;
+    } else {
+      bD[4] = false;
+    }
+  });
+  
+  return false;
+});
+
+function inRange(t,a,b) {
+  return a<=t && t<=b;
+}
+
+window.addEventListener('keydown', e => {
+  let key = e.code;
+  
+  if (key == 'KeyZ' && stateQueue.length > 1) {
+    stateQueue.shift();
+  } else if (key == 'KeyR') {
+    stateQueue.unshift(stateQueue[stateQueue.length-1]);
+  } else if (key == 'KeyE') {
+    if (curLevel < levels.length - 1) {
+      curLevel += 1;
+      stateQueue = [levels[curLevel]];
+    }
+  } else if (key == 'KeyQ') {
+    if (curLevel > 0) {
+      curLevel -= 1;
+      stateQueue = [levels[curLevel]];
+    }
+  } else if (key == 'KeyF') {
+    boardDisplayId = (boardDisplayId + 1) % displays.length;
+    boardDisplay = displays[boardDisplayId];
+  } else {    
+    /*let delta = [
+      key == 'KeyL' ? 1 : key == 'KeyJ' ? -1 : 0,
+      key == 'KeyK' ? 1 : key == 'KeyI' ? -1 : 0,
+      key == 'KeyD' ? 1 : key == 'KeyA' ? -1 : 0,
+      key == 'KeyS' ? 1 : key == 'KeyW' ? -1 : 0
+    ];
+    if (!eq(delta, [0,0,0,0])) {
+      stuff(stateQueue[0], delta);
+    }*/
+    dx = key == 'KeyD' ? 1 : key == 'KeyA' ? -1 : 0;
+    dy = key == 'KeyS' ? 1 : key == 'KeyW' ? -1 : 0;
+    if (dx != 0 || dy != 0) {
+      // shitty code, will break if somehow multiple boards get highlighted
+      boardDisplay.forEach(bD => {
+        if (bD[4]) {
+          let delta = [0,0,0,0];
+          delta[bD[0]] = dx;
+          delta[bD[1]] = dy;
+          stuff(stateQueue[0], delta);
+        }
+      });
+    }
+  }
+});
+
+</script>
