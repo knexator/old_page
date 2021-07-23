@@ -1,0 +1,370 @@
+<body style=margin:0>
+<canvas id="canvas"></canvas>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+// dev
+let STATIC_BOARD_2 = true;
+let n_colors = 6;
+let board_w = 8;
+let board_h = 6;
+
+// visual
+let COLORS = ["red", "green", "blue", "magenta", "yellow", "cyan"];
+let tile_s = 30;
+
+//game
+let board_1 = init_board();
+let board_2 = init_board();
+order_board(board_2);
+let last_clicked = null;
+
+function init_board() {
+  let b = [];
+  for (let i=0; i<board_w; i++) {  
+    let cur = [];
+    for (let j=0; j<board_h; j++) {
+      cur.push(randint(n_colors));
+    }
+    b.push(cur);
+  }
+  return b;
+}
+
+function draw_board(board, off_x) {
+  for (let i=0; i<board_w; i++) {
+    for (let j=0; j<board_h; j++) {
+      let cur_val = board[i][j];
+      if (cur_val >= 0) {
+        ctx.fillStyle = COLORS[cur_val];
+      } else {
+        ctx.fillStyle = "white";
+      }
+      ctx.fillRect(i*tile_s + off_x, j*tile_s, tile_s, tile_s);
+    }
+  }
+}
+
+function board_iteration(board, patterns) {
+  let delete_list = [];
+  for (let k=0; k<patterns.length; k++) {
+    let pattern = patterns[k];
+    for (let i=0; i<=board_w-pattern.w; i++) {
+      for (let j=0; j<=board_h-pattern.h; j++) {
+        if (pattern_fits(board, pattern, i, j)) {
+          for (let x=0; x<pattern.w; x++) {
+            for (let y=0; y<pattern.h; y++) {
+              if (pattern.d[x][y] != -1) {
+                delete_list.push([i+x, j+y]);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  for (let k=0; k<delete_list.length; k++) {
+    let cur = delete_list[k];
+    board[cur[0]][cur[1]] = -1;
+  }
+}
+
+function board_fall(board) {
+  let changed = false;
+  do {
+    changed = false;
+    for (let i=0; i<board_w; i++) {
+      for (let j=board_h-1; j>0; j--) {
+        if (board[i][j] < 0 && board[i][j-1] >= 0) {
+          board[i][j] = board[i][j-1];
+          board[i][j-1] = -1;
+          changed = true;
+        }
+      }
+    }
+  } while (changed);
+  for (let i=0; i<board_w; i++) {
+    for (let j=0; j<board_h; j++) {
+      let cur_val = board[i][j];
+      if (cur_val < 0) {
+        board[i][j] = randint(n_colors);
+      }
+    }
+  }
+}
+
+function board2patterns(board) {
+/*
+  11103444
+  12203554
+  12203554
+  78869BBA
+  78869BBA
+  77769AAA
+*/
+  /*let patterns = [
+    {
+      w: 1,
+      h: 3,
+      d: [[board[0][0], board[0][0], board[0][0]]]
+    }
+  ]*/
+  let str = `\
+11103444
+12203554
+12203554
+78869BBA
+78869BBA
+77769AAA`.split('\n');
+  let all_casillas = [];
+  for (let i=0; i<board_w; i++) {  
+    for (let j=0; j<board_h; j++) {
+      all_casillas.push([i,j]);
+    }
+  }
+  let letters = '0123456789AB';
+  let casillas = [];
+  for (let k=0; k<letters.length; k++) {
+    casillas.push(all_casillas.filter(([x,y]) => str[y][x] == letters[k]));
+  }
+  //console.log(casillas);  
+  //console.log(list2pattern(board, casillas[0]))
+  let patterns = [];
+  for (let k=0; k<casillas.length; k++) {
+    patterns = patterns.concat(variations(list2pattern(board, casillas[k])));
+  }
+  //console.log(patterns);
+  
+  return patterns;
+  //return variations(patterns);
+}
+
+function order_board(board) {
+  let str = `\
+11103444
+12203554
+12203554
+78869BBA
+78869BBA
+77769AAA`.split('\n');
+  let mapping = {'0': 0, '1': 1, '2': 2, '3': 3, '4': 0, '5': 1, '6': 1, '7': 2, '8': 0, '9': 2, 'A': 3, 'B': 0};
+  for (let i=0; i<board_w; i++) {  
+    for (let j=0; j<board_h; j++) {
+      board[i][j] = mapping[str[j][i]];
+    }
+  }
+}
+
+function list2pattern(board, casillas) {
+  let min_x = Math.min(...casillas.map(([x,y])=>x));
+  let max_x = Math.max(...casillas.map(([x,y])=>x));
+  let min_y = Math.min(...casillas.map(([x,y])=>y));
+  let max_y = Math.max(...casillas.map(([x,y])=>y));
+  
+  let w = max_x - min_x + 1;
+  let h = max_y - min_y + 1;
+  
+  let d = [];
+  for (let i=0; i<w; i++) {  
+    let cur = [];
+    for (let j=0; j<h; j++) {
+      cur.push(-1);
+    }
+    d.push(cur);
+  }
+  
+  casillas.forEach(([x,y]) => d[x - min_x][y - min_y] = board[x][y]);
+  
+  return {w: w, h: h, d: d};
+}
+
+function variations(pattern) {
+  let result = [pattern];
+  let cur = pattern;
+  for (let k=0; k<3; k++) {
+    cur = rotate_ccw(cur);
+    result.push(cur);
+  }
+  cur = flip_hor(pattern);
+  result.push(cur);
+  for (let k=0; k<3; k++) {
+    cur = rotate_ccw(cur);
+    result.push(cur);
+  }
+  return result;
+}
+
+function flip_hor(pattern) {
+  let d = [];
+  for (let i=0; i<pattern.w; i++) {
+    let cur = [];
+    for (let j=0; j<pattern.h; j++) {
+      cur.push(pattern.d[pattern.w-i-1][j]);
+    }
+    d.push(cur);
+  }
+  return {w: pattern.w, h: pattern.h, d: d};
+}
+
+function rotate_ccw(pattern) {
+  let d = [];
+  for (let i=0; i<pattern.h; i++) {
+    let cur = [];
+    for (let j=0; j<pattern.w; j++) {
+      cur.push(pattern.d[pattern.w-j-1][i]);
+    }
+    d.push(cur);
+  }
+  return {w: pattern.h, h: pattern.w, d: d};
+}
+
+function pattern_fits(board, pattern, i, j) {
+  for (let x=0; x<pattern.w; x++) {
+    for (let y=0; y<pattern.h; y++) {
+      let board_val = board[i+x][j+y];
+      let pattern_val = pattern.d[x][y];
+      if (pattern_val == -1) continue;
+      if (board_val != pattern_val) return false;
+    }
+  }
+  return true;
+}
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+
+
+function draw() {  
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  draw_board(board_1, 0);
+  draw_board(board_2, (board_w+1)*tile_s);
+  
+  if (wasKeyPressed(' ')) {
+    if (board_1.some(row => row.some(x => x < 0)) || board_2.some(row => row.some(x => x < 0))) {
+      board_fall(board_1);
+      board_fall(board_2);
+    } else {
+      let patterns_1 = board2patterns(board_1);
+      let patterns_2 = board2patterns(board_2);
+      board_iteration(board_1, patterns_2);
+      if (!STATIC_BOARD_2) board_iteration(board_2, patterns_1);
+    }
+  }
+  
+  if (wasButtonPressed(0)) {
+    last_clicked = [mouse.x, mouse.y];
+  }
+  if (wasButtonReleased(0) && last_clicked) {
+    cur_clicked = [mouse.x, mouse.y];
+    let last_i = Math.floor(last_clicked[0] / tile_s);
+    let cur_i = Math.floor(cur_clicked[0] / tile_s);
+    let last_j = Math.floor(last_clicked[1] / tile_s);
+    let cur_j = Math.floor(cur_clicked[1] / tile_s);
+    let delta_i = cur_i - last_i;
+    let delta_j = cur_j - last_j;
+    if (Math.abs(delta_i) + Math.abs(delta_j) == 1 && cur_i != board_w && last_i != board_w) {
+      if (cur_i < board_w) {
+        let temp = board_1[cur_i][cur_j];
+        board_1[cur_i][cur_j] = board_1[last_i][last_j];
+        board_1[last_i][last_j] = temp;
+      } else {
+        // the other board
+        cur_i -= board_w + 1;
+        last_i -= board_w + 1;
+        let temp = board_2[cur_i][cur_j];
+        board_2[cur_i][cur_j] = board_2[last_i][last_j];
+        board_2[last_i][last_j] = temp;
+      }      
+    }
+    last_clicked = null;
+  }
+ 
+  /*if (wasButtonPressed(0)) console.log("0 pressed");
+  if (isButtonDown(0)) console.log("0 down");
+  if (wasButtonReleased(0)) console.log("0 unpressed");
+  
+  if (wasKeyPressed('a')) console.log("a pressed");
+  if (isKeyDown('a')) console.log("a down");
+  if (wasKeyReleased('a')) console.log("a unpressed");*/
+  
+  mouse_prev = Object.assign({}, mouse);
+  mouse.wheel = 0;
+  keyboard_prev = Object.assign({}, keyboard);
+  window.requestAnimationFrame(draw);
+}
+
+window.addEventListener('mousemove', e => _mouseEvent(e));
+window.addEventListener('mousedown', e => _mouseEvent(e));
+window.addEventListener('mouseup', e => _mouseEvent(e));
+
+function _mouseEvent(e) {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  mouse.buttons = e.buttons;
+  return false;
+}
+
+window.addEventListener('wheel', e => {
+  let d = e.deltaY > 0 ? 1 : -1;
+  return mouse.wheel = d;
+});
+
+let mouse = {x: 0, y: 0, buttons: 0, wheel: 0};
+let mouse_prev = Object.assign({}, mouse);
+
+function isButtonDown(b) {
+  return (mouse.buttons & (1 << b)) != 0;
+}
+
+function wasButtonPressed(b) {
+  return ((mouse.buttons & (1 << b)) !== 0) && ((mouse_prev.buttons & (1 << b)) === 0);
+}
+
+function wasButtonReleased(b) {
+  return ((mouse.buttons & (1 << b)) === 0) && ((mouse_prev.buttons & (1 << b)) !== 0);
+}
+
+let keyboard = {};
+let keyboard_prev = {};
+
+function keyMap(e) {
+  // use key.code if key location is important
+  return e.key.toLowerCase();
+}
+
+window.addEventListener('keydown', e => {
+  let k = keyMap(e);
+  keyboard[k] = true;
+});
+
+window.addEventListener('keyup', e => {
+  let k = keyMap(e);
+  keyboard[k] = false;
+});
+
+function isKeyDown(k) {
+  return keyboard[k] || false;
+}
+
+function wasKeyPressed(k) {
+  return (keyboard[k] || false) && (!keyboard_prev[k] || false);
+}
+
+function wasKeyReleased(k) {
+  return (!keyboard[k] || false) && (keyboard_prev[k] || false);
+}
+
+function randint(n) {
+  return Math.floor(Math.random()*n);
+}
+</script>
