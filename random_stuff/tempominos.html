@@ -1,0 +1,270 @@
+<body style=margin:0>
+<div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 20; background-color: EEE">
+Pieces are one-dimensional and loop every 6 beats. Mouse to grab/drop, can't rotate.<br>Try moving them around a bit and then assembling them back into a line.<br>
+<label><input type="range" oninput="SPEED=this.value" min="0.5" max="8" step="0.01">Speed</label>
+</div>
+<canvas id="canvas"></canvas>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+let pS = 100;
+let margin = 10;
+let SPEED = 4;
+
+let lastT = 0;
+let t = 0;
+let grabbedPiece = null;
+
+let pieceI = {
+  w: 1, h: 5, d: [
+    [1],
+    [1],
+    [1],
+    [1],
+    [1]
+  ], i: 0, j: 0, k: 0, c: "#e86677"
+};
+
+let pieceP = {
+  w: 2, h: 3, d: [
+    [1, 1],
+    [1, 1],
+    [1, 0]
+  ], i: 1, j: 0, k: 0, c: "#8be386"
+};
+
+let pieceY = {
+  w: 4, h: 2, d: [
+    [1, 1, 1, 1],
+    [0, 1, 0, 0],
+  ], i: 3, j: 0, k: 0, c: "#cc6ac7"
+};
+
+let pieceV = {
+  w: 3, h: 3, d: [
+    [1, 1, 1],
+    [0, 0, 1],
+    [0, 0, 1]
+  ], i: 7, j: 0, k: 0, c: "#5db3e8"
+};
+
+let pieceX = {
+  w: 3, h: 3, d: [
+    [0, 1, 0],
+    [1, 1, 1],
+    [0, 1, 0]
+  ], i: 2, j: 0, k: 1, c: "#ac74c4"
+};
+
+let pieceL = {
+  w: 4, h: 2, d: [
+    [1, 1, 1, 1],
+    [0, 0, 0, 1],
+  ], i: 5, j: 0, k: 1, c: "#d9cf84"
+};
+
+let pieceF = {
+  w: 3, h: 3, d: [
+    [0, 1, 0],
+    [1, 1, 1],
+    [0, 0, 1]
+  ], i: 4, j: 0, k: 2, c: "#e0b970"
+};
+
+let pieceZ = {
+  w: 3, h: 3, d: [
+    [1, 1, 0],
+    [0, 1, 0],
+    [0, 1, 1]
+  ], i: 6, j: 0, k: 2, c: "#f7a6c5"
+};
+
+let pieceT = {
+  w: 3, h: 3, d: [
+    [0, 1, 0],
+    [0, 1, 0],
+    [1, 1, 1]
+  ], i: 0, j: 0, k: 3, c: "#6accaa"
+};
+
+let pieceW = {
+  w: 3, h: 3, d: [
+    [1, 0, 0],
+    [1, 1, 0],
+    [0, 1, 1]
+  ], i: 2, j: 0, k: 3, c: "#9d95e6"
+};
+
+let pieceC = {
+  w: 2, h: 3, d: [
+    [1, 1],
+    [0, 1],
+    [1, 1]
+  ], i: 8, j: 0, k: 3, c: "#78d6ca"
+};
+
+let pieceN = {
+  w: 4, h: 2, d: [
+    [1, 1, 0, 0],
+    [0, 1, 1, 1],
+  ], i: 4, j: 0, k: 4, c: "#8ee891"
+};
+
+let pieces = [pieceI, pieceP, pieceY, pieceV, pieceX, pieceL, pieceF, pieceZ, pieceT, pieceW, pieceC, pieceN];
+
+function draw_piece(piece) {
+  // if (t%1 < 0.01) return;
+  let off_x = piece.i * pS;
+  let off_y = piece.j * pS;
+  ctx.fillStyle = piece.c;
+  for (let y=0; y<piece.h; y++) {
+    if (mod(y + piece.k, 6) != Math.floor(t)) continue;
+    for (let x=0; x<piece.w; x++) {
+      if (piece.d[y][x] == 0) continue;
+      let leftMargin = x == 0 || piece.d[y][x-1] == 0;
+      let rightMargin = x == piece.w - 1 || piece.d[y][x+1] == 0;
+      ctx.fillRect(off_x + x * pS + (leftMargin ? margin : 0), off_y + margin, pS - (leftMargin ? margin : 0) - (rightMargin ? margin : 0), pS - margin*2);
+      //ctx.fillRect(off_x + x * pS, off_y, pS, pS);
+    }
+  }
+}
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+});
+
+window.addEventListener("load", e => {
+  canvas.style.cursor = "grab";
+  for (let k=0; k<pieces.length; k++) {
+    pieces[k].i += 3;
+    pieces[k].j += 3;
+  }
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function draw(timeStamp) {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  //t = Math.floor(((timeStamp * SPEED) % 6000) / 1000);
+  //t = ((timeStamp * SPEED) % 6000) / 1000;
+  let deltaTime = timeStamp - lastT;
+  t += deltaTime * SPEED / 1000;
+  t = mod(t, 6);
+  lastT = timeStamp;
+  
+  for (let x=pS; x<canvas.width; x+=pS) {
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, canvas.height);
+  }
+  for (let y=pS; y<canvas.height; y+=pS) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+  }
+  ctx.stroke();
+  
+  for (let k=0; k<pieces.length; k++) {
+    draw_piece(pieces[k]);
+  }
+ 
+  if (wasButtonPressed(0)) {
+    let i = Math.floor(mouse.x / pS);
+    let j = Math.floor(mouse.y / pS);    
+    grabbedPiece = pieces.filter(piece => {
+      if (i < piece.i || i >= piece.i + piece.w) return false;
+      if (j != piece.j) return false;
+      let k = mod(Math.floor(t) - piece.k, 6);
+      if (k >= piece.h) return false;
+      return piece.d[k][i - piece.i] == 1;
+    })[0];
+    if (grabbedPiece) {
+      grab_x = grabbedPiece.i - mouse.x / pS;
+      grab_y = grabbedPiece.j - mouse.y / pS;
+      canvas.style.cursor = "grabbing";
+    } else {
+      canvas.style.cursor = "grab";
+    }
+  }
+  if (grabbedPiece) {
+    grabbedPiece.i = mouse.x / pS + grab_x;
+    grabbedPiece.j = mouse.y / pS + grab_y;
+  }
+  if (wasButtonReleased(0) && grabbedPiece) {
+    grabbedPiece.i = Math.round(mouse.x / pS + grab_x);
+    grabbedPiece.j = Math.round(mouse.y / pS + grab_y);
+    grabbedPiece = null;
+    canvas.style.cursor = "grab";
+  }
+  
+  mouse_prev = Object.assign({}, mouse);
+  mouse.wheel = 0;
+  keyboard_prev = Object.assign({}, keyboard);
+  window.requestAnimationFrame(draw);
+}
+
+window.addEventListener('mousemove', e => _mouseEvent(e));
+window.addEventListener('mousedown', e => _mouseEvent(e));
+window.addEventListener('mouseup', e => _mouseEvent(e));
+
+function _mouseEvent(e) {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  mouse.buttons = e.buttons;
+  return false;
+}
+
+window.addEventListener('wheel', e => {
+  let d = e.deltaY > 0 ? 1 : -1;
+  return mouse.wheel = d;
+});
+
+let mouse = {x: 0, y: 0, buttons: 0, wheel: 0};
+let mouse_prev = Object.assign({}, mouse);
+
+function isButtonDown(b) {
+  return (mouse.buttons & (1 << b)) != 0;
+}
+
+function wasButtonPressed(b) {
+  return ((mouse.buttons & (1 << b)) !== 0) && ((mouse_prev.buttons & (1 << b)) === 0);
+}
+
+function wasButtonReleased(b) {
+  return ((mouse.buttons & (1 << b)) === 0) && ((mouse_prev.buttons & (1 << b)) !== 0);
+}
+
+let keyboard = {};
+let keyboard_prev = {};
+
+function keyMap(e) {
+  // use key.code if key location is important
+  return e.key.toLowerCase();
+}
+
+window.addEventListener('keydown', e => {
+  let k = keyMap(e);
+  keyboard[k] = true;
+});
+
+window.addEventListener('keyup', e => {
+  let k = keyMap(e);
+  keyboard[k] = false;
+});
+
+function isKeyDown(k) {
+  return keyboard[k] || false;
+}
+
+function wasKeyPressed(k) {
+  return (keyboard[k] || false) && (!keyboard_prev[k] || false);
+}
+
+function wasKeyReleased(k) {
+  return (!keyboard[k] || false) && (keyboard_prev[k] || false);
+}
+
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+</script>
