@@ -1,0 +1,175 @@
+<body style=margin:0>
+<canvas id="canvas"></canvas>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+let t1 = 0;
+let t2 = 0;
+
+let pattern_1 = [4];
+let pattern_2 = [3];
+
+let tS = 80;
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function t1_line(t2) {
+  return 0;
+}
+
+function t2_line(t1) {
+  return 0;
+}
+
+function draw() {  
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  t1 = mouse.x / tS;
+  t2 = mouse.y / tS;
+  
+  ctx.textAlign = "start";
+  ctx.textBaseline = "top";
+  ctx.font = "30px Arial";  
+  ctx.fillStyle = "#000000";
+  ctx.fillText('t1: ' + t1.toFixed(2) + ', t2: ' + t2.toFixed(2), mouse.x, mouse.y);
+  
+  ctx.strokeStyle = "#FF0000";
+  ctx.beginPath();
+  let i = 0;
+  for (let k=0; k<10; k++) {
+    i += pattern_1[k % pattern_1.length];
+    ctx.moveTo(t1_line(0) + i * tS, 0);
+    for (let y=0; y<canvas.height; y+=10) {
+      ctx.lineTo(t1_line(y / tS) * tS + i * tS, y)
+    }
+  }
+  ctx.stroke();
+  
+  ctx.strokeStyle = "#00FF00";
+  ctx.beginPath();
+  let j = 0;
+  for (let k=0; k<10; k++) {
+    j += pattern_2[k % pattern_2.length];
+    ctx.moveTo(0, t2_line(0) + j * tS);
+    for (let x=0; x<canvas.width; x+=10) {
+      ctx.lineTo(x, t2_line(x / tS) * tS + j * tS)
+    }
+  }
+  ctx.stroke();
+  
+  // Parabollic version
+  /*let local_t1 = (t1 - t1_line(t2)) % 4;
+  let local_t2 = (t2 - t2_line(t1)) % 3;
+  let pos = (2*2+1.5*1.5)/4 - ((local_t1-2)*(local_t1-2) + (local_t2-1.5)*(local_t2-1.5)) / 4;
+  
+  ctx.beginPath();
+  ctx.arc(canvas.width * .5, canvas.height * (1 - pos / 2) - 50, 50, 0, 2 * Math.PI);
+  ctx.stroke();*/
+  
+  // Bouncy version
+  let local_t1 = t1 - t1_line(t2);
+  let k1 = 0;
+  while (local_t1 > pattern_1[k1 % pattern_1.length]) {
+    local_t1 -= pattern_1[k1 % pattern_1.length];
+    k1 += 1;
+  }
+  local_t1 = pin_pong(local_t1 / pattern_1[k1 % pattern_1.length]);
+  let local_t2 = pin_pong(((t2 - t2_line(t1)) % 3) / 3);
+  
+  ctx.strokeStyle = "#000000";
+  let hS = 250;
+  let bR = 20;
+  ctx.strokeRect(canvas.width/2-hS,canvas.height/2-hS,hS*2,hS*2);
+  ctx.beginPath();
+  ctx.arc(canvas.width/2+(local_t1*2-1)*(hS-bR),canvas.height/2+(local_t2*2-1)*(hS-bR), bR, 0, 2 * Math.PI);
+  ctx.fill();
+  
+  mouse_prev = Object.assign({}, mouse);
+  mouse.wheel = 0;
+  keyboard_prev = Object.assign({}, keyboard);
+  window.requestAnimationFrame(draw);
+}
+
+window.addEventListener('mousemove', e => _mouseEvent(e));
+window.addEventListener('mousedown', e => _mouseEvent(e));
+window.addEventListener('mouseup', e => _mouseEvent(e));
+
+function _mouseEvent(e) {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  mouse.buttons = e.buttons;
+  return false;
+}
+
+window.addEventListener('wheel', e => {
+  let d = e.deltaY > 0 ? 1 : -1;
+  return mouse.wheel = d;
+});
+
+let mouse = {x: 0, y: 0, buttons: 0, wheel: 0};
+let mouse_prev = Object.assign({}, mouse);
+
+function isButtonDown(b) {
+  return (mouse.buttons & (1 << b)) != 0;
+}
+
+function wasButtonPressed(b) {
+  return ((mouse.buttons & (1 << b)) !== 0) && ((mouse_prev.buttons & (1 << b)) === 0);
+}
+
+function wasButtonReleased(b) {
+  return ((mouse.buttons & (1 << b)) === 0) && ((mouse_prev.buttons & (1 << b)) !== 0);
+}
+
+let keyboard = {};
+let keyboard_prev = {};
+
+function keyMap(e) {
+  // use key.code if key location is important
+  return e.key.toLowerCase();
+}
+
+window.addEventListener('keydown', e => {
+  let k = keyMap(e);
+  keyboard[k] = true;
+});
+
+window.addEventListener('keyup', e => {
+  let k = keyMap(e);
+  keyboard[k] = false;
+});
+
+function isKeyDown(k) {
+  return keyboard[k] || false;
+}
+
+function wasKeyPressed(k) {
+  return (keyboard[k] || false) && (!keyboard_prev[k] || false);
+}
+
+function wasKeyReleased(k) {
+  return (!keyboard[k] || false) && (keyboard_prev[k] || false);
+}
+
+// utility functions
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+
+function lerp(a, b, t) {
+  return a*(1-t) + b*t;
+}
+
+function pin_pong(t) {
+  return t < 0.5 ? t * 2 : 2 - t * 2;
+}
+</script>
