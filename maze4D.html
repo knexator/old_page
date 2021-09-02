@@ -3,7 +3,7 @@
 WASD and IJKL to move, Z/R to undo/restart, Q/E for previous/next level<br>
 </div>
 <div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 20;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
-<a href="https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74">Original game</a> by <a href="https://beekie.itch.io/">Beekie</a>, with a level from <a href="https://twitter.com/corey_hardt">Corey Hardt</a>. Modification by <a href="https://twitter.com/knexator">knexator</a>, inspired by <a href="https://tilmannr.itch.io/">Tilmann</a>'s <a href="https://www.puzzlescript.net/play.html?p=0c0062d17fefe9d6d4e54d354b31edc2">variation</a>
+<a href="https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74" target="_blank">Original game</a> by <a href="https://beekie.itch.io/" target="_blank">Beekie</a>, with a level from <a href="https://twitter.com/corey_hardt" target="_blank">Corey Hardt</a>. Modification by <a href="https://twitter.com/knexator" target="_blank">knexator</a>, inspired by <a href="https://tilmannr.itch.io/" target="_blank">Tilmann</a>'s <a href="https://www.puzzlescript.net/play.html?p=0c0062d17fefe9d6d4e54d354b31edc2" target="_blank">variation</a>
 
 </div>
 <canvas id="canvas"></canvas>
@@ -321,6 +321,8 @@ function add(arr1, arr2) {
 window.addEventListener("resize", e => {
   canvas.width = innerWidth;
   canvas.height = innerHeight;
+  OFFX = Math.floor(canvas.width / 2 - TILE * 4.5);
+  OFFY = Math.floor(canvas.height / 2 - TILE * 3);
 });
 
 window.addEventListener("load", e => {
