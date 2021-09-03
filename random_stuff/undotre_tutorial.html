@@ -1,0 +1,791 @@
+<head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>
+body {
+	margin: 0;
+  overscroll-behavior: contain;
+}
+
+html, body { 
+  font-size: 80%;  
+  margin: 0;
+  padding: 0;
+  width: 100%; 
+  height: 100%;
+}
+
+#footer {
+  position: absolute;
+  height: 10%;
+  width: 100%;
+  display: block;
+}
+
+#footer button {
+  height: 100%;
+  width: 33.333333%;
+  font-size:2em;
+  margin: 0;
+  padding: 0;
+}
+
+/*canvas {
+  position: absolute
+}*/
+</style></head>
+<body oncontextmenu="return false;">
+<canvas id="canvas"></canvas>
+<!--div id="footer">
+  <button onclick="reset()">Reset</button><button onclick="apply()">Apply</button><button onclick="undo()">Undo</button>
+</div-->
+<!--script source="swiped-events.min.js"></script-->
+<script>
+!function(t,e){"use strict";"function"!=typeof t.CustomEvent&&(t.CustomEvent=function(t,n){n=n||{bubbles:!1,cancelable:!1,detail:void 0};var a=e.createEvent("CustomEvent");return a.initCustomEvent(t,n.bubbles,n.cancelable,n.detail),a},t.CustomEvent.prototype=t.Event.prototype),e.addEventListener("touchstart",function(t){if("true"===t.target.getAttribute("data-swipe-ignore"))return;s=t.target,r=Date.now(),n=t.touches[0].clientX,a=t.touches[0].clientY,u=0,i=0},!1),e.addEventListener("touchmove",function(t){if(!n||!a)return;var e=t.touches[0].clientX,r=t.touches[0].clientY;u=n-e,i=a-r},!1),e.addEventListener("touchend",function(t){if(s!==t.target)return;var e=parseInt(l(s,"data-swipe-threshold","20"),10),o=parseInt(l(s,"data-swipe-timeout","500"),10),c=Date.now()-r,d="",p=t.changedTouches||t.touches||[];Math.abs(u)>Math.abs(i)?Math.abs(u)>e&&c<o&&(d=u>0?"swiped-left":"swiped-right"):Math.abs(i)>e&&c<o&&(d=i>0?"swiped-up":"swiped-down");if(""!==d){var b={dir:d.replace(/swiped-/,""),xStart:parseInt(n,10),xEnd:parseInt((p[0]||{}).clientX||-1,10),yStart:parseInt(a,10),yEnd:parseInt((p[0]||{}).clientY||-1,10)};s.dispatchEvent(new CustomEvent("swiped",{bubbles:!0,cancelable:!0,detail:b})),s.dispatchEvent(new CustomEvent(d,{bubbles:!0,cancelable:!0,detail:b}))}n=null,a=null,r=null},!1);var n=null,a=null,u=null,i=null,r=null,s=null;function l(t,n,a){for(;t&&t!==e.documentElement;){var u=t.getAttribute(n);if(u)return u;t=t.parentNode}return a}}(window,document);
+</script>
+<script>
+let canvas = document.getElementById("canvas");
+let ctx = canvas.getContext('2d');
+
+let TILE = 40;
+let OFFX = TILE;
+let OFFY = TILE;
+
+let input_queue = [];
+
+const wallSpr = str2spr('#026B9C #028DBF',`\
+00010
+11111
+01000
+11111
+00010`)
+
+const playerSpr = str2spr('#ffd080 #fe546f', `\
+.000.
+.010.
+00000
+.000.
+.0.0.`)
+
+const crateSpr = str2spr('#fe546f', `\
+00000
+0...0
+0...0
+0...0
+00000`)
+
+const targetSpr = str2spr('#ff9e7d', `\
+.....
+..0..
+.000.
+..0..
+.....`)
+
+const floorSpr = str2spr('#803D7D #75366D', `\
+11111
+10101
+11011
+10101
+11111`)
+
+const floorWinSpr = str2spr('#507f3d #437737', `\
+11111
+10101
+11011
+10101
+11111`)
+
+const sprMap = [floorSpr, wallSpr];
+
+function str2spr(cols, str) {
+  str = str.split('\n');
+  let res = [];
+  for (let i=0; i<5; i++) {
+    let row = [];
+    for (let j=0; j<5; j++) {    
+      row.push(Number(str[j][i]));
+    }
+    res.push(row);
+  }  
+  return {colors: cols.split(' '), data: res};
+}
+
+function drawSpr(spr, i, j) {
+  for (let x=0; x<5; x++) {
+    for (let y=0; y<5; y++) {
+      if (!isNaN(spr.data[x][y])) {      
+        ctx.fillStyle = spr.colors[spr.data[x][y]];
+        ctx.fillRect((i+x*.2)*TILE+OFFX,(j+y*.2)*TILE+OFFY, TILE*.2, TILE*.2);
+      }
+    }
+  }
+}
+
+function drawRect(i,j,w,h) {
+  ctx.fillRect(i*TILE+OFFX,j*TILE+OFFY,w*TILE,h*TILE);
+}
+
+function drawLevel(level) {
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = (TILE).toString() + "px Courier New";
+  let result = [];
+  let geo = level.geo;  
+  for (let j=0; j<geo.length; j++) {
+    let row = [];
+    for (let i=0; i<geo[0].length; i++) {      
+      /*let curSpr = geo[j][i] ? 1 : 0;
+      drawSpr(sprMap[curSpr], i, j);*/
+      if (geo[j][i]) {
+        //ctx.fillText("#", i*TILE+OFFX, j*TILE+OFFY);
+        row.push('#');
+      } else {
+        //ctx.fillText(".", i*TILE+OFFX, j*TILE+OFFY);
+        row.push('.');
+      }
+    }
+    result.push(row);
+  }
+  level.targets.forEach(([i,j]) => {
+    //drawSpr(targetSpr, i, j);
+    //ctx.fillText("•", i*TILE+OFFX, j*TILE+OFFY);
+    result[j][i] = '•';
+  });
+  level.doors.forEach(([i,j,c]) => {
+    result[j][i] = c;
+  });
+  level.buttons.forEach(([i,j,c]) => {
+    result[j][i] = c;
+  })
+  if (level.player_target !== null) {
+    result[level.player_target[1]][level.player_target[0]] = '!';
+  }
+  
+  let playerState = level.player.history[level.player.history.length-1];
+  //drawSpr(playerSpr, playerState[0], playerState[1]);
+  //ctx.fillText("@", playerState[0]*TILE+OFFX, playerState[1]*TILE+OFFY);
+  result[playerState[1]][playerState[0]] = '@';
+  
+  level.crates.forEach(crate => {
+    let state = crate.history[crate.history.length-1];
+    //drawSpr(crateSpr, state[0], state[1]);
+    //ctx.fillText((crate.inmune+1).toString(), state[0]*TILE+OFFX, state[1]*TILE+OFFY);
+    result[state[1]][state[0]] += (crate.inmune+1).toString();
+  });
+  
+  for (let j=0; j<result.length; j++) {
+    for (let i=0; i<result[0].length; i++) {
+      let str = result[j][i];
+      if (str.length > 1) {
+        str = str.replace('.','');
+      }
+      /*if (str.length > 1) {
+        str = str.slice(1);
+        ctx.fillText(str[Math.floor(Math.random() * str.length)], i*TILE+OFFX, j*TILE+OFFY);
+      } else ctx.fillText(result[j][i], i*TILE+OFFX, j*TILE+OFFY);*/
+      for (let k=0; k<str.length; k++) {
+        let chr = str[k]
+        if (chr >= 'P' && chr <= 'Z' && isDoorOpen(level, chr)) {
+          ctx.fillStyle = "red";
+          ctx.fillText(str[k], (i+.5)*TILE+OFFX, (j+.5)*TILE+OFFY);
+          ctx.fillStyle = "black";
+        } else {
+          ctx.fillText(str[k], (i+.5)*TILE+OFFX, (j+.5)*TILE+OFFY);
+        }        
+      }
+    }
+  }
+  
+  ctx.fillText('Level ' + (cur_level_n + 1), canvas.width/2, (level.h+1)*TILE+OFFY);
+}
+
+function isDoorOpen(level, chr) {
+  let playerState = level.player.history[level.player.history.length-1];
+  let pi = playerState[0];
+  let pj = playerState[1];
+  return level.buttons.some(([bi,bj,c]) => {
+    return c==chr.toLowerCase() && ((pi==bi && pj==bj) || level.crates.some(crate => {
+      let state = crate.history[crate.history.length-1];
+      return state[0] == bi && state[1] == bj;
+    }))
+  })
+}
+
+function closedDoorAt(level,i,j) {
+  let doors = level.doors.filter(([di,dj,c]) => {
+    return i==di && j==dj;
+  });
+  return !doors.every(([di,dj,c]) => isDoorOpen(level, c));
+}
+
+function isWon(level) {
+	/*level.crates.forEach(crate => {
+		
+		//drawSpr(crateSpr, state[0], state[1]);
+		//ctx.fillText((crate.inmune+1).toString(), state[0]*TILE+OFFX, state[1]*TILE+OFFY);
+		result[state[1]][state[0]] += (crate.inmune+1).toString();
+	  });*/
+	let crate_positions = level.crates.map(crate => {
+		return crate.history[crate.history.length-1];
+	});
+	let target_positions = level.targets;
+	
+	return target_positions.every(([ti, tj]) => {
+		return crate_positions.some(([ci, cj]) => {
+			return ti == ci && tj == cj;
+		});
+	}) && crate_positions.every(([ci, cj]) => {
+		return target_positions.some(([ti, tj]) => {
+			return ti == ci && tj == cj;
+		});
+	});
+}
+
+/* tutorial 01
+.#######....
+#O.....*#...
+.##2#.##....
+..#...#.....
+..#####.....*/
+
+/*
+...........
+...###.....
+.###@#.....
+.#*11#.....
+.#.2.##....
+.##.3*#....
+..#..##....
+..##*#.....
+...###.....
+...........*/
+
+/* tutorial 02; key idea: ir a caso hecho al origen para poder aterrizar el undo.
+......####....
+,...###.*#....
+....#O.1.#....
+....##2..#....
+.....#.*##....
+.....####.....*/
+
+/*#.............
+#.............
+#.............
+#.............
+#1............
+#*......O.....
+#2............
+#.............
+#.............
+#.............
+#.............*/
+
+/* genuine level!!  tutorial 05
+#####
+#...#
+#1#.#
+#*#O#
+#3#.#
+#...#
+#####*/
+
+/* genuine level!!  tutorial 04
+.####.
+.#..#.
+##3*##
+#.21.#
+##.O##
+.####.*/
+
+/* plagiarism, hedges level 6
+.#####.
+.#O#*##
+.#.A..#
+.#.2*##
+###.##.
+#.2.#..
+#...#..
+#####..*/
+
+/*wtf
+.......#..........................................
+.#########........................................
+.#TRS.1tq#........###.............................
+.#3##OU.##...........###..........................
+.#u#s.2Q#...............2..2..1...................
+.#####.##....q...Q................................
+..................................................
+.......3.r....r...R..............1................
+.....###.....r.....................2..............*/
+
+/* tutorial meh
+..###........
+..#r#........
+..#.#........
+..#p#########
+..#..R.2.s.q#
+..#1#########
+..#.#........
+###.#########
+#O...P.Q.3.t#
+######S######
+.....#.#.....
+.....#T#.....
+.....#.#.....
+.....#!#.....
+.....###.....*/
+
+levels = [
+str2level(`\
+####..
+#.*#..
+#..###
+#AO..#
+#..1.#
+#..###
+####..`),
+/*str2level(`\
+#########
+#O.....*#
+###2#.###
+..#...#..
+..#####..`),*/ // too tutorialish
+str2level(`\
+####..
+##*#..
+#..###
+#AO..#
+#..2.#
+#..###
+####..`),
+str2level(`\
+....####.
+....#..##
+#####.2.#
+#O*1..*.#
+#########`),
+str2level(`\
+..####
+###.*#
+#O.1*#
+##2..#
+.#..##
+.####.`),
+/*str2level(`\
+..#####..
+..#...#..
+..#.2.#..
+#####.###
+#.*1..*.#
+#O.##...#
+#########`),*/
+str2level(`\
+#######
+#.....#
+#.1.2.#
+#..O..#
+#.3.*.#
+#.....#
+#######`),
+str2level(`\
+#######
+#..*..#
+#.31B.#
+###.O##
+..####.`),
+str2level(`\
+.####.
+.#..#.
+##3*##
+#.21.#
+##.O##
+.####.`),
+str2level(`\
+#####
+#...#
+#1#.#
+#*#O#
+#3#.#
+#...#
+#####`)
+];
+
+
+let cur_level_n = 0;
+
+function Movable(i, j, inmune, extra=0) {
+  this.history = [[i,j]];
+  for (let k=0; k<extra; k++) {
+    this.history.push([i,j]);
+  }
+  this.inmune = inmune;
+}
+
+function str2level(str) {
+  str = str.split('\n');
+  let w = str[0].length;
+  let h = str.length;
+  let geo = [];
+  let player;
+  let crates = [];
+  let targets = [];
+  let buttons = [];
+  let doors = [];
+  let player_target = null;
+  for (let j=0; j<h; j++) {
+    let row = [];
+    for (let i=0; i<w; i++) {
+      let chr = str[j][i]; //.toUpperCase();
+      row.push(chr == '#');
+      if (chr == '.' || chr == '#') continue;
+      
+      if (chr == 'O' || chr == '@') {
+        player = new Movable(i, j, 0);
+        if (chr == '@') targets.push([i,j]);
+      } else if (chr == '*') {
+        targets.push([i,j]);
+      } else if (chr >= '1' && chr <= '9') {
+        crates.push(new Movable(i, j, chr - '1'));
+      } else if (chr >= 'A' && chr <= 'I') {
+        crates.push(new Movable(i, j, chr.charCodeAt(0) - 'A'.charCodeAt(0)));
+        targets.push([i,j]);        
+      } else if (chr >= 'p' && chr <= 'z') {
+        buttons.push([i,j,chr]);
+      } else if (chr >= 'P' && chr <= 'Z') {
+        doors.push([i,j,chr]);
+      } else if (chr == '!') {
+        player_target = [i,j];
+      }
+    }
+    geo.push(row);
+  }
+  return {geo: geo, player: player, crates: crates, targets: targets, buttons: buttons, doors: doors, player_target: player_target, w: w, h: h};
+}
+
+/*function str2geo(str) {
+  str = str.split('\n');
+  let w = str[0].length;
+  let h = str.length;
+  let geo = [];
+  for (let j=0; j<h; j++) {
+    let row = [];
+    for (let i=0; i<w; i++) {
+      let chr = str[j][i];
+      switch (chr) {
+        case '#':
+          row.push(true);
+          break;
+        default:
+          row.push(false);
+      }
+    }
+    geo.push(row);
+  }
+  return geo;
+}*/
+
+let true_timeline_undos = [];
+
+let HALT = false;
+
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  recalcTileSize();
+});
+
+window.addEventListener("load", e => {
+  window.dispatchEvent(new Event('resize'));
+  window.requestAnimationFrame(draw);
+});
+
+function get_original_tick(tick, max_inmune_to) {
+  // for an object inmune to max_inmune levels of time travel,
+  // when the real time is "tick", get the last real tick where
+  // their free will was executed. Without time travel, it would
+  // always be cur_tick itself; in Braid, for green objects, which
+  // have max_inmune = 1, it will always be cur_tick (if there hasn't
+  // been a "real undo") (or level 2, at least)
+
+  if (tick <= 0) {
+    //console.log("that's before time!");
+    return tick;
+  } else if (tick > true_timeline_undos.length) {
+    //console.log("that's the far future!")
+    return tick;
+  } else if (true_timeline_undos[tick-1] <= max_inmune_to) {
+    //console.log("that's a good-ol-regular tick.")
+    return tick;
+  } else {
+    let travel_depth = true_timeline_undos[tick-1];
+    let counter = 1;
+    let res = tick - 1;
+    while (counter > 0 && res > 0) {
+      let cur_depth = true_timeline_undos[res - 1];
+      if (cur_depth == travel_depth) {
+        counter += 1;
+        res -= 1;
+      } else if (cur_depth < travel_depth) {
+        counter -= 1;
+        res -= 1;
+      } else {
+        // higher level travel over here!
+        res = get_original_tick(res, max_inmune_to);
+      }      
+    }
+    //console.log("time traveling to: ", res)
+    return res;
+  }
+}
+
+function loadLevel(n) {
+	cur_level_n = n;
+	true_timeline_undos = [];
+  let cur_level = levels[cur_level_n];
+  cur_level.crates.forEach(crate => {
+    crate.history.splice(1);
+  })
+  cur_level.player.history.splice(1);
+	recalcTileSize();
+}
+
+function recalcTileSize() {
+	let cur_level = levels[cur_level_n];
+	let tile_w = Math.min(canvas.width / cur_level.w, 60);
+	let tile_h = Math.min(canvas.height / cur_level.h,60);
+	TILE = Math.floor(Math.min(tile_h, tile_w));
+	OFFX = Math.floor((canvas.width - (TILE * cur_level.w)) / 2);
+	OFFY = Math.floor((canvas.height - (TILE * cur_level.h)) / 2);
+}
+
+function draw() {  
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  let cur_level = levels[cur_level_n];
+    
+  let cur_undo = 0;
+  for (let i=1; i<10; i++) {
+    if (wasKeyPressed(i.toString())) cur_undo = i;
+  }
+  let cur_di = 0;
+  let cur_dj = 0;
+  if (wasKeyPressed('a')) cur_di -= 1;
+  if (wasKeyPressed('d')) cur_di += 1;
+  if (wasKeyPressed('w')) cur_dj -= 1;
+  if (wasKeyPressed('s')) cur_dj += 1;
+  
+  if (cur_undo == 0 && cur_di == 0 && cur_dj == 0) {
+    // nothing happened
+    
+  } else {
+    true_timeline_undos.push(cur_undo);
+    let real_tick = true_timeline_undos.length;
+    
+    //travels = generate_travels(true_timeline_undos);
+    
+    player_tick = get_original_tick(real_tick, 0); // player isn't inmune to any undo level
+    if (player_tick < 0) {
+      true_timeline_undos.pop(); // undo this turn
+    } else {
+      if (cur_level.player.history[player_tick] !== undefined) {
+        [i, j] = cur_level.player.history[player_tick];
+        cur_level.player.history[real_tick] = [i, j];
+        cur_level.crates.forEach(crate => {
+          let crate_tick = get_original_tick(real_tick, crate.inmune);          
+          if (crate.history[crate_tick] !== undefined) {
+            [i, j] = crate.history[crate_tick];
+            crate.history[real_tick] = [i, j];
+          } else {
+            [i, j] = crate.history[real_tick - 1];
+            crate.history[real_tick] = [i, j ];
+            //crate.history[real_tick] = [i + cur_di, j + cur_dj];
+            //true_timeline[crate_tick] = [px,py,vx,vy];
+          }
+        })
+      } else {
+        [pi, pj] = cur_level.player.history[real_tick - 1];
+        let bad_move = cur_level.geo[pj+cur_dj][pi+cur_di] || closedDoorAt(cur_level,pi+cur_di,pj+cur_dj);
+        let pushing_crate = cur_level.crates.some(crate => {
+          [ci, cj] = crate.history[crate.history.length-1];
+          return ci == pi + cur_di && cj == pj + cur_dj;
+        });
+        if (pushing_crate) {
+          let next_space_i = pi + cur_di * 2;
+          let next_space_j = pj + cur_dj * 2;
+          let occupied_space = cur_level.geo[next_space_j][next_space_i] || cur_level.crates.some(crate => {
+            [ci, cj] = crate.history[crate.history.length-1];
+            return ci == next_space_i && cj == next_space_j;
+          }) || closedDoorAt(cur_level,next_space_i,next_space_j);
+          bad_move = bad_move || occupied_space;
+        }
+        if (bad_move) { // ignore this move
+          true_timeline_undos.pop();
+        } else {      
+          cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
+          cur_level.crates.forEach(crate => {
+            let crate_tick = get_original_tick(real_tick, crate.inmune);
+            if (crate.history[crate_tick] !== undefined) {
+              [ci, cj] = crate.history[crate_tick];
+              crate.history[real_tick] = [ci, cj];
+            } else {          
+              [ci, cj] = crate.history[real_tick - 1];
+              if (ci == pi+cur_di && cj == pj+cur_dj) {
+                crate.history[real_tick] = [ci + cur_di, cj + cur_dj];
+              } else {
+                crate.history[real_tick] = [ci, cj];
+              }
+              
+              //crate.history[real_tick] = [i + cur_di, j + cur_dj];
+              //true_timeline[crate_tick] = [px,py,vx,vy];
+            }
+          })
+        }
+        
+        //true_timeline[player_tick] = [px,py,vx,vy];
+      }
+    }
+    
+  }
+  
+  // EDITOR
+  /*
+  let mi = Math.round((mouse.x - OFFX) / TILE);
+  let mj = Math.round((mouse.y - OFFY) / TILE);
+  if (mi >= 0 && mi < cur_level.w && mj >= 0 && mj < cur_level.h) {
+    if (isButtonDown(0)) {
+      cur_level.geo[mj][mi] = true;
+    } else if (isButtonDown(1)) {
+      cur_level.geo[mj][mi] = false;
+    } else if (wasKeyPressed('z')) {
+      cur_level.crates.push(new Movable(mi, mj, 0, extra=true_timeline_undos.length))
+    } else if (wasKeyPressed('x')) {
+      cur_level.crates.push(new Movable(mi, mj, 1, extra=true_timeline_undos.length))
+    } else if (wasKeyPressed('c')) {
+      cur_level.crates.push(new Movable(mi, mj, 2, extra=true_timeline_undos.length))
+    } else if (wasKeyPressed('v')) {
+      cur_level.crates.push(new Movable(mi, mj, 3, extra=true_timeline_undos.length))
+    } else if (wasKeyPressed('p')) {
+      cur_level.buttons.push([mi, mj, 'p']);
+    } else if (wasKeyPressed('P')) {
+      cur_level.doors.push([mi, mj, 'P']);
+    }
+  }*/
+  
+  let is_won = isWon(cur_level);
+  if (is_won) {
+	ctx.fillStyle = "lightgreen";
+	ctx.fillRect(0,0,canvas.width,canvas.height);
+	ctx.fillStyle = "black";
+	
+    if (wasKeyPressed(' ') && cur_level_n < levels.length-1) {
+      loadLevel(cur_level_n + 1);
+      cur_level = levels[cur_level_n];
+    }
+	}
+  
+  if (wasKeyPressed('r')) {
+    loadLevel(cur_level_n);
+    cur_level = levels[cur_level_n];
+  }
+  
+  // cheat
+  if (wasKeyPressed('ñ') && cur_level_n < levels.length-1) {
+    loadLevel(cur_level_n + 1);
+    cur_level = levels[cur_level_n];
+  }
+  
+  drawLevel(cur_level);
+  
+ 
+  /*if (wasButtonPressed(0)) console.log("0 pressed");
+  if (isButtonDown(0)) console.log("0 down");
+  if (wasButtonReleased(0)) console.log("0 unpressed");
+  
+  if (wasKeyPressed('a')) console.log("a pressed");
+  if (isKeyDown('a')) console.log("a down");
+  if (wasKeyReleased('a')) console.log("a unpressed");*/
+  //if (wasKeyPressed('q')) HALT = true;
+  
+  mouse_prev = Object.assign({}, mouse);
+  mouse.wheel = 0;
+  keyboard_prev = Object.assign({}, keyboard);
+  if (!HALT) window.requestAnimationFrame(draw);
+}
+
+window.addEventListener('mousemove', e => _mouseEvent(e));
+window.addEventListener('mousedown', e => _mouseEvent(e));
+window.addEventListener('mouseup', e => _mouseEvent(e));
+//document.onContextMenu = e => e.preventDefault();
+
+function _mouseEvent(e) {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  mouse.buttons = e.buttons;
+  e.preventDefault();
+  return false;
+}
+
+window.addEventListener('wheel', e => {
+  let d = e.deltaY > 0 ? 1 : -1;
+  return mouse.wheel = d;
+});
+
+let mouse = {x: 0, y: 0, buttons: 0, wheel: 0};
+let mouse_prev = Object.assign({}, mouse);
+
+function isButtonDown(b) {
+  return (mouse.buttons & (1 << b)) != 0;
+}
+
+function wasButtonPressed(b) {
+  return ((mouse.buttons & (1 << b)) !== 0) && ((mouse_prev.buttons & (1 << b)) === 0);
+}
+
+function wasButtonReleased(b) {
+  return ((mouse.buttons & (1 << b)) === 0) && ((mouse_prev.buttons & (1 << b)) !== 0);
+}
+
+let keyboard = {};
+let keyboard_prev = {};
+
+function keyMap(e) {
+  // use key.code if key location is important
+  return e.key.toLowerCase();
+}
+
+window.addEventListener('keydown', e => {
+  let k = keyMap(e);
+  if ('wasd123456789'.indexOf(k) != -1) input_queue.push(k);
+  keyboard[k] = true;
+});
+
+window.addEventListener('keyup', e => {
+  let k = keyMap(e);
+  keyboard[k] = false;
+});
+
+function isKeyDown(k) {
+  return keyboard[k] || false;
+}
+
+function wasKeyPressed(k) {
+	let queue_pos = input_queue.findIndex(n => n == k);
+	if (queue_pos == -1) return (keyboard[k] || false) && (!keyboard_prev[k] || false);
+	input_queue.splice(queue_pos, 1);
+	return true;
+}
+
+function wasKeyReleased(k) {
+  return (!keyboard[k] || false) && (keyboard_prev[k] || false);
+}
+
+document.addEventListener('swiped', function(e) {
+	let dir2key = {'left': 'a', 'right': 'd', 'up': 'w', 'down': 's'};
+	let key = dir2key[e.detail.dir];
+	input_queue.push(key);
+	// alert(e.detail.dir); // swipe direction
+});
+
+// utility functions
+function mod(n, m) {
+  return ((n % m) + m) % m;
+}
+</script>
