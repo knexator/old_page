@@ -13,30 +13,52 @@ html, body {
   height: 100%;
 }
 
-#footer {
+#header {
   position: absolute;
+  top: 0;
   height: 10%;
   width: 100%;
-  display: block;
+  //display: block;
+  display: flex
+}
+
+#header button {
+  height: 100%;
+  flex-grow: 1;
+  font-size:2em;
+  margin: 0;
+  padding: 0;  
+}
+
+#footer {
+  position: absolute;
+  bottom: 0;
+  height: 10%;
+  width: 100%;
+  //display: block;
+  display: flex;
 }
 
 #footer button {
   height: 100%;
-  width: 33.333333%;
+  flex-grow: 1;
   font-size:2em;
   margin: 0;
   padding: 0;
 }
 
-/*canvas {
+canvas {
   position: absolute
-}*/
+}
 </style></head>
 <body oncontextmenu="return false;">
 <canvas id="canvas"></canvas>
-<!--div id="footer">
-  <button onclick="reset()">Reset</button><button onclick="apply()">Apply</button><button onclick="undo()">Undo</button>
-</div-->
+<div id="header">
+  <button onclick="prevLevel()" id="prevLevelButton">Prev</button><button id="curLevelButton" onclick="resetLevel()">Level 1</button><button onclick="nextLevel()" id="nextLevelButton">Next</button>
+</div>
+<div id="footer">
+  <button onclick="doUndo(1)">Undo</button><button onclick="doUndo(2)"><i>Really</i> Undo</button><button onclick="doUndo(3)"><i>Really</i> <i><b>Really</b></i> Undo</button><button onclick="doUndo(4)"><i>Really</i> <i><b>Really</b></i> <i><b><u>Really</u></b></i> Undo</button>
+</div>
 <!--script source="swiped-events.min.js"></script-->
 <script>
 !function(t,e){"use strict";"function"!=typeof t.CustomEvent&&(t.CustomEvent=function(t,n){n=n||{bubbles:!1,cancelable:!1,detail:void 0};var a=e.createEvent("CustomEvent");return a.initCustomEvent(t,n.bubbles,n.cancelable,n.detail),a},t.CustomEvent.prototype=t.Event.prototype),e.addEventListener("touchstart",function(t){if("true"===t.target.getAttribute("data-swipe-ignore"))return;s=t.target,r=Date.now(),n=t.touches[0].clientX,a=t.touches[0].clientY,u=0,i=0},!1),e.addEventListener("touchmove",function(t){if(!n||!a)return;var e=t.touches[0].clientX,r=t.touches[0].clientY;u=n-e,i=a-r},!1),e.addEventListener("touchend",function(t){if(s!==t.target)return;var e=parseInt(l(s,"data-swipe-threshold","20"),10),o=parseInt(l(s,"data-swipe-timeout","500"),10),c=Date.now()-r,d="",p=t.changedTouches||t.touches||[];Math.abs(u)>Math.abs(i)?Math.abs(u)>e&&c<o&&(d=u>0?"swiped-left":"swiped-right"):Math.abs(i)>e&&c<o&&(d=i>0?"swiped-up":"swiped-down");if(""!==d){var b={dir:d.replace(/swiped-/,""),xStart:parseInt(n,10),xEnd:parseInt((p[0]||{}).clientX||-1,10),yStart:parseInt(a,10),yEnd:parseInt((p[0]||{}).clientY||-1,10)};s.dispatchEvent(new CustomEvent("swiped",{bubbles:!0,cancelable:!0,detail:b})),s.dispatchEvent(new CustomEvent(d,{bubbles:!0,cancelable:!0,detail:b}))}n=null,a=null,r=null},!1);var n=null,a=null,u=null,i=null,r=null,s=null;function l(t,n,a){for(;t&&t!==e.documentElement;){var u=t.getAttribute(n);if(u)return u;t=t.parentNode}return a}}(window,document);
@@ -194,7 +216,7 @@ function drawLevel(level) {
     }
   }
   
-  ctx.fillText('Level ' + (cur_level_n + 1), canvas.width/2, (level.h+1)*TILE+OFFY);
+  //ctx.fillText('Level ' + (cur_level_n + 1), canvas.width/2, (level.h+1)*TILE+OFFY);
 }
 
 function isDoorOpen(level, chr) {
@@ -410,6 +432,7 @@ str2level(`\
 
 
 let cur_level_n = 0;
+let solved_levels = [];
 
 function Movable(i, j, inmune, extra=0) {
   this.history = [[i,j]];
@@ -493,7 +516,12 @@ window.addEventListener("resize", e => {
 });
 
 window.addEventListener("load", e => {
-  window.dispatchEvent(new Event('resize'));
+  let undoButtons = document.getElementById("footer").children;
+  for (let k=1; k<undoButtons.length; k++) {
+    undoButtons[k].style.display = 'none';
+  }
+  loadLevel(0);
+  window.dispatchEvent(new Event('resize'));  
   window.requestAnimationFrame(draw);
 });
 
@@ -536,6 +564,24 @@ function get_original_tick(tick, max_inmune_to) {
   }
 }
 
+function resetLevel() {
+  loadLevel(cur_level_n);
+}
+
+function prevLevel() {
+  if (cur_level_n > 0) {
+    cur_level_n -= 1;
+    loadLevel(cur_level_n)
+  }
+}
+
+function nextLevel() {
+  if (cur_level_n < levels.length-1) {
+    cur_level_n += 1;
+    loadLevel(cur_level_n)
+  }
+}
+
 function loadLevel(n) {
 	cur_level_n = n;
 	true_timeline_undos = [];
@@ -545,15 +591,30 @@ function loadLevel(n) {
   })
   cur_level.player.history.splice(1);
 	recalcTileSize();
+  
+  document.getElementById("prevLevelButton").disabled = (n == 0);
+  document.getElementById("nextLevelButton").disabled = (cur_level_n >= levels.length-1) || (solved_levels.indexOf(cur_level_n) == -1);
+  document.getElementById("curLevelButton").innerHTML = "Level " + (n+1);
+  
+  let undoButtons = document.getElementById("footer").children;
+  if (n == 1) {
+    undoButtons[1].style.display = '';
+  } else if (n == 4) {
+    undoButtons[2].style.display = '';
+  }
 }
 
 function recalcTileSize() {
 	let cur_level = levels[cur_level_n];
 	let tile_w = Math.min(canvas.width / cur_level.w, 60);
-	let tile_h = Math.min(canvas.height / cur_level.h,60);
+	let tile_h = Math.min((canvas.height*.8) / cur_level.h,60);
 	TILE = Math.floor(Math.min(tile_h, tile_w));
 	OFFX = Math.floor((canvas.width - (TILE * cur_level.w)) / 2);
 	OFFY = Math.floor((canvas.height - (TILE * cur_level.h)) / 2);
+}
+
+function doUndo(n) {
+  input_queue.push(n.toString())
 }
 
 function draw() {  
@@ -671,24 +732,30 @@ function draw() {
   
   let is_won = isWon(cur_level);
   if (is_won) {
-	ctx.fillStyle = "lightgreen";
-	ctx.fillRect(0,0,canvas.width,canvas.height);
-	ctx.fillStyle = "black";
-	
+    if (solved_levels.indexOf(cur_level_n) == -1) solved_levels.push(cur_level_n);
+  
+    document.getElementById("nextLevelButton").disabled = (cur_level_n >= levels.length-1) || (solved_levels.indexOf(cur_level_n + 1) != -1);
+  
+    ctx.fillStyle = "lightgreen";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = "black";
+    
     if (wasKeyPressed(' ') && cur_level_n < levels.length-1) {
-      loadLevel(cur_level_n + 1);
+      //loadLevel(cur_level_n + 1);
+      nextLevel();
       cur_level = levels[cur_level_n];
     }
 	}
   
   if (wasKeyPressed('r')) {
-    loadLevel(cur_level_n);
+    resetLevel();
+    //loadLevel(cur_level_n);
     cur_level = levels[cur_level_n];
   }
   
   // cheat
   if (wasKeyPressed('ñ') && cur_level_n < levels.length-1) {
-    loadLevel(cur_level_n + 1);
+    nextLevel();
     cur_level = levels[cur_level_n];
   }
   
