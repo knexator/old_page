@@ -217,6 +217,10 @@ function drawLevel(level) {
   }
   
   //ctx.fillText('Level ' + (cur_level_n + 1), canvas.width/2, (level.h+1)*TILE+OFFY);
+  /*ctx.fillText(get_timeline_length(true_timeline_undos.length, 0).toString(), canvas.width/2, (level.h+1)*TILE+OFFY);
+  ctx.fillText(get_timeline_length(true_timeline_undos.length, 1).toString(), canvas.width/2, (level.h+2)*TILE+OFFY);
+  ctx.fillText(get_timeline_length(true_timeline_undos.length, 2).toString(), canvas.width/2, (level.h+3)*TILE+OFFY);
+  ctx.fillText(get_timeline_length(true_timeline_undos.length, 3).toString(), canvas.width/2, (level.h+4)*TILE+OFFY);*/
 }
 
 function isDoorOpen(level, chr) {
@@ -432,7 +436,7 @@ str2level(`\
 
 
 let cur_level_n = 0;
-let solved_levels = [0, 1, 2];
+let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7];
 
 function Movable(i, j, inmune, extra=0) {
   this.history = [[i,j]];
@@ -525,6 +529,72 @@ window.addEventListener("load", e => {
   window.requestAnimationFrame(draw);
 });
 
+function get_times_directions(tick) {
+  tick += 1;
+  //console.log("trying to get tick: ", tick)
+  let res = [1,1,1,1,1];
+  if (tick <= 0) {
+    //console.log("that's before time!");
+    //return res;
+  } else if (tick > true_timeline_undos.length) {
+    //console.log("that's the far future!")
+    //return res;
+  } else if (true_timeline_undos[tick-1] == 0) {
+    //console.log("that's a good-ol-regular tick.")
+    //return res;
+  } else {
+    let cur_depth = true_timeline_undos[tick-1];
+    for (let k=0; k<cur_depth; k++) {
+      res[k] = -1;
+    }
+    let destination = do_local_travel(tick);
+    let destination_directions = get_times_directions(destination);
+    for (let k=0; k<5; k++) {
+      res[k] *= destination_directions[k];
+    }
+  }return res;
+  
+}
+
+function get_timeline_length(tick, max_inmune_to) {
+  // extremely wrong, lol
+  let res = 1;
+  for (let i=1; i<=tick; i++) {
+    //console.log("iteration i: ", i);
+    let dirs = get_times_directions(i);
+    res += dirs[max_inmune_to];
+    /*if (true_timeline_undos[i] > max_inmune_to) {
+      res -= 1;
+    } else {
+      res += 1;
+    }*/
+  }
+  return res;
+}
+
+function do_local_travel(tick) {
+  let travel_depth = true_timeline_undos[tick-1];
+  if (travel_depth === 0 || travel_depth === undefined) {
+    return tick;
+  }
+  let counter = 1;
+  let res = tick - 1;
+  while (counter > 0) {
+    let cur_depth = true_timeline_undos[res - 1];
+    if (cur_depth == travel_depth) {
+      counter += 1;
+      res -= 1;
+    } else if (cur_depth < travel_depth || cur_depth === undefined) {
+      counter -= 1;
+      res -= 1;
+    } else {
+      // higher level travel over here!
+      res = do_local_travel(res);
+    }
+  }
+  return res;
+}
+
 function get_original_tick(tick, max_inmune_to) {
   // for an object inmune to max_inmune levels of time travel,
   // when the real time is "tick", get the last real tick where
@@ -557,7 +627,7 @@ function get_original_tick(tick, max_inmune_to) {
       } else {
         // higher level travel over here!
         res = get_original_tick(res, max_inmune_to);
-      }      
+      }
     }
     //console.log("time traveling to: ", res)
     return res;
@@ -593,7 +663,7 @@ function loadLevel(n) {
 	recalcTileSize();
   
   document.getElementById("prevLevelButton").disabled = (n == 0);
-  document.getElementById("nextLevelButton").disabled = (cur_level_n >= levels.length-1) || (solved_levels.indexOf(cur_level_n) == -1);
+  document.getElementById("nextLevelButton").disabled = (cur_level_n >= levels.length-1) || ( solved_levels.indexOf(cur_level_n) == -1);
   document.getElementById("curLevelButton").innerHTML = "Level " + (n+1);
   
   let undoButtons = document.getElementById("footer").children;
@@ -638,11 +708,18 @@ function draw() {
     
   } else {
     true_timeline_undos.push(cur_undo);
+    
     let real_tick = true_timeline_undos.length;
+    
+    let stuff = get_timeline_length(real_tick, 0);
+    if (stuff < 1) {
+      true_timeline_undos.pop(); // undo this turn
+    }
     
     //travels = generate_travels(true_timeline_undos);
     
     player_tick = get_original_tick(real_tick, 0); // player isn't inmune to any undo level
+    //console.log(player_tick);
     if (player_tick < 0) {
       true_timeline_undos.pop(); // undo this turn
     } else {
@@ -686,7 +763,7 @@ function draw() {
             if (crate.history[crate_tick] !== undefined) {
               [ci, cj] = crate.history[crate_tick];
               crate.history[real_tick] = [ci, cj];
-            } else {          
+            } else {
               [ci, cj] = crate.history[real_tick - 1];
               if (ci == pi+cur_di && cj == pj+cur_dj) {
                 crate.history[real_tick] = [ci + cur_di, cj + cur_dj];
@@ -708,8 +785,8 @@ function draw() {
   
   // EDITOR
   /*
-  let mi = Math.round((mouse.x - OFFX) / TILE);
-  let mj = Math.round((mouse.y - OFFY) / TILE);
+  let mi = Math.round((mouse.x - OFFX) / TILE - .5);
+  let mj = Math.round((mouse.y - OFFY) / TILE - .5);
   if (mi >= 0 && mi < cur_level.w && mj >= 0 && mj < cur_level.h) {
     if (isButtonDown(0)) {
       cur_level.geo[mj][mi] = true;
@@ -734,7 +811,7 @@ function draw() {
   if (is_won) {
     if (solved_levels.indexOf(cur_level_n) == -1) solved_levels.push(cur_level_n);
   
-    document.getElementById("nextLevelButton").disabled = (cur_level_n >= levels.length-1) || (solved_levels.indexOf(cur_level_n + 1) != -1);
+    document.getElementById("nextLevelButton").disabled = (cur_level_n >= levels.length-1);
   
     ctx.fillStyle = "lightgreen";
     ctx.fillRect(0,0,canvas.width,canvas.height);
