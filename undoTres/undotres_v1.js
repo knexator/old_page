@@ -46,7 +46,10 @@ let undoSounds = [
     src: ['undo4.wav']
   }),
 ];
-
+let restartSound = new Howl({
+  src: ['restart.wav'],
+  volume: 0.4
+});
 
 
 //let using_machine_n_turns = 0;
@@ -500,6 +503,7 @@ levels = [
 #####`)
 ];
 
+levels = easy_levels_raw.map(str => str2level(str));
 
 let cur_level_n = 0;
 let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7];
@@ -689,6 +693,7 @@ function get_original_tick_2(tick, inmune_history) {
 }
 
 function resetLevel() {
+  restartSound.play();
   loadLevel(cur_level_n);
 }
 
