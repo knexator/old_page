@@ -282,7 +282,7 @@ function drawLevel(level) {
 
   drawSpr(playerSpr, pi, pj);
   sortedCrates.reverse();
-  
+
   sortedCrates.forEach(crate => {
     let state = crate.history[true_timeline_undos.length];
     let prevState = crate.history[true_timeline_undos.length - 1];
@@ -429,19 +429,7 @@ function isWon(level) {
 }
 
 levels = [
-//   str2level(`\
-// #.............
-// #.............
-// #..........J..
-// #.............
-// #1.........K..
-// #*......O.....
-// #2............
-// #.............
-// #.............
-// #.............
-// #.............`),
-str2level(`\
+/*str2level(`\
 ................*
 .................
 .................
@@ -453,7 +441,7 @@ str2level(`\
 .................
 .................
 .................
-.................`),
+.................`),*/
   str2level(`\
 ####..
 #.*#..
@@ -961,7 +949,7 @@ function draw() {
                       } else { // ignore this move
                         true_timeline_undos.pop();
                         turn_time = 0;
-                      }                      
+                      }
                     } else {
                       true_timeline_undos.pop(); // ignore this move
                       turn_time = 0;
