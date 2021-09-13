@@ -16,6 +16,8 @@ let ALLOW_CHANGE_CRATES = false;
 let ALLOW_EDITOR = false;
 let ALLOW_MACHINES = false;
 let ALLOW_MAGIC_INPUT = false;
+let KEEP_UNDOING_UNTIL_CRATE_MOVE = true;
+let DEFAULT_FORBID_OVERLAP = false;
 
 let goalSound = new Howl({
   src: ['goal.wav']
@@ -166,6 +168,13 @@ const floorWinSpr = str2spr('#507f3d #437737', `\
 10101
 11111`)
 
+const holeSpr = str2spr('#52174f', `\
+00000
+00000
+00000
+00000
+00000`)
+
 const sprMap = [floorSpr, wallSpr];
 
 function str2spr(cols, str) {
@@ -183,11 +192,15 @@ function str2spr(cols, str) {
 
 function drawSpr(spr, i, j) {
   if (!spr) return;
+  ctx.fillStyle = spr.colors[0];
+  let s = 0.22;
   for (let x=0; x<5; x++) {
     for (let y=0; y<5; y++) {
       if (!isNaN(spr.data[x][y])) {
-        ctx.fillStyle = spr.colors[spr.data[x][y]];
-        ctx.fillRect((i+x*.2)*TILE+OFFX,(j+y*.2)*TILE+OFFY, TILE*.22, TILE*.22);
+        //ctx.fillStyle = spr.colors[spr.data[x][y]];
+        s1 = x==4 ? .2 : .22;
+        s2 = y==4 ? .2 : .22;
+        ctx.fillRect((i+x*.2)*TILE+OFFX,(j+y*.2)*TILE+OFFY, TILE*s1, TILE*s2);
       }
     }
   }
@@ -205,12 +218,56 @@ function drawLevel(level) {
       }
     }
   }
-  level.targets.forEach(([i, j]) => {
-    drawSpr(targetSpr, i, j);
-  });
+
+  let sortedCrates = _.orderBy(
+    level.crates,
+    function(crate) {
+      return -crate.inmune_history.at(-1);
+    }
+  );
+  let crateSprsA = [crateSpr1_a, crateSpr2_a, crateSpr3_b];
+  let crateSprsB = [crateSpr1_b, crateSpr2_b, crateSpr3_a];
 
   let forwardsT = Math.pow(1 - turn_time, 1/3);
   let backwardsT = Math.pow(1 - turn_time, 3);
+
+  // only draw crates in holes
+  sortedCrates.forEach(crate => {
+    if (!crate.inHole.get()) return;
+    let state = crate.history[true_timeline_undos.length];
+    let prevState = crate.history[true_timeline_undos.length - 1];
+    if (prevState === undefined) prevState = state;
+    let inmune = crate.inmune_history[crate.inmune_history.length - 1];
+    let crate_forward = get_times_directions(true_timeline_undos.length-1)[inmune] == 1;
+    let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT);
+    let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT);
+    drawSpr(crateSprs[inmune], ci, cj);
+  });
+  sortedCrates.reverse();
+  sortedCrates.forEach(crate => {
+    if (!crate.inHole.get()) return;
+    let state = crate.history[true_timeline_undos.length];
+    let prevState = crate.history[true_timeline_undos.length - 1];
+    if (prevState === undefined) prevState = state;
+    let inmune = crate.inmune_history[crate.inmune_history.length - 1];
+    let crate_forward = get_times_directions(true_timeline_undos.length-1)[inmune] == 1;
+    let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT);
+    let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT);
+    drawSpr(crateSprsB[inmune], ci, cj);
+  });
+  sortedCrates.reverse();
+
+  ctx.globalAlpha = 0.2;
+  ctx.fillStyle = "black";
+  level.holes.forEach(([i,j]) => {
+    ctx.fillRect(i*TILE+OFFX,j*TILE+OFFY, TILE, TILE);
+    //drawSpr(holeSpr, i, j);
+  });
+  ctx.globalAlpha = 1;
+
+  level.targets.forEach(([i, j]) => {
+    drawSpr(targetSpr, i, j);
+  });
 
   let playerState = level.player.history[true_timeline_undos.length];
   let prevPlayerState = level.player.history[true_timeline_undos.length - 1];
@@ -221,20 +278,12 @@ function drawLevel(level) {
   let pj = lerp(prevPlayerState[1], playerState[1], player_forward ? forwardsT : backwardsT);
   // drawSpr(playerSpr, pi, pj);
 
-
-  let sortedCrates = _.orderBy(
-    level.crates,
-    function(crate) {
-      return -crate.inmune_history.at(-1);
-    }
-  );
-  let crateSprsA = [crateSpr1_a, crateSpr2_a, crateSpr3_b];
-  let crateSprsB = [crateSpr1_b, crateSpr2_b, crateSpr3_a];
   // drawSpr(playerSpr, playerState[0], playerState[1]);
   //ctx.fillText("@", playerState[0]*TILE+OFFX, playerState[1]*TILE+OFFY);
   //result[playerState[1]][playerState[0]] = '@' + level.player.inmune_history.at(-1);
   //level.crates.forEach(crate => {
   sortedCrates.forEach(crate => {
+    if (crate.inHole.get()) return;
     let state = crate.history[true_timeline_undos.length];
     let prevState = crate.history[true_timeline_undos.length - 1];
     if (prevState === undefined) prevState = state;
@@ -253,6 +302,7 @@ function drawLevel(level) {
   sortedCrates.reverse();
 
   sortedCrates.forEach(crate => {
+    if (crate.inHole.get()) return;
     let state = crate.history[true_timeline_undos.length];
     let prevState = crate.history[true_timeline_undos.length - 1];
     if (prevState === undefined) prevState = state;
@@ -368,10 +418,31 @@ function closedDoorAt(level, i, j) {
   return !doors.every(([di, dj, c]) => isDoorOpen(level, c));
 }
 
+function openHoleAt(level, i, j) {
+  return level.holes.some(([hi,hj]) => {
+    return hi == i && hj == j;
+  }) && !level.crates.some(crate => {
+    [ci, cj] = crate.history.at(-1);
+    return ci == i && cj == j && crate.inHole.get();
+  });
+}
+
 function machineAt(level, i, j) {
   return level.machines.find(([mi, mj, c]) => {
     return i == mi && j == mj;
   });
+}
+
+function neutralTurn(level) {
+  [pi, pj] = level.player.history.at(-1);
+  level.player.history.push([pi, pj]);
+  level.player.inmune_history.push(level.player.inmune_history.at(-1));
+  level.crates.forEach(crate => {
+    [ci, cj] = crate.history.at(-1);
+    crate.history.push([ci, cj]);
+    crate.inmune_history.push(crate.inmune_history.at(-1)); // unchecked
+    crate.inHole.add();
+  })
 }
 
 function isWon(level) {
@@ -410,105 +481,34 @@ function getCoveredGoals(level) {
   });
 }
 
-levels = [
-//   str2level(`\
-// #.............
-// #.............
-// #..........J..
-// #.............
-// #1.........K..
-// #*......O.....
-// #2............
-// #.............
-// #.............
-// #.............
-// #.............`),
-  str2level(`\
-####..
-#.*#..
-#..###
-#AO..#
-#..1.#
-#..###
-####..`),
-  /*str2level(`\
-  #########
-  #O.....*#
-  ###2#.###
-  ..#...#..
-  ..#####..`),*/ // too tutorialish
-  str2level(`\
-####..
-##*#..
-#..###
-#AO..#
-#..2.#
-#..###
-####..`),
-  str2level(`\
-###..
-#O#..
-#*#..
-#1#..
-#.###
-#...#
-#*2.#
-#..##
-####.`),
-  str2level(`\
-..####
-###.*#
-#O.1*#
-##2..#
-.#..##
-.####.`),
-  /*str2level(`\
-  ..#####..
-  ..#...#..
-  ..#.2.#..
-  #####.###
-  #.*1..*.#
-  #O.##...#
-  #########`),*/
-  str2level(`\
-#######
-#.....#
-#.1.2.#
-#..O..#
-#.3.*.#
-#.....#
-#######`),
-  str2level(`\
-.####
-.#..#
-##3.#
-#.1*#
-#OB.#
-##..#
-.####`),
-  str2level(`\
-.####.
-.#..#.
-##3*##
-#.21.#
-##.O##
-.####.`),
-  str2level(`\
-#####
-#...#
-#1#.#
-#*#O#
-#3#.#
-#...#
-#####`)
-];
-
 levels = easy_levels_raw.map(str => str2level(str));
 
 let cur_level_n = 0;
 let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7];
 
-function Movable(i, j, inmune, extra = 0, superSolid = false) {
+function PropertyHistory(initial_value, inmune, extra = 0) {
+  this.value = [initial_value];
+  if (typeof inmune == "number") inmune = [inmune];
+  this.inmune = inmune;
+  for (let k = 0; k < extra; k++) {
+    this.value.push(initial_value);
+  }
+}
+
+PropertyHistory.prototype.get = function(tick = undefined) {
+  if (tick === undefined) return this.value.at(-1);
+  return this.value[get_original_tick_2(tick, this.inmune)];
+}
+
+PropertyHistory.prototype.add = function(value = undefined) {
+  if (value === undefined) {
+    this.value.push(this.value.at(-1));
+  } else {
+    this.value.push(value);
+  }
+}
+
+function Movable(i, j, inmune, extra = 0, superSolid = DEFAULT_FORBID_OVERLAP) {
   this.history = [[i, j]];
   this.inmune_history = [inmune];
   this.superSolid = superSolid;
@@ -516,6 +516,7 @@ function Movable(i, j, inmune, extra = 0, superSolid = false) {
     this.history.push([i, j]);
     this.inmune_history.push(inmune);
   }
+  this.inHole = new PropertyHistory(false, this.inmune_history, extra);
   //this.inmune = inmune;
 }
 
@@ -531,6 +532,7 @@ function str2level(str) {
   let doors = [];
   let player_target = null;
   let machines = [];
+  let holes = [];
   for (let j = 0; j < h; j++) {
     let row = [];
     for (let i = 0; i < w; i++) {
@@ -556,11 +558,13 @@ function str2level(str) {
         player_target = [i, j];
       } else if ('JKLMN'.indexOf(chr) != -1) {
         machines.push([i, j, 'JKLMN'.indexOf(chr) + 1]);
+      } else if (chr == '_') {
+        holes.push([i, j]);
       }
     }
     geo.push(row);
   }
-  return { geo: geo, player: player, crates: crates, targets: targets, buttons: buttons, doors: doors, player_target: player_target, machines: machines, w: w, h: h };
+  return { geo: geo, player: player, crates: crates, targets: targets, buttons: buttons, doors: doors, player_target: player_target, machines: machines, holes: holes, w: w, h: h };
 }
 
 let true_timeline_undos = [];
@@ -692,6 +696,73 @@ function get_original_tick_2(tick, inmune_history) {
   return get_original_tick(tick, inmune_history.at(-1));
 }
 
+function level2str(level) {
+	let res = [];
+	let [pi, pj] = level.player.history.at(-1);
+	for (let j = 0; j < level.h; j++) {
+    let row = [];
+    for (let i = 0; i < level.w; i++) {
+			if (level.geo[j][i]) {
+				row.push('#');
+			} else {
+				let isPlayer = i == pi && j == pj;
+				let isTarget = level.targets.some(([ti, tj]) => {
+					return ti == i && tj == j;
+				});
+				let cur = isPlayer ? (isTarget ? '@' : 'O') : (isTarget ? '*' : '.');
+				row.push(cur);
+			}
+		}
+		res.push(row);
+	}
+	level.crates.forEach(crate => {
+		let [ci, cj] = crate.history.at(-1);
+		let n = crate.inmune_history.at(-1);
+		let cur = res[cj][ci];
+		res[cj][ci] = cur == '.' ? '123456789'[n] : 'ABCDEFGHI'[n]
+	});
+	return res.map(x => x.join('')).join('\n');
+}
+
+function loadFromText() {
+	levels[cur_level_n] = str2level(document.getElementById("inText").value);
+	loadLevel(cur_level_n);
+}
+function exportToText() {
+	document.getElementById("inText").value = level2str(levels[cur_level_n]);
+}
+
+function resizeLevel(a,b,c,d) {
+	exportToText();
+	let w = levels[cur_level_n].w;
+	let h = levels[cur_level_n].h;
+	let text = document.getElementById("inText").value;
+	let rows = text.split('\n');
+	if (a > 0) {
+		rows.unshift(".".repeat(w));
+	} else if (a < 0) {
+		rows.shift();
+	}
+	if (b > 0) {
+		rows = rows.map(row => '.' + row)
+	} else if (b < 0) {
+		rows = rows.map(row => row.slice(1));
+	}
+	if (c > 0) {
+		rows.push(".".repeat(w))
+	} else if (c < 0) {
+		rows.pop();
+	}
+	if (d > 0) {
+		rows = rows.map(row => row + '.')
+	} else if (d < 0) {
+		rows = rows.map(row => row.slice(0,-1));
+	}
+	text = rows.join('\n');
+	document.getElementById("inText").value = text;
+	loadFromText();
+}
+
 function resetLevel() {
   restartSound.play();
   loadLevel(cur_level_n);
@@ -718,6 +789,7 @@ function loadLevel(n) {
   cur_level.crates.forEach(crate => {
     crate.history.splice(1);
     crate.inmune_history.splice(1);
+    crate.inHole.value.splice(1);
   })
   cur_level.player.history.splice(1);
   cur_level.player.inmune_history.splice(1);
@@ -786,6 +858,7 @@ function draw() {
       let machine_input = pressed_key == ('z') && ALLOW_MACHINES;
 
       let SKIP_TURN = false;
+      let SKIPPED_TURN = false;
 
       let covered_goals = getCoveredGoals(cur_level);
 
@@ -813,12 +886,13 @@ function draw() {
       let real_tick = true_timeline_undos.length;
 
       let stuff = get_timeline_length(real_tick, 0);
-      console.log("stuff is ", stuff)
+      //console.log("stuff is ", stuff)
       if (stuff < 1 || SKIP_TURN) {
         true_timeline_undos.pop(); // undo this turn
         turn_time = 0;
+        SKIPPED_TURN = true;
       } else {
-        console.log("doing a turn");
+        //console.log("doing a turn");
         //travels = generate_travels(true_timeline_undos);
 
         player_tick = get_original_tick_2(real_tick, cur_level.player.inmune_history); // player isn't inmune to any undo level
@@ -827,11 +901,12 @@ function draw() {
           console.log("NEVER HAPPENS");
           true_timeline_undos.pop(); // undo this turn
           turn_time = 0;
+          SKIPPED_TURN = true;
         } else {
           //if (cur_level.player.history[player_tick] !== undefined) { // player is undoing
           if (cur_undo > 0) {
-            undoSounds[cur_undo-1].play()
-            if (cur_level.player.history[player_tick] !== undefined) {
+            undoSounds[cur_undo-1].play();
+            if (cur_level.player.history[player_tick] !== undefined) { // player is being undoed
               [i, j] = cur_level.player.history[player_tick];
               cur_level.player.history[real_tick] = [i, j];
               cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[player_tick];
@@ -846,44 +921,42 @@ function draw() {
                 [i, j] = crate.history[crate_tick];
                 crate.history[real_tick] = [i, j];
                 crate.inmune_history[real_tick] = crate.inmune_history[crate_tick]; // unchecked
+                crate.inHole.value[real_tick] = crate.inHole.value[crate_tick]; // unchecked
               } else {
                 [i, j] = crate.history[real_tick - 1];
                 crate.history[real_tick] = [i, j];
                 crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1]; // unchecked
+                crate.inHole.value[real_tick] = crate.inHole.value[real_tick - 1];
               }
-            })
+            });
+            if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
+              let boxes_moved = cur_level.crates.some(crate => {
+                let [ci1, cj1] = crate.history.at(-1);
+                let [ci2, cj2] = crate.history.at(-2);
+                return ci1 != ci2 || cj1 != cj2;
+              });
+              if (!boxes_moved) input_queue.push(cur_undo.toString());
+            }
           } else if (magic_stuff_input) {
-            [pi, pj] = cur_level.player.history[real_tick - 1];
-            cur_level.player.history[real_tick] = [pi, pj];
+            neutralTurn(cur_level);
             cur_level.player.inmune_history[real_tick] = 2; // magic!
-            //cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1];
-            cur_level.crates.forEach(crate => {
-              [ci, cj] = crate.history[real_tick - 1];
-              crate.history[real_tick] = [ci, cj];
-              crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1];
-              //crate.inmune_history[real_tick] = 1; // magic!
-            })
           } else { // player did an original move
             [pi, pj] = cur_level.player.history[real_tick - 1];
-            let bad_move = cur_level.geo[pj + cur_dj][pi + cur_di] || closedDoorAt(cur_level, pi + cur_di, pj + cur_dj);
-            console.log(bad_move);
+            let bad_move = cur_level.geo[pj + cur_dj][pi + cur_di] || closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) || openHoleAt(cur_level, pi + cur_di, pj + cur_dj);
+            // console.log(bad_move);
             if (bad_move) { // ignore this move
               wallSound.play();
               true_timeline_undos.pop();
               turn_time = 0;
+              SKIPPED_TURN = true;
             } else {
               let pushing_crate = cur_level.crates.findIndex(crate => {
                 [ci, cj] = crate.history[crate.history.length - 1];
-                return ci == pi + cur_di && cj == pj + cur_dj;
+                return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
               });
-              if (pushing_crate != -1) {
+              if (pushing_crate != -1) { // trying to push a crate
                 let next_space_i = pi + cur_di * 2;
                 let next_space_j = pj + cur_dj * 2;
-                /*let occupied_space = cur_level.geo[next_space_j][next_space_i] || cur_level.crates.some(crate => {
-                  [ci, cj] = crate.history[crate.history.length-1];
-                  return ci == next_space_i && cj == next_space_j;
-                }) || closedDoorAt(cur_level,next_space_i,next_space_j);
-                bad_move = bad_move || occupied_space;*/
                 let occupied_by_wall = cur_level.geo[next_space_j][next_space_i] || closedDoorAt(cur_level, next_space_i, next_space_j);
                 if (occupied_by_wall) { // ignore this move
                   if (ALLOW_CHANGE_PLAYER) {
@@ -891,84 +964,65 @@ function draw() {
                     let pushing_inmune = cur_level.crates[pushing_crate].inmune_history[real_tick - 1];
                     let player_inmune = cur_level.player.inmune_history[real_tick - 1];
                     if (player_inmune != pushing_inmune) {
-                      [pi, pj] = cur_level.player.history[real_tick - 1];
-                      cur_level.player.history[real_tick] = [pi, pj];
-                      cur_level.player.inmune_history[real_tick] = pushing_inmune; // change player inmunity
-                      cur_level.crates.forEach(crate => {
-                        [ci, cj] = crate.history[real_tick - 1];
-                        crate.history[real_tick] = [ci, cj];
-                        crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1]; // unchecked
-                      })
+                      neutralTurn(cur_level);
+                      cur_level.player.inmune_history[real_tick] = pushing_inmune;
                     } else { // ignore this move
                       true_timeline_undos.pop();
                       turn_time = 0;
+                      SKIPPED_TURN = true;
                     }
                   } else {
                     wallSound.play();
                     true_timeline_undos.pop();
                     turn_time = 0;
+                    SKIPPED_TURN = true;
                   }
                 } else {
-                  let occupied_by_crate = cur_level.crates.findIndex(crate => {
-                    [ci, cj] = crate.history[crate.history.length - 1];
-                    return ci == next_space_i && cj == next_space_j;
-                  });
-                  if (occupied_by_crate != -1) {
-                    if (ALLOW_CHANGE_CRATES) {
-                      // Change inmunity of pushed crate!!
-                      let pushing_inmune = cur_level.crates[pushing_crate].inmune_history[real_tick - 1];
-                      let pushed_inmune = cur_level.crates[occupied_by_crate].inmune_history[real_tick - 1];
-                      if (pushing_inmune != pushed_inmune) {
-                        // but first, the neutral turn stuff
-                        [pi, pj] = cur_level.player.history[real_tick - 1];
-                        cur_level.player.history[real_tick] = [pi, pj];
-                        cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1];
-                        cur_level.crates.forEach(crate => {
-                          [ci, cj] = crate.history[real_tick - 1];
-                          crate.history[real_tick] = [ci, cj];
-                          crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1]; // unchecked
-                        })
-                        cur_level.crates[occupied_by_crate].inmune_history[real_tick] = pushing_inmune;
-                      } else { // ignore this move
-                        true_timeline_undos.pop();
+                  let occupied_by_hole = openHoleAt(cur_level, next_space_i, next_space_j);
+
+                  if (occupied_by_hole) {
+                    // holeSound.play(); // TODO
+                    neutralTurn(cur_level);
+                    cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
+                    cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
+                    cur_level.crates[pushing_crate].inHole.value[real_tick] = true;
+                  } else {
+                    let occupied_by_crate = cur_level.crates.findIndex(crate => {
+                      [ci, cj] = crate.history[crate.history.length - 1];
+                      return ci == next_space_i && cj == next_space_j && !crate.inHole.get();
+                    });
+                    if (occupied_by_crate != -1) {
+                      if (ALLOW_CHANGE_CRATES) {
+                        // Change inmunity of pushed crate!!
+                        let pushing_inmune = cur_level.crates[pushing_crate].inmune_history[real_tick - 1];
+                        let pushed_inmune = cur_level.crates[occupied_by_crate].inmune_history[real_tick - 1];
+                        if (pushing_inmune != pushed_inmune) {
+                          // but first, the neutral turn stuff
+                          neutralTurn(cur_level)
+                          cur_level.crates[occupied_by_crate].inmune_history[real_tick] = pushing_inmune;
+                        } else { // ignore this move
+                          true_timeline_undos.pop();
+                          turn_time = 0;
+                          SKIPPED_TURN = true;
+                        }
+                      } else {
+                        wallSound.play();
+                        true_timeline_undos.pop(); // ignore this move
                         turn_time = 0;
+                        SKIPPED_TURN = true;
                       }
                     } else {
-                      wallSound.play();
-                      true_timeline_undos.pop(); // ignore this move
-                      turn_time = 0;
+                      pushSound.play();
+                      neutralTurn(cur_level);
+                      cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
+                      cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
                     }
-                  } else {
-                    pushSound.play();
-                    cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
-                    cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1];
-                    cur_level.crates.forEach(crate => {
-                      [ci, cj] = crate.history[real_tick - 1];
-                      if (ci == pi + cur_di && cj == pj + cur_dj) {
-                        crate.history[real_tick] = [ci + cur_di, cj + cur_dj];
-                        crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1]; // unchecked
-                      } else {
-                        crate.history[real_tick] = [ci, cj];
-                        crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1]; // unchecked
-                      }
-                    })
                   }
                 }
               } else {
                 stepSound.play();
+                neutralTurn(cur_level);
                 cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
-                cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1];
-                cur_level.crates.forEach(crate => {
-                  [ci, cj] = crate.history[real_tick - 1];
-                  if (ci == pi + cur_di && cj == pj + cur_dj) {
-                    crate.history[real_tick] = [ci + cur_di, cj + cur_dj];
-                    crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1]; // unchecked
-                    console.log("NEVER ENTER THIS IF")
-                  } else {
-                    crate.history[real_tick] = [ci, cj];
-                    crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1]; // unchecked
-                  }
-                })
               }
             }
           }
@@ -979,32 +1033,65 @@ function draw() {
       if (covered_goals_late.some(n => {
         return covered_goals.indexOf(n) == -1;
       })) goalSound.play();
-    }
 
-    [pi, pj] = cur_level.player.history.at(-1);
-    let forbidden_overlap = cur_level.crates.some((crate, i) => {
-      if (crate.superSolid) {
-        let [c1i, c1j] = crate.history.at(-1);
-        return (c1i == pi && c1j == pj) || cur_level.crates.some((crate2, j) => {
-          if (i == j) return false;
-          let [c2i, c2j] = crate2.history.at(-1);
-          return c2i == c1i && c2j == c1j;
+
+      // forbidden_overlap stuff
+      [pi, pj] = cur_level.player.history.at(-1);
+      let forbidden_overlap = cur_level.crates.some((crate, i) => {
+        // TODO: add hole support
+        if (crate.superSolid) {
+          if (crate.inHole.get()) {
+            // overlaps with a crate outside the hole?
+            let [c1i, c1j] = crate.history.at(-1);
+            return cur_level.crates.some((crate2, j) => {
+              if (i == j) return false;
+              let [c2i, c2j] = crate2.history.at(-1);
+              return c2i == c1i && c2j == c1j && crate2.inHole.get();
+            })
+          } else {
+            // overlaps with a crate outside a hole?
+            let [c1i, c1j] = crate.history.at(-1);
+            return (c1i == pi && c1j == pj) || cur_level.crates.some((crate2, j) => {
+              if (i == j) return false;
+              let [c2i, c2j] = crate2.history.at(-1);
+              return c2i == c1i && c2j == c1j && !crate2.inHole.get();
+            })
+          }
+        } else {
+          return false;
+        }
+      });
+
+      console.log(forbidden_overlap);
+
+      if (forbidden_overlap) {
+        // TODO: add hole support
+        // forget last move
+        true_timeline_undos.pop();
+        turn_time = 0;
+        SKIPPED_TURN = true;
+        cur_level.player.history.pop();
+        cur_level.player.inmune_history.pop();
+        cur_level.crates.forEach(crate => {
+          crate.history.pop()
+          crate.inmune_history.pop()
+          crate.inHole.value.pop()
         })
-      } else {
-        return false;
       }
-    });
 
-    if (forbidden_overlap) {
-      // forget last move
-      true_timeline_undos.pop();
-      turn_time = 0;
-      cur_level.player.history.pop();
-      cur_level.player.inmune_history.pop();
-      cur_level.crates.forEach(crate => {
-        crate.history.pop()
-        crate.inmune_history.pop()
-      })
+
+      if (!SKIPPED_TURN && cur_undo == 0) {
+        // drop crates over holes
+        let flying_crates = cur_level.crates.filter(crate => {
+          let [ci, cj] = crate.history.at(-1);
+          return openHoleAt(cur_level, ci, cj)
+          //return !crate.inHole.get() &&
+        })
+        //console.log('flying crates: ', flying_crates);
+        flying_crates.forEach(crate => {
+          crate.inHole.value[crate.inHole.value.length - 1] = true;
+        });
+      }
     }
   }
 
@@ -1018,6 +1105,11 @@ function draw() {
         cur_level.geo[mj][mi] = true;
       } else if (isButtonDown(1)) {
         cur_level.geo[mj][mi] = false;
+				cur_level.targets = cur_level.targets.filter(([i,j]) =>	i != mi || j != mj);
+				cur_level.crates = cur_level.crates.filter(crate =>	{
+					let [i,j] = crate.history.at(-1);
+					return i != mi || j != mj
+				});
       } else if (wasKeyPressed('z')) {
         cur_level.crates.push(new Movable(mi, mj, 0, extra = true_timeline_undos.length))
       } else if (wasKeyPressed('x')) {
@@ -1030,7 +1122,25 @@ function draw() {
         cur_level.buttons.push([mi, mj, 'p']);
       } else if (wasKeyPressed('P')) {
         cur_level.doors.push([mi, mj, 'P']);
-      }
+      } else if (wasKeyPressed('q')) {
+				cur_level.targets.push([mi, mj]);
+			} else if (wasKeyPressed('i')) { // level sizing (smaller)
+				resizeLevel(1,0,0,0);
+			} else if (wasKeyPressed('j')) {
+				resizeLevel(0,1,0,0);
+			} else if (wasKeyPressed('k')) {
+				resizeLevel(0,0,1,0);
+			} else if (wasKeyPressed('l')) {
+				resizeLevel(0,0,0,1);
+			} else if (wasKeyPressed('I')) { // level sizing (bigger)
+				resizeLevel(-1,0,0,0);
+			} else if (wasKeyPressed('J')) {
+				resizeLevel(0,-1,0,0);
+			} else if (wasKeyPressed('K')) {
+				resizeLevel(0,0,-1,0);
+			} else if (wasKeyPressed('L')) {
+				resizeLevel(0,0,0,-1);
+			}
     }
   }
 
