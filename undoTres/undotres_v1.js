@@ -57,7 +57,6 @@ let restartSound = new Howl({
 //let using_machine_n_turns = 0;
 let using_machine_type = null;
 
-// const wallSpr = str2spr('#026B9C #028DBF',`\
 const wallSpr = str2spr('#006a9c #007ca8',`\
 00010
 11111
@@ -950,18 +949,25 @@ function draw() {
               turn_time = 0;
               SKIPPED_TURN = true;
             } else {
-              let pushing_crate = cur_level.crates.findIndex(crate => {
+              /*let pushing_crate = cur_level.crates.findIndex(crate => {
                 [ci, cj] = crate.history[crate.history.length - 1];
                 return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
-              });
-              if (pushing_crate != -1) { // trying to push a crate
+              });*/
+			  let pushing_crates = cur_level.crates.reduce((acc,crate,index) => {
+                [ci, cj] = crate.history[crate.history.length - 1];
+                if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index);
+				return acc;
+              }, []);
+			  //console.log(pushing_crates);
+              if (pushing_crates.length > 0) { // trying to push a crate
                 let next_space_i = pi + cur_di * 2;
                 let next_space_j = pj + cur_dj * 2;
                 let occupied_by_wall = cur_level.geo[next_space_j][next_space_i] || closedDoorAt(cur_level, next_space_i, next_space_j);
                 if (occupied_by_wall) { // ignore this move
                   if (ALLOW_CHANGE_PLAYER) {
                     // Change inmunity of player!!
-                    let pushing_inmune = cur_level.crates[pushing_crate].inmune_history[real_tick - 1];
+					// arbitrary choice when pushing several crates, oops.
+                    let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1];
                     let player_inmune = cur_level.player.inmune_history[real_tick - 1];
                     if (player_inmune != pushing_inmune) {
                       neutralTurn(cur_level);
@@ -984,8 +990,10 @@ function draw() {
                     // holeSound.play(); // TODO
                     neutralTurn(cur_level);
                     cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
-                    cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
-                    cur_level.crates[pushing_crate].inHole.value[real_tick] = true;
+                    pushing_crates.forEach(pushing_crate => {
+						cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
+						cur_level.crates[pushing_crate].inHole.value[real_tick] = true;
+					});
                   } else {
                     let occupied_by_crate = cur_level.crates.findIndex(crate => {
                       [ci, cj] = crate.history[crate.history.length - 1];
@@ -994,7 +1002,8 @@ function draw() {
                     if (occupied_by_crate != -1) {
                       if (ALLOW_CHANGE_CRATES) {
                         // Change inmunity of pushed crate!!
-                        let pushing_inmune = cur_level.crates[pushing_crate].inmune_history[real_tick - 1];
+						// arbitrary choice when pushing several crates, oops.
+                        let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1];
                         let pushed_inmune = cur_level.crates[occupied_by_crate].inmune_history[real_tick - 1];
                         if (pushing_inmune != pushed_inmune) {
                           // but first, the neutral turn stuff
@@ -1014,8 +1023,11 @@ function draw() {
                     } else {
                       pushSound.play();
                       neutralTurn(cur_level);
-                      cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
-                      cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
+                      cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];                      
+					  pushing_crates.forEach(pushing_crate => {
+						cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
+					  });
+					  console.log(pushing_crates);
                     }
                   }
                 }
@@ -1203,7 +1215,7 @@ function _mouseEvent(e) {
   mouse.x = e.clientX;
   mouse.y = e.clientY;
   mouse.buttons = e.buttons;
-  e.preventDefault();
+  if (!ALLOW_EDITOR) e.preventDefault();
   return false;
 }
 
