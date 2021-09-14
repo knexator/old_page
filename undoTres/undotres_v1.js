@@ -704,7 +704,9 @@ function level2str(level) {
     for (let i = 0; i < level.w; i++) {
 			if (level.geo[j][i]) {
 				row.push('#');
-			} else {
+			} else if (openHoleAt(level, i, j)) {
+        row.push('_');
+      } else {
 				let isPlayer = i == pi && j == pj;
 				let isTarget = level.targets.some(([ti, tj]) => {
 					return ti == i && tj == j;
@@ -1105,6 +1107,7 @@ function draw() {
         cur_level.geo[mj][mi] = true;
       } else if (isButtonDown(1)) {
         cur_level.geo[mj][mi] = false;
+				cur_level.holes = cur_level.holes.filter(([i,j]) =>	i != mi || j != mj);
 				cur_level.targets = cur_level.targets.filter(([i,j]) =>	i != mi || j != mj);
 				cur_level.crates = cur_level.crates.filter(crate =>	{
 					let [i,j] = crate.history.at(-1);
@@ -1124,7 +1127,9 @@ function draw() {
         cur_level.doors.push([mi, mj, 'P']);
       } else if (wasKeyPressed('q')) {
 				cur_level.targets.push([mi, mj]);
-			} else if (wasKeyPressed('i')) { // level sizing (smaller)
+			} else if (wasKeyPressed('e')) {
+        cur_level.holes.push([mi, mj]);
+      } else if (wasKeyPressed('i')) { // level sizing (smaller)
 				resizeLevel(1,0,0,0);
 			} else if (wasKeyPressed('j')) {
 				resizeLevel(0,1,0,0);
