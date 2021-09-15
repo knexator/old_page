@@ -823,6 +823,12 @@ function doUndo(n) {
   input_queue.push(n.toString())
 }
 
+function getKeyRetriggerTime(key) {
+  if ('123456789'.indexOf(key) != -1) return KEY_RETRIGGER_TIME / 2;
+  // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
+  return Infinity;
+}
+
 function draw() {
   //ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = ALLOW_EDITOR ? COLORS.floorWin : COLORS.background; // #75366D
@@ -831,7 +837,8 @@ function draw() {
   let now = Date.now();
   Object.keys(keyboard_last_pressed).forEach(key => {
     if (keyboard_last_pressed[key] === null) return;
-    if (now - keyboard_last_pressed[key] > KEY_RETRIGGER_TIME) {
+    //if (now - keyboard_last_pressed[key] > KEY_RETRIGGER_TIME) {
+    if (now - keyboard_last_pressed[key] > getKeyRetriggerTime(key)) {
       input_queue.push(key);
       keyboard_last_pressed[key] = now;
     }
@@ -847,18 +854,19 @@ function draw() {
     turn_time = Math.max(turn_time, 0);
   } else {
 
-    let cur_undo = 0;
+    /*let cur_undo = 0;
     for (let i = 1; i < 10; i++) {
       if (isKeyDown(i.toString())) cur_undo = i;
-    }
+    }*/
 
-    if (input_queue.length == 0 && cur_undo == 0) {
+    //if (input_queue.length == 0 && cur_undo == 0) {
+    if (input_queue.length == 0) {
     //if (cur_undo == 0 && cur_di == 0 && cur_dj == 0 && !magic_stuff_input && !machine_input) {
       // nothing happened
     } else {
 
       let pressed_key = input_queue.shift();
-      //let cur_undo = 0;
+      let cur_undo = 0;
       for (let i = 1; i < 10; i++) {
         if (pressed_key == i.toString()) cur_undo = i;
       }
