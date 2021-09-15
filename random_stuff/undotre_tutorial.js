@@ -684,7 +684,7 @@ function loadLevel(n) {
     undoButtons[2].style.display = '';
   }*/
   let undoButtons = document.getElementById("footer").children;
-  if (n == 5) {
+  if (n == 4) {
     undoButtons[1].style.display = '';
   }
 }
