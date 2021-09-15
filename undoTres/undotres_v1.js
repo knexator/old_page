@@ -1339,13 +1339,18 @@ let keyboard_last_pressed = {}
 
 function keyMap (e) {
   // use key.code if key location is important
-  if (ALLOW_EDITOR) return e.key
+  if (ALLOW_EDITOR) return e.key;
+  if (e.key == 'ArrowLeft') return 'a';
+  if (e.key == 'ArrowRight') return 'd';
+  if (e.key == 'ArrowDown') return 's';
+  if (e.key == 'ArrowUp') return 'w';
   return e.key.toLowerCase()
 }
 
 window.addEventListener('keydown', e => {
-  if (e.repeat) return
-  let k = keyMap(e)
+  if (e.repeat) return;
+
+  let k = keyMap(e);
   if ('wasdzx123456789'.indexOf(k) != -1) input_queue.push(k)
   keyboard[k] = true
   keyboard_last_pressed[k] = Date.now()
