@@ -15,7 +15,7 @@ let ALLOW_CHANGE_PLAYER = false
 let ALLOW_CHANGE_CRATES = false
 let ALLOW_EDITOR = false
 let ALLOW_MACHINES = true
-let ALLOW_CRATE_ON_TOP_OF_MACHINE = false
+let ALLOW_CRATE_ON_TOP_OF_MACHINE = true
 let ALLOW_MAGIC_INPUT = false
 let KEEP_UNDOING_UNTIL_CRATE_MOVE = false
 let DEFAULT_FORBID_OVERLAP = false
@@ -66,11 +66,17 @@ let COLORS = {
   'wall': '#909C6E', // '#006a9c #007ca8'
   'floor': '#696E4F', // '#803D7D #75366D'
   'floorWin': '#507f3d', // '#507f3d #437737'  // 437737
-  'player': '#F07167', // F07167 '#947BD3', // '#ffd080 #fe546f'
+  'player': '#6EE745', // F07167 '#947BD3', // '#ffd080 #fe546f'
   'target': '#83765D', // #ff9e7d
-  'crate1': '#24d3f2', // 24d3f2
+  /* 'crate1': '#24d3f2', // 24d3f2
   'crate2': '#abff4f', // aaff54
-  'crate3': '#ff3366' // ff245b
+  'crate3': '#ff3366' // ff245b */
+  'crate1': '#F8CB58',
+  'crate2': '#F8984E',
+  'crate3': '#F8643F',
+  'machine1': '#F5B512',  // E9C46A D2BA7F E9A90A
+  'machine2': '#F46F0A', // E89A5E D09D76 E26709
+  'machine3': '#EC3609' // E76F51 CD7E6A D83208
 }
 COLORS.background = COLORS.floor // #75366D
 
@@ -175,19 +181,19 @@ const holeSpr = str2spr('#52174f', `\
 00000`)
 const sprMap = [floorSpr, wallSpr]
 const machineSprs = [
-  str2spr(COLORS.crate1, `\
+  str2spr(COLORS.machine1, `\
 00.00
 0...0
 .....
 0...0
 00.00`),
-  str2spr(COLORS.crate2, `\
+  str2spr(COLORS.machine2, `\
 00.00
 0...0
 .....
 0...0
 00.00`),
-  str2spr(COLORS.crate3, `\
+  str2spr(COLORS.machine3, `\
 00.00
 0...0
 .....
@@ -224,15 +230,36 @@ function drawSpr (spr, i, j) {
   }
 }
 
+function drawSprScaled (spr, i, j, scale_x = 1, scale_y = 1) {
+  if (!spr) return
+  ctx.fillStyle = spr.colors[0]
+  let s = 0.22
+  for (let x = 0; x < 5; x++) {
+    for (let y = 0; y < 5; y++) {
+      if (!isNaN(spr.data[x][y])) {
+        // ctx.fillStyle = spr.colors[spr.data[x][y]];
+        s1 = x == 4 ? 0.2 : 0.22
+        s2 = y == 4 ? 0.2 : 0.22
+        ctx.fillRect((i + (1 - scale_x) / 2 + x * 0.2 * scale_x) * TILE + OFFX, (j + y * 0.2) * TILE + OFFY, TILE * s1 * scale_x, TILE * s2)
+      }
+    }
+  }
+}
+
 function drawLevel (level) {
   let is_won = isWon(level)
   let geo = level.geo
+  ctx.fillStyle = COLORS.wall
+  if (ALLOW_EDITOR) {
+    ctx.strokeRect(OFFX - 0.1 * TILE, OFFY - 0.1 * TILE, (level.w + 0.2) * TILE, (level.h + 0.2) * TILE)
+  }
   for (let j = 0; j < geo.length; j++) {
     for (let i = 0; i < geo[0].length; i++) {
       if (geo[j][i]) {
-        drawSpr(wallSpr, i, j)
+        // drawSpr(wallSpr, i, j)
+        ctx.fillRect(i * TILE + OFFX, j * TILE + OFFY, TILE, TILE)
       } else {
-        drawSpr(is_won ? floorWinSpr : floorSpr, i, j)
+        // drawSpr(is_won ? floorWinSpr : floorSpr, i, j)
       }
     }
   }
@@ -319,6 +346,10 @@ function drawLevel (level) {
     // result[state[1]][state[0]] += (inmune + 1).toString();
   })
 
+  // let player_scale_x = player_forward ? (1 - turn_time) * .7 + .35 : (turn_time) * .7 + .35;
+  // if (turn_time == 0) player_scale_x = 1;
+  // player_scale_x = 1 - 6.66*player_scale_x + 15*player_scale_x*player_scale_x - 8.3*player_scale_x*player_scale_x*player_scale_x
+  // drawSprScaled(playerSpr, pi, pj, player_scale_x, 1);
   drawSpr(playerSpr, pi, pj)
   sortedCrates.reverse()
 
@@ -502,10 +533,10 @@ function getCoveredGoals (level) {
   })
 }
 
-levels = easy_levels_raw.map(str => str2level(str))
+levels = hole_levels_raw.map(str => str2level(str))
 
 let cur_level_n = 0
-let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7]
+let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7,8,9,10,11,12,13,14,15,16,17];
 
 function PropertyHistory (initial_value, inmune, extra = 0) {
   this.value = [initial_value]
@@ -859,7 +890,8 @@ function getKeyRetriggerTime (key) {
 
 function draw () {
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = ALLOW_EDITOR ? COLORS.floorWin : COLORS.background // #75366D
+  // ctx.fillStyle = ALLOW_EDITOR ? COLORS.floorWin : COLORS.background // #75366D
+  ctx.fillStyle = COLORS.background // #75366D
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   let now = Date.now()
@@ -1211,12 +1243,12 @@ function draw () {
       } else if (wasKeyPressed('L')) {
         resizeLevel(0, 0, 0, -1)
       } else if (wasKeyPressed('b')) { // undo machines
-  cur_level.machines.push([mi, mj, 1])
-} else if (wasKeyPressed('n')) {
+        cur_level.machines.push([mi, mj, 1])
+      } else if (wasKeyPressed('n')) {
         cur_level.machines.push([mi, mj, 2])
       } else if (wasKeyPressed('m')) {
-  cur_level.machines.push([mi, mj, 3])
-}
+        cur_level.machines.push([mi, mj, 3])
+      }
     }
   }
 
