@@ -14,7 +14,8 @@ let TURN_SPEED = 0.3;
 let ALLOW_CHANGE_PLAYER = false;
 let ALLOW_CHANGE_CRATES = false;
 let ALLOW_EDITOR = false;
-let ALLOW_MACHINES = false;
+let ALLOW_MACHINES = true;
+let ALLOW_CRATE_ON_TOP_OF_MACHINE = false;
 let ALLOW_MAGIC_INPUT = false;
 let KEEP_UNDOING_UNTIL_CRATE_MOVE = false;
 let DEFAULT_FORBID_OVERLAP = false;
@@ -52,6 +53,7 @@ let undoSounds = [
     src: ['undo4.wav']
   }),
 ];
+undoSounds[8] = undoSounds[0];
 let restartSound = new Howl({
   src: ['restart.wav'],
   volume: 0.4
@@ -173,6 +175,26 @@ const holeSpr = str2spr('#52174f', `\
 00000
 00000`)
 const sprMap = [floorSpr, wallSpr];
+const machineSprs = [
+  str2spr(COLORS.crate1, `\
+00.00
+0...0
+.....
+0...0
+00.00`),
+str2spr(COLORS.crate2, `\
+00.00
+0...0
+.....
+0...0
+00.00`),
+str2spr(COLORS.crate3, `\
+00.00
+0...0
+.....
+0...0
+00.00`),
+]
 
 function str2spr(cols, str) {
   str = str.split('\n');
@@ -264,6 +286,9 @@ function drawLevel(level) {
 
   level.targets.forEach(([i, j]) => {
     drawSpr(targetSpr, i, j);
+  });
+  level.machines.forEach(([i,j,t]) => {
+    drawSpr(machineSprs[t-1], i, j);
   });
 
   let playerState = level.player.history[true_timeline_undos.length];
@@ -714,6 +739,10 @@ function level2str(level) {
 		}
 		res.push(row);
 	}
+  level.machines.forEach(([i,j,l]) => {
+    res[j][i] = 'JKLMN'[l-1];
+  });
+
 	level.crates.forEach(crate => {
 		let [ci, cj] = crate.history.at(-1);
 		let n = crate.inmune_history.at(-1);
@@ -826,6 +855,7 @@ function doUndo(n) {
 function getKeyRetriggerTime(key) {
   if ('123456789'.indexOf(key) != -1) return KEY_RETRIGGER_TIME / 2;
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
+  if (key == 'z' || key == 'x') return KEY_RETRIGGER_TIME / 2;
   return Infinity;
 }
 
@@ -877,8 +907,10 @@ function draw() {
       if (pressed_key == ('w')) cur_dj -= 1;
       if (pressed_key == ('s')) cur_dj += 1;
 
-      let magic_stuff_input = pressed_key == ('e') && ALLOW_MAGIC_INPUT;
-      let machine_input = pressed_key == ('z') && ALLOW_MACHINES;
+      let magic_stuff_input = pressed_key == 'e' && ALLOW_MAGIC_INPUT;
+      let machine_input_back = pressed_key == 'z' && ALLOW_MACHINES;
+      let machine_input_front = pressed_key == 'x' && ALLOW_MACHINES;
+      let machine_input = machine_input_back || machine_input_front;
 
       let SKIP_TURN = false;
       let SKIPPED_TURN = false;
@@ -886,18 +918,20 @@ function draw() {
       let covered_goals = getCoveredGoals(cur_level);
 
       if (machine_input) {
+        console.log("machine input")
         if (using_machine_type === null) {
           [pi, pj] = cur_level.player.history.at(-1);
           let machine = machineAt(cur_level, pi, pj);
-          if (machine === undefined) {
+          if (machine === undefined || machine_input_front) {
             // ignore this turn
             SKIP_TURN = true;
           } else {
+            console.log("using a machine")
             using_machine_type = machine[2];
-            cur_undo = using_machine_type;
+            cur_undo = machine_input_back ? using_machine_type : 9;
           }
         } else {
-          cur_undo = using_machine_type;
+          cur_undo = machine_input_back ? using_machine_type : 9;
         }
       } else {
         using_machine_type = null;
@@ -928,7 +962,7 @@ function draw() {
         } else {
           //if (cur_level.player.history[player_tick] !== undefined) { // player is undoing
           if (cur_undo > 0) {
-            undoSounds[cur_undo-1].play();
+            if (undoSounds[cur_undo-1]) undoSounds[cur_undo-1].play();
             if (cur_level.player.history[player_tick] !== undefined) { // player is being undoed
               [i, j] = cur_level.player.history[player_tick];
               cur_level.player.history[real_tick] = [i, j];
@@ -977,16 +1011,19 @@ function draw() {
                 [ci, cj] = crate.history[crate.history.length - 1];
                 return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
               });*/
-			  let pushing_crates = cur_level.crates.reduce((acc,crate,index) => {
+      			  let pushing_crates = cur_level.crates.reduce((acc,crate,index) => {
                 [ci, cj] = crate.history[crate.history.length - 1];
                 if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index);
-				return acc;
+      				return acc;
               }, []);
 			  //console.log(pushing_crates);
               if (pushing_crates.length > 0) { // trying to push a crate
                 let next_space_i = pi + cur_di * 2;
                 let next_space_j = pj + cur_dj * 2;
                 let occupied_by_wall = cur_level.geo[next_space_j][next_space_i] || closedDoorAt(cur_level, next_space_i, next_space_j);
+                if (!ALLOW_CRATE_ON_TOP_OF_MACHINE) {
+                 occupied_by_wall = occupied_by_wall || machineAt(cur_level, next_space_i, next_space_j);
+               }
                 if (occupied_by_wall) { // ignore this move
                   if (ALLOW_CHANGE_PLAYER) {
                     // Change inmunity of player!!
@@ -1148,9 +1185,10 @@ function draw() {
 					let [i,j] = crate.history.at(-1);
 					return i != mi || j != mj
 				});
-      } else if (wasKeyPressed('z')) {
+        cur_level.machines = cur_level.machines.filter(([i,j,t]) =>	i != mi || j != mj);
+      } else if (wasKeyPressed('f')) {
         cur_level.crates.push(new Movable(mi, mj, 0, extra = true_timeline_undos.length))
-      } else if (wasKeyPressed('x')) {
+      } else if (wasKeyPressed('g')) {
         cur_level.crates.push(new Movable(mi, mj, 1, extra = true_timeline_undos.length))
       } else if (wasKeyPressed('c')) {
         cur_level.crates.push(new Movable(mi, mj, 2, extra = true_timeline_undos.length))
@@ -1180,6 +1218,12 @@ function draw() {
 				resizeLevel(0,0,-1,0);
 			} else if (wasKeyPressed('L')) {
 				resizeLevel(0,0,0,-1);
+			} else if (wasKeyPressed('b')) { // undo machines
+				cur_level.machines.push([mi, mj, 1]);
+			} else if (wasKeyPressed('n')) {
+				cur_level.machines.push([mi, mj, 2]);
+			} else if (wasKeyPressed('m')) {
+				cur_level.machines.push([mi, mj, 3]);
 			}
     }
   }
@@ -1280,7 +1324,7 @@ function keyMap(e) {
 window.addEventListener('keydown', e => {
   if (e.repeat) return;
   let k = keyMap(e);
-  if ('wasd123456789'.indexOf(k) != -1) input_queue.push(k);
+  if ('wasdzx123456789'.indexOf(k) != -1) input_queue.push(k);
   keyboard[k] = true;
   keyboard_last_pressed[k] = Date.now();
 });
