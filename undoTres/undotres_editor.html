@@ -87,6 +87,7 @@ canvas {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
 <script src="howler.core.min.js"></script>
 <script src="levels_easy.js"></script>
+<script src="levels_holes.js"></script>
 <script src="undotres_v1.js"></script>
 <script>// @ts-nocheck
 ALLOW_EDITOR = true;
@@ -101,4 +102,6 @@ ALLOW_MAGIC_INPUT = false;
 DEFAULT_FORBID_OVERLAP = false;
 
 KEEP_UNDOING_UNTIL_CRATE_MOVE = false;
+
+levels = hole_levels_raw.map(str => str2level(str));
 </script>

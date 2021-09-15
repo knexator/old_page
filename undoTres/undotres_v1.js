@@ -16,8 +16,9 @@ let ALLOW_CHANGE_CRATES = false;
 let ALLOW_EDITOR = false;
 let ALLOW_MACHINES = false;
 let ALLOW_MAGIC_INPUT = false;
-let KEEP_UNDOING_UNTIL_CRATE_MOVE = true;
+let KEEP_UNDOING_UNTIL_CRATE_MOVE = false;
 let DEFAULT_FORBID_OVERLAP = false;
+let KEY_RETRIGGER_TIME = 200;
 
 let goalSound = new Howl({
   src: ['goal.wav']
@@ -33,6 +34,9 @@ let pushSound = new Howl({
 });
 let winSound = new Howl({
   src: ['win.wav']
+});
+let holeSound = new Howl({
+  src: ['hole.wav']
 });
 let undoSounds = [
   new Howl({
@@ -57,58 +61,62 @@ let restartSound = new Howl({
 //let using_machine_n_turns = 0;
 let using_machine_type = null;
 
-const wallSpr = str2spr('#006a9c #007ca8',`\
+let COLORS = {
+  'wall': '#909C6E', // '#006a9c #007ca8'
+  'floor': '#696E4F', // '#803D7D #75366D'
+  'floorWin': '#507f3d', // '#507f3d #437737'  // 437737
+  'player': '#F07167', // F07167 '#947BD3', // '#ffd080 #fe546f'
+  'target': '#83765D', // #ff9e7d
+  'crate1': '#24d3f2', // 24d3f2
+  'crate2': '#abff4f', // aaff54
+  'crate3': '#ff3366', // ff245b
+}
+COLORS.background = COLORS.floor // #75366D
+
+const wallSpr = str2spr(COLORS.wall,`\
 00010
 11111
 01000
 11111
 00010`)
-
-const playerSpr = str2spr('#ffd080 #fe546f', `\
+const playerSpr = str2spr(COLORS.player, `\
 .000.
 .010.
 00000
 .000.
 .0.0.`)
 
-const crateSpr = str2spr('#fe546f', `\
-00000
-0...0
-0...0
-0...0
-00000`)
-
-const crateSpr1 = str2spr('#24d3f2', `\
+const crateSpr1 = str2spr(COLORS.crate1, `\
 .000.
 00000
 00000
 00000
 .000.`);
-const crateSpr2 = str2spr('#aaff54', `\
+const crateSpr2 = str2spr(COLORS.crate2, `\
 .000.
 00000
 00000
 00000
 .000.`);
-const crateSpr1_a = str2spr('#24d3f2', `\
+const crateSpr1_a = str2spr(COLORS.crate1, `\
 .0.0.
 0.0.0
 .0.0.
 0.0.0
 .0.0.`);
-const crateSpr1_b = str2spr('#24d3f2', `\
+const crateSpr1_b = str2spr(COLORS.crate1, `\
 ..0..
 .0.0.
 0.0.0
 .0.0.
 ..0..`);
-const crateSpr2_a = str2spr('#aaff54', `\
+const crateSpr2_a = str2spr(COLORS.crate2, `\
 ..0..
 .0.0.
 0.0.0
 .0.0.
 ..0..`);
-const crateSpr2_b = str2spr('#aaff54', `\
+const crateSpr2_b = str2spr(COLORS.crate2, `\
 .0.0.
 0.0.0
 .0.0.
@@ -120,19 +128,19 @@ const crateSpr2_b = str2spr('#aaff54', `\
 0...0
 0...0
 00000`)*/
-const crateSpr3 = str2spr('#ff245b', `\
+const crateSpr3 = str2spr(COLORS.crate3, `\
 .000.
 00000
 00000
 00000
 .000.`);
-const crateSpr3_a = str2spr('#ff245b', `\
+const crateSpr3_a = str2spr(COLORS.crate3, `\
 ...0.
 .00..
 0..00
 .00..
 ...0.`);
-const crateSpr3_b = str2spr('#ff245b', `\
+const crateSpr3_b = str2spr(COLORS.crate3, `\
 .00..
 0..00
 .00..
@@ -140,40 +148,30 @@ const crateSpr3_b = str2spr('#ff245b', `\
 .00..`);
 const crateSprs = [crateSpr1, crateSpr2, crateSpr3];
 
-// const targetSpr = str2spr('#ff9e7d', `\
-// .....
-// ..0..
-// .000.
-// ..0..
-// .....`)
-const targetSpr = str2spr('#ff9e7d', `\
+const targetSpr = str2spr(COLORS.target, `\
 00.00
 0...0
 .....
 0...0
 00.00`)
-
-const floorSpr = str2spr('#803D7D #75366D', `\
+const floorSpr = str2spr(COLORS.floor, `\
 11111
 10101
 11011
 10101
 11111`)
-
-const floorWinSpr = str2spr('#507f3d #437737', `\
+const floorWinSpr = str2spr(COLORS.floorWin, `\
 11111
 10101
 11011
 10101
 11111`)
-
 const holeSpr = str2spr('#52174f', `\
 00000
 00000
 00000
 00000
 00000`)
-
 const sprMap = [floorSpr, wallSpr];
 
 function str2spr(cols, str) {
@@ -827,8 +825,18 @@ function doUndo(n) {
 
 function draw() {
   //ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = "#75366D"; // #75366D
+  ctx.fillStyle = ALLOW_EDITOR ? COLORS.floorWin : COLORS.background; // #75366D
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let now = Date.now();
+  Object.keys(keyboard_last_pressed).forEach(key => {
+    if (keyboard_last_pressed[key] === null) return;
+    if (now - keyboard_last_pressed[key] > KEY_RETRIGGER_TIME) {
+      input_queue.push(key);
+      keyboard_last_pressed[key] = now;
+    }
+  });
+
 
   let cur_level = levels[cur_level_n];
 
@@ -838,13 +846,19 @@ function draw() {
     turn_time -= TURN_SPEED;
     turn_time = Math.max(turn_time, 0);
   } else {
-    if (input_queue.length == 0) {
+
+    let cur_undo = 0;
+    for (let i = 1; i < 10; i++) {
+      if (isKeyDown(i.toString())) cur_undo = i;
+    }
+
+    if (input_queue.length == 0 && cur_undo == 0) {
     //if (cur_undo == 0 && cur_di == 0 && cur_dj == 0 && !magic_stuff_input && !machine_input) {
       // nothing happened
     } else {
 
       let pressed_key = input_queue.shift();
-      let cur_undo = 0;
+      //let cur_undo = 0;
       for (let i = 1; i < 10; i++) {
         if (pressed_key == i.toString()) cur_undo = i;
       }
@@ -989,13 +1003,13 @@ function draw() {
                   let occupied_by_hole = openHoleAt(cur_level, next_space_i, next_space_j);
 
                   if (occupied_by_hole) {
-                    // holeSound.play(); // TODO
+                    holeSound.play();
                     neutralTurn(cur_level);
                     cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
                     pushing_crates.forEach(pushing_crate => {
-						cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
-						cur_level.crates[pushing_crate].inHole.value[real_tick] = true;
-					});
+          						cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
+          						cur_level.crates[pushing_crate].inHole.value[real_tick] = true;
+          					});
                   } else {
                     let occupied_by_crate = cur_level.crates.findIndex(crate => {
                       [ci, cj] = crate.history[crate.history.length - 1];
@@ -1004,7 +1018,7 @@ function draw() {
                     if (occupied_by_crate != -1) {
                       if (ALLOW_CHANGE_CRATES) {
                         // Change inmunity of pushed crate!!
-						// arbitrary choice when pushing several crates, oops.
+                        // arbitrary choice when pushing several crates, oops.
                         let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1];
                         let pushed_inmune = cur_level.crates[occupied_by_crate].inmune_history[real_tick - 1];
                         if (pushing_inmune != pushed_inmune) {
@@ -1025,11 +1039,11 @@ function draw() {
                     } else {
                       pushSound.play();
                       neutralTurn(cur_level);
-                      cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];                      
-					  pushing_crates.forEach(pushing_crate => {
-						cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
-					  });
-					  console.log(pushing_crates);
+                      cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj];
+          					  pushing_crates.forEach(pushing_crate => {
+  						          cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j];
+          					  });
+          					  console.log(pushing_crates);
                     }
                   }
                 }
@@ -1052,7 +1066,7 @@ function draw() {
       // forbidden_overlap stuff
       [pi, pj] = cur_level.player.history.at(-1);
       let forbidden_overlap = cur_level.crates.some((crate, i) => {
-        // TODO: add hole support
+        // TODO: add hole support ?? already done, maybe
         if (crate.superSolid) {
           if (crate.inHole.get()) {
             // overlaps with a crate outside the hole?
@@ -1105,6 +1119,7 @@ function draw() {
         flying_crates.forEach(crate => {
           crate.inHole.value[crate.inHole.value.length - 1] = true;
         });
+        if (flying_crates.length > 0) holeSound.play();
       }
     }
   }
@@ -1167,7 +1182,7 @@ function draw() {
 
     document.getElementById("nextLevelButton").disabled = (cur_level_n >= levels.length - 1);
 
-    ctx.fillStyle = "#437737";
+    ctx.fillStyle = COLORS.floorWin; // "#437737";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "black";
 
@@ -1246,21 +1261,26 @@ function wasButtonReleased(b) {
 
 let keyboard = {};
 let keyboard_prev = {};
+let keyboard_last_pressed = {};
 
 function keyMap(e) {
   // use key.code if key location is important
+  if (ALLOW_EDITOR) return e.key;
   return e.key.toLowerCase();
 }
 
 window.addEventListener('keydown', e => {
+  if (e.repeat) return;
   let k = keyMap(e);
   if ('wasd123456789'.indexOf(k) != -1) input_queue.push(k);
   keyboard[k] = true;
+  keyboard_last_pressed[k] = Date.now();
 });
 
 window.addEventListener('keyup', e => {
   let k = keyMap(e);
   keyboard[k] = false;
+  keyboard_last_pressed[k] = null;
 });
 
 function isKeyDown(k) {
