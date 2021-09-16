@@ -1,4 +1,5 @@
 // @ts-nocheck
+
 let canvas = document.getElementById('canvas')
 let ctx = canvas.getContext('2d')
 
@@ -494,7 +495,9 @@ function neutralTurn (level) {
     crate.history.push([ci, cj])
     crate.inmune_history.push(crate.inmune_history.at(-1)) // unchecked
     crate.inHole.add()
-  })
+  });
+
+  fallFlying(level);
 }
 
 function isWon (level) {
@@ -536,7 +539,7 @@ function getCoveredGoals (level) {
 levels = hole_levels_raw.map(str => str2level(str))
 
 let cur_level_n = 0
-let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7,8,9,10,11,12,13,14,15,16,17];
+let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 
 function PropertyHistory (initial_value, inmune, extra = 0) {
   this.value = [initial_value]
@@ -888,6 +891,20 @@ function getKeyRetriggerTime (key) {
   return Infinity
 }
 
+function fallFlying(level) {
+  // drop crates over holes
+  let flying_crates = level.crates.filter(crate => {
+    let [ci, cj] = crate.history.at(-1)
+    return openHoleAt(level, ci, cj)
+    // return !crate.inHole.get() &&
+  })
+  // console.log('flying crates: ', flying_crates);
+  flying_crates.forEach(crate => {
+    crate.inHole.value[crate.inHole.value.length - 1] = true
+  })
+  if (flying_crates.length > 0) holeSound.play();
+}
+
 function draw () {
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
   // ctx.fillStyle = ALLOW_EDITOR ? COLORS.floorWin : COLORS.background // #75366D
@@ -1039,10 +1056,10 @@ function draw () {
                 return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
               }); */
       			  let pushing_crates = cur_level.crates.reduce((acc, crate, index) => {
-          [ci, cj] = crate.history[crate.history.length - 1]
-          if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
-      				return acc
-        }, [])
+                [ci, cj] = crate.history[crate.history.length - 1]
+                if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
+            				return acc
+              }, [])
 			  // console.log(pushing_crates);
               if (pushing_crates.length > 0) { // trying to push a crate
                 let next_space_i = pi + cur_di * 2
@@ -1054,7 +1071,7 @@ function draw () {
                 if (occupied_by_wall) { // ignore this move
                   if (ALLOW_CHANGE_PLAYER) {
                     // Change inmunity of player!!
-					// arbitrary choice when pushing several crates, oops.
+					          // arbitrary choice when pushing several crates, oops.
                     let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1]
                     let player_inmune = cur_level.player.inmune_history[real_tick - 1]
                     if (player_inmune != pushing_inmune) {
@@ -1178,7 +1195,7 @@ function draw () {
         })
       }
 
-      if (!SKIPPED_TURN && cur_undo == 0) {
+      /* if (!SKIPPED_TURN && cur_undo == 0) {
         // drop crates over holes
         let flying_crates = cur_level.crates.filter(crate => {
           let [ci, cj] = crate.history.at(-1)
@@ -1190,7 +1207,7 @@ function draw () {
           crate.inHole.value[crate.inHole.value.length - 1] = true
         })
         if (flying_crates.length > 0) holeSound.play()
-      }
+      } */
     }
   }
 
@@ -1339,18 +1356,18 @@ let keyboard_last_pressed = {}
 
 function keyMap (e) {
   // use key.code if key location is important
-  if (ALLOW_EDITOR) return e.key;
-  if (e.key == 'ArrowLeft') return 'a';
-  if (e.key == 'ArrowRight') return 'd';
-  if (e.key == 'ArrowDown') return 's';
-  if (e.key == 'ArrowUp') return 'w';
+  if (ALLOW_EDITOR) return e.key
+  if (e.key == 'ArrowLeft') return 'a'
+  if (e.key == 'ArrowRight') return 'd'
+  if (e.key == 'ArrowDown') return 's'
+  if (e.key == 'ArrowUp') return 'w'
   return e.key.toLowerCase()
 }
 
 window.addEventListener('keydown', e => {
-  if (e.repeat) return;
+  if (e.repeat) return
 
-  let k = keyMap(e);
+  let k = keyMap(e)
   if ('wasdzx123456789'.indexOf(k) != -1) input_queue.push(k)
   keyboard[k] = true
   keyboard_last_pressed[k] = Date.now()
