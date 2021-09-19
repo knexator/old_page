@@ -15,6 +15,7 @@ let level_transition_time = 0
 let in_last_level = false
 let intro_time = 1
 let next_level = null
+let first_undo_press = false
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
 let TURN_SPEED = 0.15 //0.3
@@ -1263,9 +1264,9 @@ function doUndo (n) {
 }
 
 function getKeyRetriggerTime (key) {
-  if ('123456789'.indexOf(key) != -1) return KEY_RETRIGGER_TIME / 2
+  if ('123456789'.indexOf(key) != -1) return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
-  if (key == 'z' || key == 'x') return KEY_RETRIGGER_TIME / 2
+  if (key == 'z' || key == 'x') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   return Infinity
 }
 
@@ -1315,6 +1316,7 @@ function draw () {
     if (now - keyboard_last_pressed[key] > getKeyRetriggerTime(key)) {
       input_queue.push(key)
       keyboard_last_pressed[key] = now
+      first_undo_press = false
     }
   })
 
@@ -1821,12 +1823,14 @@ window.addEventListener('keydown', e => {
   if ('wasdzx123456789'.indexOf(k) != -1) input_queue.push(k)
   keyboard[k] = true
   keyboard_last_pressed[k] = Date.now()
+  if (k == '1') first_undo_press = true
 })
 
 window.addEventListener('keyup', e => {
   let k = keyMap(e)
   keyboard[k] = false
   keyboard_last_pressed[k] = null
+  first_undo_press = false
 })
 
 function isKeyDown (k) {
