@@ -1640,6 +1640,10 @@ function draw () {
     nextLevel()
     cur_level = levels[cur_level_n]
   }
+  if (wasKeyPressed('l') && cur_level_n > 0) {
+    prevLevel()
+    cur_level = levels[cur_level_n]
+  }
 
   // drawLevel(cur_level)
   drawScreen()
