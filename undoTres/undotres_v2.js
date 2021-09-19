@@ -1383,11 +1383,11 @@ function draw () {
             cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
           } else { // player did an original move
             [pi, pj] = cur_level.player.history[real_tick - 1]
-            let bad_move = cur_level.geo[pj + cur_dj][pi + cur_di] ||
+            let bad_move = (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
+              (pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
+              cur_level.geo[pj + cur_dj][pi + cur_di] ||
               closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) ||
               openHoleAt(cur_level, pi + cur_di, pj + cur_dj) ||
-              (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
-              (pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
               movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
             // console.log(bad_move);
             if (bad_move) { // ignore this move
