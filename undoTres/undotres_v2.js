@@ -17,7 +17,8 @@ let intro_time = 1
 let next_level = null
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
-let TURN_SPEED = 0.3
+let TURN_SPEED = 0.15 //0.3
+let TRANSITION_SPEED = 0.03
 let ALLOW_CHANGE_PLAYER = false
 let ALLOW_CHANGE_CRATES = false
 let ALLOW_EDITOR = false
@@ -1334,7 +1335,7 @@ function draw () {
   if (level_transition_time > 0) {
     // console.log("in transition");
     let starts_above_half = level_transition_time > 0.5
-    level_transition_time -= TURN_SPEED * 0.1
+    level_transition_time -= TRANSITION_SPEED //TURN_SPEED * 0.1
     let ends_below_half = level_transition_time <= 0.5
     if (starts_above_half && ends_below_half) {
       //nextLevel()
@@ -1345,7 +1346,7 @@ function draw () {
     level_transition_time = Math.max(level_transition_time, 0)
   }
   if (intro_time > 0 && true_timeline_undos.length > 0) {
-    intro_time -= TURN_SPEED * 0.1
+    intro_time -= TRANSITION_SPEED //TURN_SPEED * 0.1
     intro_time = Math.max(intro_time, 0)
   }
   if (turn_time == 0 && !in_last_level) {
