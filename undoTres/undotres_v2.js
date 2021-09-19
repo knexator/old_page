@@ -12,6 +12,8 @@ let input_queue = []
 let turn_time = 0
 let screen_transition_turn = false
 let level_transition_time = 0
+let in_last_level = false
+let intro_time = 1
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
 let TURN_SPEED = 0.3
@@ -87,6 +89,9 @@ undoSounds[8] = undoSounds[0]
 let restartSound = new Howl({
   src: ['restart.wav'],
   volume: 0.4
+})
+let transitionSound = new Howl({
+  src: ['transition.wav']
 })
 
 // let using_machine_n_turns = 0;
@@ -424,7 +429,11 @@ function drawLevel (level) {
 }
 
 function drawIntroText () {
-  ctx.fillStyle = COLORS.wall
+  if (intro_time > 0) {
+    ctx.fillStyle = hexToRGB(COLORS.wall, 1-intro_time)
+  } else {
+    ctx.fillStyle = COLORS.wall
+  }
   /* canvasTxt.fontSize = TILE * 2.5
   canvasTxt.font = 'Salsa'
   canvasTxt.drawText(ctx, 'Undo Tres', OFFX - TILE * 0.5, OFFY - TILE * 0.5, TILE * 6, TILE * 6)
@@ -442,6 +451,7 @@ function drawIntroText () {
   ctx.fillText('Undo', OFFX + TILE * 2.5, OFFY + TILE * 2.5)
   ctx.fillText('Tres', OFFX + TILE * 2.5, OFFY + TILE * 5)
 
+  ctx.fillStyle = COLORS.wall
   ctx.font = (TILE * 0.45).toString() + 'px Verdana'
   ctx.fillText('Arrow Keys or', OFFX + TILE * 11, OFFY + TILE * 7.6)
   ctx.fillText('WASD to Move', OFFX + TILE * 11, OFFY + TILE * 8.1)
@@ -472,13 +482,24 @@ function drawSecondText () {
   } else {
     let moved_orange = levels[1].crates[1].history.findIndex(([i, j]) => i != 4 || j != 2)
     if (moved_orange == -1) return
-    let time_0 = Math.max(get_timeline_length(true_timeline_undos.length, 0), 1)
+    let balance = 0;
+    for (let k = moved_orange; k < true_timeline_undos.length; k++) {
+      if (true_timeline_undos[k] == 0) {
+        balance += 1
+      } else {
+        balance -= 1
+      }
+    }
+    if (balance < -2) {
+      setTimeout(function () { ENABLE_RESTART = true }, 1000)
+    }
+    /*let time_0 = Math.max(get_timeline_length(true_timeline_undos.length, 0), 1)
     let [oi, oj] = levels[1].crates[1].history[time_0 - 1]
     let [oi2, oj2] = levels[1].crates[1].history.at(-1)
     if (oi != oi2 || oj != oj2) {
       // ENABLE_RESTART = true
       setTimeout(function () { ENABLE_RESTART = true }, 1000)
-    }
+    }*/
     /* let time_1 = get_timeline_length(true_timeline_undos.length, 1)
     if (time_1 - time_0 > 4) {
       ENABLE_RESTART = true
@@ -522,6 +543,8 @@ function drawXtoReallyText () {
   // let x = OFFX + TILE * 4.2
   let x = OFFX + TILE * 3.2
   let y = OFFY - TILE * 0.2
+  /*let x = OFFX + TILE * 5.0
+  let y = OFFY + TILE * 0.7*/
   ctx.font = (TILE * 0.5).toString() + 'px Verdana'
 
   let text1 = 'X to '
@@ -624,6 +647,28 @@ function drawExitGradient (level) {
 
 function drawScreen () {
   // ctx.fillStyle = BACKGROUND_IS_WALL ? COLORS.wall : COLORS.floor
+  if (in_last_level) {
+    ctx.fillStyle = COLORS.true_background
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+    ctx.fillStyle = COLORS.wall
+    ctx.textAlign = 'center'
+    // ctx.textBaseline = "middle";
+    ctx.font = (TILE * 4.5).toString() + 'px Salsa'
+
+    //let x = OFFX + TILE * 6 - level_transition_time * 2 * canvas.width
+    let x = OFFX + TILE * 6
+    ctx.fillText('Thanks for', x, OFFY + TILE * 4)
+    ctx.fillText('Playing!', x, OFFY + TILE * 8)
+
+    if (level_transition_time > 0) {
+      ctx.fillStyle = COLORS.transition
+      //ctx.fillRect((1 - level_transition_time * 2) * canvas.width, 0, canvas.width, canvas.height)
+      ctx.fillRect(0, 0, level_transition_time * 2 * canvas.width, canvas.height)
+    }
+    return
+  }
+
   ctx.fillStyle = COLORS.true_background
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -769,7 +814,7 @@ function getCoveredGoals (level) {
 levels = hole_levels_raw.map(([str, enter, exit]) => str2level(str, enter, exit))
 levels[0].extraDrawCode = drawIntroText
 levels[1].extraDrawCode = drawSecondText
-levels[4].extraDrawCode = drawXtoReallyText
+levels[5].extraDrawCode = drawXtoReallyText
 
 let cur_level_n = 0
 let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
@@ -866,6 +911,7 @@ window.addEventListener('resize', e => {
   canvas.width = innerWidth
   canvas.height = innerHeight
   recalcTileSize()
+  if (in_last_level) drawScreen()
 })
 
 window.addEventListener('load', e => {
@@ -1071,6 +1117,9 @@ function nextLevel () {
   if (cur_level_n < levels.length - 1) {
     cur_level_n += 1
     loadLevel(cur_level_n)
+  } else {
+    in_last_level = true
+    recalcTileSize()
   }
 }
 
@@ -1097,9 +1146,17 @@ function loadLevel (n) {
 }
 
 function recalcTileSize (level) {
+  if (in_last_level) {
+    let tile_w = Math.min(canvas.width / (12), 60)
+    let tile_h = Math.min(canvas.height / (12), 60)
+    TILE = Math.floor(Math.min(tile_h, tile_w))
+    OFFX = Math.floor((canvas.width - (TILE * 12)) / 2)
+    OFFY = Math.floor((canvas.height - (TILE * 12)) / 2)
+    return;
+  }
   if (!level) level = levels[cur_level_n]
-  let tile_w = Math.min(canvas.width / (level.w + 1), 60)
-  let tile_h = Math.min(canvas.height / (level.h + 1), 60)
+  let tile_w = Math.min(canvas.width / (level.w), 60)
+  let tile_h = Math.min(canvas.height / (level.h), 60)
   TILE = Math.floor(Math.min(tile_h, tile_w))
   OFFX = Math.floor((canvas.width - (TILE * level.w)) / 2)
   OFFY = Math.floor((canvas.height - (TILE * level.h)) / 2)
@@ -1142,8 +1199,25 @@ function movesBackToEntrance (level, pi, pj, cur_di, cur_dj) {
 function draw () {
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
   // ctx.fillStyle = ALLOW_EDITOR ? COLORS.floorWin : COLORS.background // #75366D
-  ctx.fillStyle = COLORS.background // #75366D
-  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  //ctx.fillStyle = COLORS.background // #75366D
+  //ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+  if (in_last_level) {
+    level_transition_time -= TURN_SPEED * 0.1
+    level_transition_time = Math.max(level_transition_time, 0)
+    drawScreen()
+    //console.log();
+    //return
+    /*mouse_prev = Object.assign({}, mouse)
+    mouse.wheel = 0
+    keyboard_prev = Object.assign({}, keyboard)*/
+    if (level_transition_time > 0) {
+      window.requestAnimationFrame(draw)
+    } else {
+      //console.log("done");
+    }
+    return
+  }
 
   let now = Date.now()
   Object.keys(keyboard_last_pressed).forEach(key => {
@@ -1179,6 +1253,10 @@ function draw () {
     }
     // if (level_transition_time <= 0) nextLevel();
     level_transition_time = Math.max(level_transition_time, 0)
+  }
+  if (intro_time > 0 && true_timeline_undos.length > 0) {
+    intro_time -= TURN_SPEED * 0.1
+    intro_time = Math.max(intro_time, 0)
   }
   if (turn_time == 0) {
     /* let cur_undo = 0;
@@ -1296,6 +1374,7 @@ function draw () {
           } else if (starts_won && cur_di == cur_level.exit[0] && cur_dj == cur_level.exit[1]) {
             // player exited the level
             // nextLevel();
+            transitionSound.play();
             screen_transition_turn = true
             turn_time = 1
             level_transition_time = 1
@@ -1322,10 +1401,10 @@ function draw () {
                 return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
               }); */
       			  let pushing_crates = cur_level.crates.reduce((acc, crate, index) => {
-          [ci, cj] = crate.history[crate.history.length - 1]
-          if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
-            				return acc
-        }, [])
+                [ci, cj] = crate.history[crate.history.length - 1]
+                if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
+                  				return acc
+              }, [])
 			  // console.log(pushing_crates);
               if (pushing_crates.length > 0) { // trying to push a crate
                 let next_space_i = pi + cur_di * 2
@@ -1541,13 +1620,13 @@ function draw () {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     ctx.fillStyle = 'black' */
 
-    if (!starts_won) winSound.play()
+    // if (!starts_won) winSound.play()
 
-    if (wasKeyPressed(' ') && cur_level_n < levels.length - 1) {
+    /* if (wasKeyPressed(' ') && cur_level_n < levels.length - 1) {
       // loadLevel(cur_level_n + 1);
       nextLevel()
       cur_level = levels[cur_level_n]
-    }
+    } */
   }
 
   if (wasKeyPressed('r')) {
