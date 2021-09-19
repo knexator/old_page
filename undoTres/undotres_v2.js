@@ -14,6 +14,7 @@ let screen_transition_turn = false
 let level_transition_time = 0
 let in_last_level = false
 let intro_time = 1
+let next_level = null
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
 let TURN_SPEED = 0.3
@@ -284,6 +285,10 @@ function drawSprScaled (spr, i, j, scale_x = 1, scale_y = 1) {
 }
 
 function drawLevel (level) {
+  if (in_last_level) {
+    if (level.extraDrawCode) level.extraDrawCode()
+    return
+  }
   let is_won = isWon(level)
   let geo = level.geo
   if (ALLOW_EDITOR) {
@@ -369,7 +374,8 @@ function drawLevel (level) {
     // prevPlayerState = playerState
     prevPlayerState = [playerState[0] - level.enter[0], playerState[1] - level.enter[1]]
     // backwardsT = 1 - turn_time;
-    forwardsT = Math.pow(1 - level_transition_time * 2, 1 / 2)
+    forwardsT = level_transition_time <= 0.5 ? Math.pow(1 - level_transition_time * 2, 1 / 2) : 1
+    //forwardsT = Math.pow(1 - level_transition_time * 2, 1 / 2)
     // forwardsT = 1 - level_transition_time * 2
   }
   let player_forward = get_times_directions(level.player.history.length - 2)[0] == 1
@@ -430,7 +436,7 @@ function drawLevel (level) {
 
 function drawIntroText () {
   if (intro_time > 0) {
-    ctx.fillStyle = hexToRGB(COLORS.wall, 1-intro_time)
+    ctx.fillStyle = hexToRGB(COLORS.wall, 1 - intro_time)
   } else {
     ctx.fillStyle = COLORS.wall
   }
@@ -484,7 +490,7 @@ function drawSecondText () {
   } else {
     let moved_orange = levels[1].crates[1].history.findIndex(([i, j]) => i != 4 || j != 2)
     if (moved_orange == -1) return
-    let balance = 0;
+    let balance = 0
     for (let k = moved_orange; k < true_timeline_undos.length; k++) {
       if (true_timeline_undos[k] == 0) {
         balance += 1
@@ -495,13 +501,13 @@ function drawSecondText () {
     if (balance < -2) {
       setTimeout(function () { ENABLE_RESTART = true }, 1000)
     }
-    /*let time_0 = Math.max(get_timeline_length(true_timeline_undos.length, 0), 1)
+    /* let time_0 = Math.max(get_timeline_length(true_timeline_undos.length, 0), 1)
     let [oi, oj] = levels[1].crates[1].history[time_0 - 1]
     let [oi2, oj2] = levels[1].crates[1].history.at(-1)
     if (oi != oi2 || oj != oj2) {
       // ENABLE_RESTART = true
       setTimeout(function () { ENABLE_RESTART = true }, 1000)
-    }*/
+    } */
     /* let time_1 = get_timeline_length(true_timeline_undos.length, 1)
     if (time_1 - time_0 > 4) {
       ENABLE_RESTART = true
@@ -532,6 +538,28 @@ function drawSecondText () {
   } */
 }
 
+function drawEndScreen () {
+  /*ctx.fillStyle = COLORS.true_background
+  ctx.fillRect(0, 0, canvas.width, canvas.height)*/
+
+  ctx.fillStyle = COLORS.wall
+  ctx.textAlign = 'center'
+  // ctx.textBaseline = "middle";
+  ctx.font = (TILE * 4.5).toString() + 'px Salsa'
+
+  // let x = OFFX + TILE * 6 - level_transition_time * 2 * canvas.width
+  let x = OFFX + TILE * 6
+  ctx.fillText('Thanks for', x, OFFY + TILE * 2)
+  ctx.fillText('Playing!', x, OFFY + TILE * 6)
+
+  /*if (level_transition_time > 0) {
+    ctx.fillStyle = COLORS.transition
+    ctx.fillRect((1 - level_transition_time * 2) * canvas.width, 0, canvas.width, canvas.height)
+    // ctx.fillRect(0, 0, level_transition_time * 2 * canvas.width, canvas.height)
+  }
+  return*/
+}
+
 function drawXtoReallyText () {
   ctx.fillStyle = COLORS.wall
 
@@ -545,8 +573,8 @@ function drawXtoReallyText () {
   // let x = OFFX + TILE * 4.2
   let x = OFFX + TILE * 3.2
   let y = OFFY - TILE * 0.2
-  /*let x = OFFX + TILE * 5.0
-  let y = OFFY + TILE * 0.7*/
+  /* let x = OFFX + TILE * 5.0
+  let y = OFFY + TILE * 0.7 */
   ctx.font = (TILE * 0.5).toString() + 'px Verdana'
 
   let text1 = 'X to '
@@ -690,30 +718,8 @@ function drawExitGradient2 (level) {
       TILE * (1 + 2 * Math.abs(di)), TILE * (1 + 2 * Math.abs(dj)))
 }
 
-
 function drawScreen () {
   // ctx.fillStyle = BACKGROUND_IS_WALL ? COLORS.wall : COLORS.floor
-  if (in_last_level) {
-    ctx.fillStyle = COLORS.true_background
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    ctx.fillStyle = COLORS.wall
-    ctx.textAlign = 'center'
-    // ctx.textBaseline = "middle";
-    ctx.font = (TILE * 4.5).toString() + 'px Salsa'
-
-    //let x = OFFX + TILE * 6 - level_transition_time * 2 * canvas.width
-    let x = OFFX + TILE * 6
-    ctx.fillText('Thanks for', x, OFFY + TILE * 4)
-    ctx.fillText('Playing!', x, OFFY + TILE * 8)
-
-    if (level_transition_time > 0) {
-      ctx.fillStyle = COLORS.transition
-      ctx.fillRect((1 - level_transition_time * 2) * canvas.width, 0, canvas.width, canvas.height)
-      // ctx.fillRect(0, 0, level_transition_time * 2 * canvas.width, canvas.height)
-    }
-    return
-  }
 
   ctx.fillStyle = COLORS.true_background
   ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -729,8 +735,10 @@ function drawScreen () {
     // ctx.restore()
     ctx.fillStyle = COLORS.transition // ctx.fillStyle = COLORS.background; // 'black' floorWin
 
-    let di = cur_level.exit[0]
-    let dj = cur_level.exit[1]
+    /*let di = cur_level.exit[0]
+    let dj = cur_level.exit[1]*/
+    let di = levels[next_level].enter[0]
+    let dj = levels[next_level].enter[1]
     let x_start = di < 0 ? canvas.width * t : 0
     let x_end = di > 0 ? canvas.width * (1 - t) : canvas.width
     let y_start = dj < 0 ? canvas.height * t : 0
@@ -861,6 +869,7 @@ levels = hole_levels_raw.map(([str, enter, exit]) => str2level(str, enter, exit)
 levels[0].extraDrawCode = drawIntroText
 levels[1].extraDrawCode = drawSecondText
 levels[5].extraDrawCode = drawXtoReallyText
+levels.at(-1).extraDrawCode = drawEndScreen
 
 let cur_level_n = 0
 let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
@@ -957,7 +966,7 @@ window.addEventListener('resize', e => {
   canvas.width = innerWidth
   canvas.height = innerHeight
   recalcTileSize()
-  if (in_last_level) drawScreen()
+  //if (in_last_level) drawScreen()
 })
 
 window.addEventListener('load', e => {
@@ -1163,15 +1172,35 @@ function nextLevel () {
   if (cur_level_n < levels.length - 1) {
     cur_level_n += 1
     loadLevel(cur_level_n)
-  } else {
+  } /*else {
     in_last_level = true
     recalcTileSize()
+  }*/
+}
+
+function initTransitionToNextLevel () {
+  if (cur_level_n < levels.length - 1) {
+    level_transition_time = 1
+    transitionSound.play()
+    screen_transition_turn = true
+    next_level = cur_level_n + 1
+  }
+}
+
+function initTransitionToPrevLevel () {
+  if (cur_level_n > 0) {
+    level_transition_time = 1
+    transitionSound.play()
+    screen_transition_turn = true
+    next_level = cur_level_n - 1
   }
 }
 
 function loadLevel (n) {
+  in_last_level = n == levels.length - 1
   cur_level_n = n
   true_timeline_undos = []
+  input_queue = []
   let cur_level = levels[cur_level_n]
   cur_level.crates.forEach(crate => {
     crate.history.splice(1)
@@ -1192,14 +1221,14 @@ function loadLevel (n) {
 }
 
 function recalcTileSize (level) {
-  if (in_last_level) {
+  /*if (in_last_level) {
     let tile_w = Math.min(canvas.width / (12), 60)
     let tile_h = Math.min(canvas.height / (12), 60)
     TILE = Math.floor(Math.min(tile_h, tile_w))
     OFFX = Math.floor((canvas.width - (TILE * 12)) / 2)
     OFFY = Math.floor((canvas.height - (TILE * 12)) / 2)
-    return;
-  }
+    return
+  }*/
   if (!level) level = levels[cur_level_n]
   let tile_w = Math.min(canvas.width / (level.w), 60)
   let tile_h = Math.min(canvas.height / (level.h), 60)
@@ -1245,25 +1274,22 @@ function movesBackToEntrance (level, pi, pj, cur_di, cur_dj) {
 function draw () {
   // ctx.clearRect(0, 0, canvas.width, canvas.height);
   // ctx.fillStyle = ALLOW_EDITOR ? COLORS.floorWin : COLORS.background // #75366D
-  //ctx.fillStyle = COLORS.background // #75366D
-  //ctx.fillRect(0, 0, canvas.width, canvas.height)
+  // ctx.fillStyle = COLORS.background // #75366D
+  // ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  if (in_last_level) {
+  /*if (in_last_level) {
     level_transition_time -= TURN_SPEED * 0.1
     level_transition_time = Math.max(level_transition_time, 0)
     drawScreen()
-    //console.log();
-    //return
-    /*mouse_prev = Object.assign({}, mouse)
-    mouse.wheel = 0
-    keyboard_prev = Object.assign({}, keyboard)*/
+    // console.log();
+    // return
     if (level_transition_time > 0) {
       window.requestAnimationFrame(draw)
     } else {
-      //console.log("done");
+      // console.log("done");
     }
     return
-  }
+  }*/
 
   let now = Date.now()
   Object.keys(keyboard_last_pressed).forEach(key => {
@@ -1295,7 +1321,9 @@ function draw () {
     level_transition_time -= TURN_SPEED * 0.1
     let ends_below_half = level_transition_time <= 0.5
     if (starts_above_half && ends_below_half) {
-      nextLevel()
+      //nextLevel()
+      console.log("gonna load: ", next_level);
+      loadLevel(next_level)
     }
     // if (level_transition_time <= 0) nextLevel();
     level_transition_time = Math.max(level_transition_time, 0)
@@ -1304,7 +1332,7 @@ function draw () {
     intro_time -= TURN_SPEED * 0.1
     intro_time = Math.max(intro_time, 0)
   }
-  if (turn_time == 0) {
+  if (turn_time == 0 && !in_last_level) {
     /* let cur_undo = 0;
     for (let i = 1; i < 10; i++) {
       if (isKeyDown(i.toString())) cur_undo = i;
@@ -1420,10 +1448,11 @@ function draw () {
           } else if (starts_won && cur_di == cur_level.exit[0] && cur_dj == cur_level.exit[1]) {
             // player exited the level
             // nextLevel();
-            transitionSound.play();
+            initTransitionToNextLevel()
+            /* transitionSound.play();
             screen_transition_turn = true
+            level_transition_time = 1 */
             turn_time = 1
-            level_transition_time = 1
             neutralTurn(cur_level);
             [pi, pj] = cur_level.player.history.at(-1)
             cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
@@ -1447,10 +1476,10 @@ function draw () {
                 return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
               }); */
       			  let pushing_crates = cur_level.crates.reduce((acc, crate, index) => {
-                [ci, cj] = crate.history[crate.history.length - 1]
-                if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
+          [ci, cj] = crate.history[crate.history.length - 1]
+          if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
                   				return acc
-              }, [])
+        }, [])
 			  // console.log(pushing_crates);
               if (pushing_crates.length > 0) { // trying to push a crate
                 let next_space_i = pi + cur_di * 2
@@ -1675,7 +1704,7 @@ function draw () {
     } */
   }
 
-  if (wasKeyPressed('r')) {
+  if (wasKeyPressed('r') && !in_last_level) {
     resetLevel()
     // loadLevel(cur_level_n);
     cur_level = levels[cur_level_n]
@@ -1683,12 +1712,18 @@ function draw () {
 
   // cheat
   if (wasKeyPressed('m') && cur_level_n < levels.length - 1) {
-    nextLevel()
-    cur_level = levels[cur_level_n]
+    //nextLevel()
+    //cur_level = levels[cur_level_n]
+    if (level_transition_time == 0) {
+      initTransitionToNextLevel()
+    }
   }
   if (wasKeyPressed('n') && cur_level_n > 0) {
-    prevLevel()
-    cur_level = levels[cur_level_n]
+    //prevLevel()
+    //cur_level = levels[cur_level_n]
+    if (level_transition_time == 0) {
+      initTransitionToPrevLevel()
+    }
   }
 
   // drawLevel(cur_level)
@@ -1748,7 +1783,7 @@ let keyboard_last_pressed = {}
 
 function keyMap (e) {
   // use key.code if key location is important
-  if (e.metaKey) return '.';
+  if (e.metaKey) return '.'
   if (ALLOW_EDITOR) return e.key
   if (e.key == 'ArrowLeft') return 'a'
   if (e.key == 'ArrowRight') return 'd'
