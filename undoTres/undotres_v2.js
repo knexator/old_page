@@ -448,15 +448,17 @@ function drawIntroText () {
   ctx.font = (TILE * 2.5).toString() + 'px Salsa'
   /* ctx.textAlign = "center";
   ctx.textBaseline = "middle"; */
-  ctx.fillText('Undo', OFFX + TILE * 2.5, OFFY + TILE * 2.5)
-  ctx.fillText('Tres', OFFX + TILE * 2.5, OFFY + TILE * 5)
+  // ctx.fillText('Undo', OFFX + TILE * 2.5, OFFY + TILE * 2.5)
+  // ctx.fillText('Tres', OFFX + TILE * 2.5, OFFY + TILE * 5)
+  ctx.fillText('Undo', OFFX + TILE * 3.5, OFFY + TILE * 2.5)
+  ctx.fillText('Tres', OFFX + TILE * 3.5, OFFY + TILE * 5)
 
   ctx.fillStyle = COLORS.wall
   ctx.font = (TILE * 0.45).toString() + 'px Verdana'
-  ctx.fillText('Arrow Keys or', OFFX + TILE * 11, OFFY + TILE * 7.6)
-  ctx.fillText('WASD to Move', OFFX + TILE * 11, OFFY + TILE * 8.1)
+  ctx.fillText('Arrow Keys or', OFFX + TILE * 12, OFFY + TILE * 7.6)
+  ctx.fillText('WASD to Move', OFFX + TILE * 12, OFFY + TILE * 8.1)
 
-  ctx.fillText('Z to Undo', OFFX + TILE * 11, OFFY + TILE * 8.8)
+  ctx.fillText('Z to Undo', OFFX + TILE * 12, OFFY + TILE * 8.8)
 }
 
 function drawSecondText () {
@@ -582,7 +584,11 @@ function drawEntranceGradient (level) {
     /* entranceGradient.addColorStop(0.33, hexToRGB(COLORS.floor, 0.0))
     entranceGradient.addColorStop(0.66, COLORS.true_background) */
     entranceGradient.addColorStop(0.2, hexToRGB(COLORS.floor, 0.0))
-    entranceGradient.addColorStop(0.53, COLORS.true_background)
+    entranceGradient.addColorStop(0.63, COLORS.true_background)
+    // entranceGradient.addColorStop(0.0, "black")
+    // entranceGradient.addColorStop(0.3, "black")
+    // entranceGradient.addColorStop(0.6, "white")
+    // entranceGradient.addColorStop(1.0, "white")
     console.log('computing gradient')
   }
   ctx.fillStyle = entranceGradient
@@ -595,7 +601,7 @@ function drawEntranceGradient (level) {
         OFFX + TILE * (ei + 0.5 - di * -0.5), OFFY + TILE * (ej + 0.5 - dj * -0.5),
         OFFX + TILE * (ei + 0.5 - di * 2.5), OFFY + TILE * (ej + 0.5 - dj * 2.5))
     entranceGradient2.addColorStop(0.53, COLORS.wall)
-    entranceGradient2.addColorStop(0.86, COLORS.true_background)
+    entranceGradient2.addColorStop(0.96, COLORS.true_background)
   }
   ctx.fillStyle = entranceGradient2
   notI = Math.abs(dj)
@@ -609,6 +615,45 @@ function drawEntranceGradient (level) {
 }
 
 function drawExitGradient (level) {
+  let [ei, ej] = level.targets[0]
+  let [di, dj] = level.exit
+  di *= -1
+  dj *= -1
+
+  if (exitGradient === undefined) {
+    exitGradient = ctx.createLinearGradient(
+        OFFX + TILE * (ei + 0.5 - di * -0.5), OFFY + TILE * (ej + 0.5 - dj * -0.5),
+        OFFX + TILE * (ei + 0.5 - di * 1.5), OFFY + TILE * (ej + 0.5 - dj * 1.5))
+    exitGradient.addColorStop(0.0, hexToRGB(COLORS.floor, 0.0))
+    exitGradient.addColorStop(0.5, COLORS.true_background)
+    console.log('computing gradient')
+  }
+  ctx.fillStyle = exitGradient
+  ctx.fillRect(
+      OFFX + TILE * Math.min(ei, ei - 1 * di), OFFY + TILE * Math.min(ej, ej - 1 * dj),
+      TILE * (1 + 1 * Math.abs(di)), TILE * (1 + 1 * Math.abs(dj)))
+
+  if (exitGradient2 === undefined) {
+    exitGradient2 = ctx.createLinearGradient(
+        OFFX + TILE * (ei + 0.5 - di * -0.5), OFFY + TILE * (ej + 0.5 - dj * -0.5),
+        OFFX + TILE * (ei + 0.5 - di * 1.5), OFFY + TILE * (ej + 0.5 - dj * 1.5))
+    exitGradient2.addColorStop(0.5, COLORS.wall)
+    exitGradient2.addColorStop(1.0, COLORS.true_background)
+    // exitGradient2.addColorStop(0.5, "white")
+    // exitGradient2.addColorStop(1.0, "black")
+  }
+  ctx.fillStyle = exitGradient2
+  notI = Math.abs(dj)
+  notJ = Math.abs(di)
+  ctx.fillRect(
+      OFFX + TILE * Math.min(ei - notI, ei - di * 1 - notI), OFFY + TILE * Math.min(ej - notJ, ej - dj * 1 - notJ),
+      TILE * (1 + 1 * Math.abs(di)), TILE * (1 + 1 * Math.abs(dj)))
+  ctx.fillRect(
+      OFFX + TILE * Math.min(ei + notI, ei - di * 1 + notI), OFFY + TILE * Math.min(ej + notJ, ej - dj * 1 + notJ),
+      TILE * (1 + 1 * Math.abs(di)), TILE * (1 + 1 * Math.abs(dj)))
+}
+
+function drawExitGradient2 (level) {
   let [ei, ej] = level.targets[0]
   let [di, dj] = level.exit
   di *= -1
@@ -645,6 +690,7 @@ function drawExitGradient (level) {
       TILE * (1 + 2 * Math.abs(di)), TILE * (1 + 2 * Math.abs(dj)))
 }
 
+
 function drawScreen () {
   // ctx.fillStyle = BACKGROUND_IS_WALL ? COLORS.wall : COLORS.floor
   if (in_last_level) {
@@ -663,8 +709,8 @@ function drawScreen () {
 
     if (level_transition_time > 0) {
       ctx.fillStyle = COLORS.transition
-      //ctx.fillRect((1 - level_transition_time * 2) * canvas.width, 0, canvas.width, canvas.height)
-      ctx.fillRect(0, 0, level_transition_time * 2 * canvas.width, canvas.height)
+      ctx.fillRect((1 - level_transition_time * 2) * canvas.width, 0, canvas.width, canvas.height)
+      // ctx.fillRect(0, 0, level_transition_time * 2 * canvas.width, canvas.height)
     }
     return
   }
@@ -1636,11 +1682,11 @@ function draw () {
   }
 
   // cheat
-  if (wasKeyPressed('ñ') && cur_level_n < levels.length - 1) {
+  if (wasKeyPressed('m') && cur_level_n < levels.length - 1) {
     nextLevel()
     cur_level = levels[cur_level_n]
   }
-  if (wasKeyPressed('l') && cur_level_n > 0) {
+  if (wasKeyPressed('n') && cur_level_n > 0) {
     prevLevel()
     cur_level = levels[cur_level_n]
   }
