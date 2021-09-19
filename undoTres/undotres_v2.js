@@ -1702,6 +1702,7 @@ let keyboard_last_pressed = {}
 
 function keyMap (e) {
   // use key.code if key location is important
+  if (e.metaKey) return '.';
   if (ALLOW_EDITOR) return e.key
   if (e.key == 'ArrowLeft') return 'a'
   if (e.key == 'ArrowRight') return 'd'
