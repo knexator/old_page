@@ -117,6 +117,11 @@ let COLORS = {
 COLORS.background = COLORS.floor // #75366D
 COLORS.true_background = '#5e5e5e' // COLORS.wall // #75366D
 COLORS.transition = COLORS.floor // COLORS.wall // #75366D
+COLORS.floor = COLORS.true_background
+
+// BACK_COLORS = [COLORS.true_background, COLORS.crate1, COLORS.crate2, COLORS.crate3]
+BACK_COLORS = [COLORS.true_background, COLORS.machine1, COLORS.machine2, COLORS.machine3]
+UNDO_PLAYER_COLORS = [COLORS.player, COLORS.machine1, COLORS.machine2, COLORS.machine3]
 
 const wallSpr = str2spr(COLORS.wall, `\
 00010
@@ -721,6 +726,15 @@ function drawExitGradient2 (level) {
 function drawScreen () {
   // ctx.fillStyle = BACKGROUND_IS_WALL ? COLORS.wall : COLORS.floor
 
+  /*entranceGradient = undefined
+  entranceGradient2 = undefined
+  exitGradient = undefined
+  exitGradient2 = undefined*/
+
+  //COLORS.true_background = BACK_COLORS[true_timeline_undos.at(-1) || 0]
+  //COLORS.floor = BACK_COLORS[true_timeline_undos.at(-1) || 0]
+  playerSpr.colors[0] = UNDO_PLAYER_COLORS[true_timeline_undos.at(-1) || 0]
+
   ctx.fillStyle = COLORS.true_background
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -1217,7 +1231,9 @@ function loadLevel (n) {
   } else if (n == 4) {
     undoButtons[2].style.display = '';
   } */
-  if (n == 4) ENABLE_UNDO_2 = true
+
+  if (n >= 2) ENABLE_RESTART = true
+  if (n >= 4) ENABLE_UNDO_2 = true
 }
 
 function recalcTileSize (level) {
