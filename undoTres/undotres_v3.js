@@ -3,6 +3,7 @@
 // let canvasTxt = window.canvasTxt.default
 
 let pintar = new PintarJS();
+pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
 
 let canvas = document.getElementById('canvas')
 //let ctx = canvas.getContext('webgl2')
@@ -123,6 +124,11 @@ COLORS.background = COLORS.floor // #75366D
 COLORS.true_background = '#5e5e5e' // COLORS.wall // #75366D
 COLORS.transition = COLORS.floor // COLORS.wall // #75366D
 COLORS.floor = COLORS.true_background
+COLORS.crates = [
+  COLORS.crate1,
+  COLORS.crate2,
+  COLORS.crate3,
+]
 
 // BACK_COLORS = [COLORS.true_background, COLORS.crate1, COLORS.crate2, COLORS.crate3]
 BACK_COLORS = [COLORS.true_background, COLORS.machine1, COLORS.machine2, COLORS.machine3]
@@ -142,17 +148,66 @@ let player_texture = new PintarJS.Texture("imgs/zelda.png", () => {
   player_sprite = raw_player_sprites[0]
 });
 let world_texture = new PintarJS.Texture("imgs/world.png", () => {
-  wall_sprites = [
-    new PintarJS.Sprite(world_texture),
-    new PintarJS.Sprite(world_texture),
-  ];
-  wall_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(0, 0), new PintarJS.Point(4, 10));
+  //wall_sprites = [];
+  geo_sprites = {};
+  let geoData = {
+    '#': [0,0],
+    //',': [1,0], //[3,10],
+    '.': [0,10],
+    'A': [0,6],
+    'B': [1,6],
+    'C': [2,6],
+    'D': [3,6],
+    'E': [0,3],
+    'F': [1,3],
+    'G': [2,3],
+    'H': [3,3],
+    'e': [2,5],
+    'f': [3,5],
+    'g': [0,5],
+    'h': [1,5],
+    'I': [0,4],
+    'J': [1,4],
+    'K': [2,4],
+    'L': [3,4],
+    'M': [0,7],
+    'm': [2,8],
+  }
+  let _4x10 = new PintarJS.Point(4, 10)
+  Object.entries(geoData).forEach(([k,v]) => {
+    let spr = new PintarJS.Sprite(world_texture)
+    spr.setSourceFromSpritesheet(new PintarJS.Point(v[0], v[1]), _4x10);
+    geo_sprites[k] = spr
+  })
+  //wall_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(0, 0), new PintarJS.Point(4, 10));
   floor_sprite = new PintarJS.Sprite(world_texture)
-  floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 9), new PintarJS.Point(4, 10));
-  crate_sprite = new PintarJS.Sprite(world_texture)
-  crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
+  //floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 9), new PintarJS.Point(4, 10));
+  floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 10), new PintarJS.Point(4, 10));
+  //crate_sprite = new PintarJS.Sprite(world_texture)
+  //crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
+  crate_sprites = []
+  crate_hole_sprites = []
+  for (let k=0; k<3; k++) {
+    let curSpr = new PintarJS.Sprite(world_texture)
+    curSpr.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
+    curSpr.color = new PintarJS.Color.fromHex(COLORS.crates[k]);
+    crate_sprites.push(curSpr)
+
+    curSpr = curSpr.clone()
+    curSpr.brightness = 0.4
+    crate_hole_sprites.push(curSpr)
+  }
+  /*for (let k=0; k<3; k++) {
+    let curSpr = new PintarJS.Sprite(world_texture)
+    curSpr.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
+    curSpr.color = new PintarJS.Color.fromHex(COLORS.holeCrates[k]);
+    crate_hole_sprites.push(curSpr)
+  }*/
   hole_sprite  = new PintarJS.Sprite(world_texture)
   hole_sprite.setSourceFromSpritesheet(new PintarJS.Point(1, 9), new PintarJS.Point(4, 10));
+
+  black_sprite  = new PintarJS.Sprite(world_texture)
+  black_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 9), new PintarJS.Point(4, 10));
 });
 
 /*let raw_player_sprites = [
@@ -166,6 +221,12 @@ let world_texture = new PintarJS.Texture("imgs/world.png", () => {
 
 pintar.makePixelatedScaling();
 pintar.makeFullscreen();
+
+function drawSpr(spr, i,j) {
+  spr.position = new PintarJS.Point(OFFX + i*TILE, OFFY + j*TILE)
+  spr.scale = new PintarJS.Point(TILE/16, TILE/16)
+  pintar.drawSprite(spr);
+}
 
 function drawLevel (level) {
   if (in_last_level) {
@@ -181,30 +242,11 @@ function drawLevel (level) {
   // ctx.fillStyle = BACKGROUND_IS_WALL ? COLORS.floor : COLORS.wall
   for (let j = 0; j < geo.length; j++) {
     for (let i = 0; i < geo[0].length; i++) {
-      /* if (geo[j][i]) {
-        // drawSpr(wallSpr, i, j)
-        if (!BACKGROUND_IS_WALL) ctx.fillRect(i * TILE + OFFX, j * TILE + OFFY, TILE, TILE)
-      } else {
-        // drawSpr(is_won ? floorWinSpr : floorSpr, i, j)
-        if (BACKGROUND_IS_WALL) ctx.fillRect(i * TILE + OFFX, j * TILE + OFFY, TILE, TILE)
-      } */
-      if (geo[j][i] == 1) {
-        wall_sprites[0].position = new PintarJS.Point(OFFX + i*TILE, OFFY + j*TILE)
-        wall_sprites[0].scale = new PintarJS.Point(TILE/16, TILE/16)
-        pintar.drawSprite(wall_sprites[0]);
-        // pintar.drawRectangle(new PintarJS.ColoredRectangle(new PintarJS.Point(i*16, j*16), new PintarJS.Point(16,16), PintarJS.Color.black(), PintarJS.BlendModes.Opaque, true, 0));
-        //pintar.drawPixel(new PintarJS.Pixel(new PintarJS.Point(i*16, j*16), PintarJS.Color.black(), new PintarJS.Point(16,16)));
-        // ctx.fillStyle = COLORS.wall
-        // ctx.fillRect(i * TILE + OFFX, j * TILE + OFFY, TILE, TILE)
-        //pintar.drawRectangle(new PintarJS.ColoredRectangle(new PintarJS.Point(i*16, j*16), new PintarJS.Point(16,16), PintarJS.Color.green(), null, true));
-      } else if (geo[j][i] == 0) {
-        floor_sprite.position = new PintarJS.Point(OFFX + i*TILE, OFFY + j*TILE)
-        floor_sprite.scale = new PintarJS.Point(TILE/16, TILE/16)
-        pintar.drawSprite(floor_sprite);
-        // ctx.fillStyle = COLORS.floor
-        // ctx.fillRect(i * TILE + OFFX, j * TILE + OFFY, TILE, TILE)
-        //pintar.drawPixel(new PintarJS.Pixel(new PintarJS.Point(i*16, j*16), PintarJS.Color.blue(), new PintarJS.Point(16,16)));
-      }
+      let cur_spr = geo_sprites[geo[j][i]]
+      if (!cur_spr) continue
+      cur_spr.position = new PintarJS.Point(OFFX + i*TILE, OFFY + j*TILE)
+      cur_spr.scale = new PintarJS.Point(TILE/16, TILE/16)
+      pintar.drawSprite(cur_spr);
     }
   }
   // console.log("hola?");
@@ -222,9 +264,17 @@ function drawLevel (level) {
   let forwardsT = Math.pow(1 - turn_time, 1 / 1)
   let backwardsT = Math.pow(1 - turn_time, 1)
 
+  // draw black pit of holes
+  level.holes.forEach(([i, j]) => {
+    black_sprite.position = new PintarJS.Point(OFFX + i*TILE, OFFY + j*TILE)
+    black_sprite.scale = new PintarJS.Point(TILE/16, TILE/16)
+    pintar.drawSprite(black_sprite);
+  })
+
   // only draw crates in holes
-  /*sortedCrates.forEach(crate => {
+  sortedCrates.forEach(crate => {
     if (!crate.inHole.get()) return
+    if (!crate.inHole.value.at(-2) && turn_time > 0) return
     let state = crate.history.at(-1)
     let prevState = crate.history.at(-2)
     if (prevState === undefined) prevState = state
@@ -232,9 +282,9 @@ function drawLevel (level) {
     let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
     let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
-    drawSpr(crateSprs[inmune], ci, cj)
+    drawSpr(crate_hole_sprites[inmune], ci, cj)
   })
-  sortedCrates.reverse()
+  /*sortedCrates.reverse()
   sortedCrates.forEach(crate => {
     if (!crate.inHole.get()) return
     let state = crate.history.at(-1)
@@ -281,7 +331,11 @@ function drawLevel (level) {
   // drawSpr(playerSpr, pi, pj);
 
   sortedCrates.forEach(crate => {
-    if (crate.inHole.get()) return
+    if (crate.inHole.get()) {
+      if (crate.inHole.value.at(-2) || turn_time == 0) {
+        return
+      }
+    }
     let state = crate.history.at(-1)
     let prevState = crate.history.at(-2)
     if (prevState === undefined) prevState = state
@@ -290,6 +344,7 @@ function drawLevel (level) {
     let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
     let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
+    let crate_sprite = crate_sprites[inmune]
     crate_sprite.position = new PintarJS.Point(OFFX + ci*TILE, OFFY + cj*TILE)
     crate_sprite.scale = new PintarJS.Point(TILE/16, TILE/16)
     pintar.drawSprite(crate_sprite);
@@ -327,11 +382,19 @@ function drawLevel (level) {
   // drawSprScaled(playerSpr, pi, pj, player_scale_x, 1);
   //drawSpr(playerSpr, pi, pj)
   //let sprOffset = Math.floor(pt * 2) % 2;
-  let sprOffset = 1 - (Math.floor(turn_time * 1.99) % 2);
-  //let sprOffset = 0
+  //if (globalT === undefined) globalT = 0
+  //globalT += TURN_SPEED / 10
+  //let sprOffset = 1 - (Math.floor(globalT * 1.99) % 2);
+  //let sprOffset = 1 - (Math.floor(turn_time * 1.99) % 2);
+  let sprOffset = 0
   let odd = level.player.inHole.value.at(-1) % 2 == 1
   if (odd) sprOffset = -sprOffset
-  player_sprite = raw_player_sprites[level.player.inHole.value.at(-1) + sprOffset]
+  let player_spr_n = level.player.inHole.value.at(-1) + sprOffset
+  /*if (player_spr_n >= 8 && turn_time == 0) {
+    // edge case: pushed into a hole
+    player_spr_n -= 8
+  }*/
+  player_sprite = raw_player_sprites[player_spr_n]
   player_sprite.position = new PintarJS.Point(OFFX + pi*TILE, OFFY + pj*TILE)
   player_sprite.scale = new PintarJS.Point(TILE/16, TILE/16)
   pintar.drawSprite(player_sprite);
@@ -565,6 +628,11 @@ function Movable (i, j, inmune, extra = 0, superSolid = DEFAULT_FORBID_OVERLAP) 
   // this.inmune = inmune;
 }
 
+function geoMapChar(chr) {
+  if ('#,.'.indexOf(chr) != -1) return chr
+  return '.'
+}
+
 function str2level (str, enter, exit) {
   str = str.split('\n')
   let w = str[0].length
@@ -583,41 +651,58 @@ function str2level (str, enter, exit) {
     for (let i = 0; i < w; i++) {
       let chr = str[j][i] // .toUpperCase();
       // row.push(chr == '#')
-      if (chr == '#') {
+      /*if (chr == '#') {
         row.push(1)
         continue
       } else if (chr == ',') {
         row.push(2)
         continue
-      } else {
-        row.push(0)
+      } else if ('┌────┐┌┘│├─╷│'.indexOf(chr) != -1) {
+        row.push(chr)
       }
-      if (chr == '.' || chr == '#' || chr == ',') continue
+      else {
+        row.push(0)
+      }*/
+      let geoChar = chr
 
-      if (chr == 'O' || chr == '@') {
+      if (chr == '.' || chr == '#' || chr == ',') {
+
+      } else if (chr == 'O' || chr == '@') {
         player = new Movable(i, j, DEFAULT_PLAYER_INMUNE_LEVEL)
         if (chr == '@') targets.push([i, j])
+        geoChar = '.'
       } else if (chr == '*') {
         targets.push([i, j])
+        geoChar = '.'
       } else if (chr >= '1' && chr <= '9') {
         crates.push(new Movable(i, j, chr - '1'))
-      } else if (chr >= 'A' && chr <= 'I') {
+        geoChar = '.'
+      /*} else if (chr >= 'A' && chr <= 'I') {
         crates.push(new Movable(i, j, chr.charCodeAt(0) - 'A'.charCodeAt(0)))
         targets.push([i, j])
+        geoChar = '.'
       } else if (chr >= 'p' && chr <= 'z') {
         buttons.push([i, j, chr])
+        geoChar = '.'
       } else if (chr >= 'P' && chr <= 'Z') {
         doors.push([i, j, chr])
+        geoChar = '.'
       } else if (chr == '!') {
         player_target = [i, j]
+        geoChar = '.'
       } else if ('JKLMN'.indexOf(chr) != -1) {
         machines.push([i, j, 'JKLMN'.indexOf(chr) + 1])
+        geoChar = '.'*/
       } else if (chr == '_') {
         holes.push([i, j])
+        geoChar = '.'
       } else if (chr == '-') {
         holes.push([i, j])
         targets.push([i, j])
+        geoChar = '.'
       }
+
+      row.push(geoChar)
     }
     geo.push(row)
   }
@@ -1162,7 +1247,7 @@ function draw () {
             [pi, pj] = cur_level.player.history[real_tick - 1]
             let bad_move = (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
               (pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
-              cur_level.geo[pj + cur_dj][pi + cur_di] ||
+              (cur_level.geo[pj + cur_dj][pi + cur_di] != '.') ||
               closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) ||
               openHoleAt(cur_level, pi + cur_di, pj + cur_dj) ||
               movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
@@ -1186,7 +1271,7 @@ function draw () {
               if (pushing_crates.length > 0) { // trying to push a crate
                 let next_space_i = pi + cur_di * 2
                 let next_space_j = pj + cur_dj * 2
-                let occupied_by_wall = cur_level.geo[next_space_j][next_space_i] || closedDoorAt(cur_level, next_space_i, next_space_j)
+                let occupied_by_wall = (cur_level.geo[next_space_j][next_space_i] != '.') || closedDoorAt(cur_level, next_space_i, next_space_j)
                 if (!ALLOW_CRATE_ON_TOP_OF_MACHINE) {
                   occupied_by_wall = occupied_by_wall || machineAt(cur_level, next_space_i, next_space_j)
                 }
