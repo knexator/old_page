@@ -1544,6 +1544,8 @@ function draw (timestamp) {
     }
   })
 
+  console.log(first_undo_press)
+
   let cur_level = levels[cur_level_n]
 
   let starts_won = isWon(cur_level)
@@ -2059,7 +2061,7 @@ window.addEventListener('keydown', e => {
   if ('wasdzx123456789'.indexOf(k) != -1) input_queue.push(k)
   keyboard[k] = true
   keyboard_last_pressed[k] = Date.now()
-  //if (k == '1' || k == '2' || k == '3') first_undo_press = true
+  if (k == '1' || k == '2' || k == '3') first_undo_press = true
   first_key_press = true
 })
 
