@@ -4,6 +4,7 @@
 
 let pintar = new PintarJS();
 pintar.clearColor = PintarJS.Color.fromHex('5e5e5e'); // F7A36B B7B4E2
+//pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
 
 let canvas = document.getElementById('canvas')
 //let ctx = canvas.getContext('webgl2')
@@ -156,6 +157,7 @@ let in_last_level = false
 let intro_time = 1
 let next_level = null
 let first_undo_press = false
+let first_key_press = false
 let won_cur_level = false
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
@@ -310,7 +312,9 @@ let world_texture = new PintarJS.Texture("imgs/world.png", () => {
     'K': [2,4],
     'L': [3,4],
     'M': [0,7],
+    'N': [2,7],
     'm': [2,8],
+    'P': [3,0],
     'X': [0,10]
   }
   let _4x10 = new PintarJS.Point(4, 11)
@@ -379,6 +383,40 @@ let gradients_texture = new PintarJS.Texture("imgs/gradients.png", () => {
   //player_sprite = raw_player_sprites[0]
 });
 
+let texto_1_texture = new PintarJS.Texture("imgs/texts_1.png", () => {
+  texto_1_sprite = new PintarJS.Sprite(texto_1_texture)
+  texto_1_sprite.size = new PintarJS.Point(896, 576)
+});
+let texto_2a_texture = new PintarJS.Texture("imgs/Text_2_a.png", () => {
+  texto_2a_sprite = new PintarJS.Sprite(texto_2a_texture)
+  texto_2a_sprite.size = new PintarJS.Point(640, 448)
+});
+let texto_2b_texture = new PintarJS.Texture("imgs/Text_2_b.png", () => {
+  texto_2b_sprite = new PintarJS.Sprite(texto_2b_texture)
+  texto_2b_sprite.size = new PintarJS.Point(640, 448)
+});
+let texto_3_texture = new PintarJS.Texture("imgs/texts_3.png", () => {
+  texto_3_sprite = new PintarJS.Sprite(texto_3_texture)
+  texto_3_sprite.size = new PintarJS.Point(640, 640)
+});
+let texto_r_texture = new PintarJS.Texture("imgs/texts_r.png", () => {
+  texto_r_sprite = new PintarJS.Sprite(texto_r_texture)
+  texto_r_sprite.size = new PintarJS.Point(640, 640)
+});
+let texto_recap_texture = new PintarJS.Texture("imgs/texts_recap.png", () => {
+  texto_recap_sprite = new PintarJS.Sprite(texto_recap_texture)
+  texto_recap_sprite.size = new PintarJS.Point(448, 640)
+});
+let texto_NM_texture = new PintarJS.Texture("imgs/texts_select.png", () => {
+  texto_NM_sprite = new PintarJS.Sprite(texto_NM_texture)
+  texto_NM_sprite.size = new PintarJS.Point(832, 448)
+  texto_NM_sprite.color = PintarJS.Color.fromHex('#7988c0')
+});
+let texto_credits_texture = new PintarJS.Texture("imgs/texts_credits.png", () => {
+  texto_credits_sprite = new PintarJS.Sprite(texto_credits_texture)
+  texto_credits_sprite.size = new PintarJS.Point(896, 576)
+  texto_credits_sprite.color = PintarJS.Color.fromHex('#4f69ba')
+});
 /*let raw_player_sprites = [
   new PintarJS.Sprite(player_texture)
 ]
@@ -562,7 +600,7 @@ function drawLevel (level) {
   //globalT += TURN_SPEED / 10
   //let sprOffset = 1 - (Math.floor(globalT * 1.99) % 2);
   //let sprOffset = 1 - (Math.floor(turn_time * 1.99) % 2);
-  let sprOffset = 0
+  let sprOffset = level_transition_time > 0.5 && won_cur_level ? 1 : 0
   let odd = level.player.inHole.value.at(-1) % 2 == 1
   if (odd) sprOffset = -sprOffset
   let player_spr_n = level.player.inHole.value.at(-1) + sprOffset
@@ -709,46 +747,29 @@ function drawExitGradient (level) {
   pintar.drawSprite(gradSpr)
 }
 
-let text_logo_sprite = new PintarJS.TextSprite("Tres\nUndos")
+/*let text_logo_sprite = new PintarJS.TextSprite("Tres\nUndos")
 text_logo_sprite.font = "Helvetica"
 text_logo_sprite.color = PintarJS.Color.white();
 text_logo_sprite.strokeWidth = 2;
 text_logo_sprite.strokeColor = PintarJS.Color.black();
 text_logo_sprite.fontSize = 128;
-text_logo_sprite.position = new PintarJS.Point(20, 100);
+text_logo_sprite.position = new PintarJS.Point(20, 100);*/
+
 function drawIntroText () {
-  pintar.drawText(text_logo_sprite)
-  /*if (intro_time > 0) {
-    ctx.fillStyle = hexToRGB(COLORS.wall, 1 - intro_time)
-  } else {
-    ctx.fillStyle = COLORS.wall
-  }
-  ctx.textAlign = 'center'
-  ctx.font = (TILE * 2.5).toString() + 'px Salsa'
-  ctx.fillText('Undo', OFFX + TILE * 3.5, OFFY + TILE * 2.5)
-  ctx.fillText('Tres', OFFX + TILE * 3.5, OFFY + TILE * 5)
-
-  ctx.fillStyle = COLORS.wall
-  ctx.font = (TILE * 0.45).toString() + 'px Verdana'
-  ctx.fillText('Arrow Keys or', OFFX + TILE * 12, OFFY + TILE * 7.6)
-  ctx.fillText('WASD to Move', OFFX + TILE * 12, OFFY + TILE * 8.1)
-
-  ctx.fillText('Z to Undo', OFFX + TILE * 12, OFFY + TILE * 8.8)*/
+  texto_1_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  texto_1_sprite.position = new PintarJS.Point(OFFX, OFFY)
+  pintar.drawSprite(texto_1_sprite)
 }
 
 function drawSecondText () {
-  /*ctx.fillStyle = COLORS.wall
-  ctx.textAlign = 'left'
-  let x = OFFX + TILE * 4.2
-  let y = OFFY + TILE * 5.6
-  ctx.font = (TILE * 0.5).toString() + 'px Verdana'
-  ctx.fillText('Z to undo', x, y)
-
   if (ENABLE_RESTART) {
-    y += TILE * 0.6
-    ctx.fillText('R to reset', x, y)
-    ENABLE_RESTART = true
+    texto_2b_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+    texto_2b_sprite.position = new PintarJS.Point(OFFX, OFFY)
+    pintar.drawSprite(texto_2b_sprite)
   } else {
+    texto_2a_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+    texto_2a_sprite.position = new PintarJS.Point(OFFX, OFFY)
+    pintar.drawSprite(texto_2a_sprite)
     let moved_orange = levels[1].crates[1].history.findIndex(([i, j]) => i != 4 || j != 2)
     if (moved_orange == -1) return
     let balance = 0
@@ -762,35 +783,37 @@ function drawSecondText () {
     if (balance < -2) {
       setTimeout(function () { ENABLE_RESTART = true }, 1000)
     }
-  }*/
+  }
 }
 
 function drawEndScreen () {
-  /*ctx.fillStyle = COLORS.wall
-  ctx.textAlign = 'center'
-  ctx.font = (TILE * 4.5).toString() + 'px Salsa'
-  let x = OFFX + TILE * 6
-  ctx.fillText('Thanks for', x, OFFY + TILE * 2)
-  ctx.fillText('Playing!', x, OFFY + TILE * 6)*/
+  texto_credits_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  texto_credits_sprite.position = new PintarJS.Point(OFFX, OFFY)
+  pintar.drawSprite(texto_credits_sprite)
 }
 
 function drawXtoReallyText () {
-  /*ctx.fillStyle = COLORS.wall
-  ctx.textAlign = 'left'
-  let x = OFFX + TILE * 3.2
-  let y = OFFY - TILE * 0.2
-  ctx.font = (TILE * 0.5).toString() + 'px Verdana'
+  texto_3_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  texto_3_sprite.position = new PintarJS.Point(OFFX, OFFY)
+  pintar.drawSprite(texto_3_sprite)
+}
 
-  let text1 = 'X to '
-  let text2 = 'really'
-  let text3 = ' undo'
-  let text1Width = ctx.measureText(text1).width
-  let text2Width = ctx.measureText(text2).width
+function drawCtoRRText () {
+  texto_r_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  texto_r_sprite.position = new PintarJS.Point(OFFX, OFFY)
+  pintar.drawSprite(texto_r_sprite)
+}
 
-  ctx.fillText(text1, x, y)
-  ctx.fillText(text3, x + text1Width + text2Width, y)
-  ctx.font = 'italic ' + (TILE * 0.5).toString() + 'px Verdana'
-  ctx.fillText(text2, x + text1Width, y)*/
+function drawSkipText () {
+  texto_NM_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  texto_NM_sprite.position = new PintarJS.Point(OFFX, OFFY)
+  pintar.drawSprite(texto_NM_sprite)
+}
+
+function drawRecapText () {
+  texto_recap_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  texto_recap_sprite.position = new PintarJS.Point(OFFX, OFFY)
+  pintar.drawSprite(texto_recap_sprite)
 }
 
 function hexToRGB (hex, alpha) {
@@ -1024,7 +1047,10 @@ function getCoveredGoals (level) {
 levels = hole_levels_raw.map(([str, enter, exit]) => str2level(str, enter, exit))
 levels[0].extraDrawCode = drawIntroText
 levels[1].extraDrawCode = drawSecondText
-levels[5].extraDrawCode = drawXtoReallyText
+levels[3].extraDrawCode = drawXtoReallyText
+levels[5].extraDrawCode = drawSkipText
+levels[6].extraDrawCode = drawRecapText
+levels[7].extraDrawCode = drawCtoRRText
 levels.at(-1).extraDrawCode = drawEndScreen
 
 let cur_level_n = 0
@@ -1152,7 +1178,7 @@ window.addEventListener('resize', e => {
   //canvas.width = innerWidth
   //canvas.height = innerHeight
   //pintar.resizeAndCenter(64, 64);
-  recalcTileSize()
+  setTimeout(recalcTileSize, 100);
   //if (in_last_level) drawScreen()
 })
 
@@ -1409,7 +1435,7 @@ function loadLevel (n) {
   } */
 
   if (n >= 2) ENABLE_RESTART = true
-  if (n >= 4) ENABLE_UNDO_2 = true
+  if (n >= 3) ENABLE_UNDO_2 = true
 }
 
 function recalcTileSize (level) {
@@ -1424,8 +1450,10 @@ function recalcTileSize (level) {
   if (!level) level = levels[cur_level_n]
   // let tile_w = Math.min(canvas.width / (level.w), 64)
   // let tile_h = Math.min(canvas.height / (level.h), 64)
-  let tile_w = Math.floor(canvas.width / (level.w * 16)) * 16
-  let tile_h = Math.floor(canvas.height / (level.h * 16)) * 16
+  let tile_w = Math.floor(canvas.width / (level.w * 1)) * 1
+  let tile_h = Math.floor(canvas.height / (level.h * 1)) * 1
+  // let tile_w = Math.floor(canvas.width / (level.w * 16)) * 16
+  // let tile_h = Math.floor(canvas.height / (level.h * 16)) * 16
 
   console.log(tile_w, tile_h);
   // tile_w = Math.min(tile_w, 64)
@@ -1448,7 +1476,8 @@ function doUndo (n) {
 function getKeyRetriggerTime (key) {
   if ('123456789'.indexOf(key) != -1) return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
-  if (key == 'z' || key == 'x') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
+  if (key == 'z' || key == 'x' || key == 'c') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
+  //return first_key_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   return Infinity
 }
 
@@ -2018,7 +2047,8 @@ window.addEventListener('keydown', e => {
   if ('wasdzx123456789'.indexOf(k) != -1) input_queue.push(k)
   keyboard[k] = true
   keyboard_last_pressed[k] = Date.now()
-  if (k == '1') first_undo_press = true
+  //if (k == '1' || k == '2' || k == '3') first_undo_press = true
+  first_key_press = true
 })
 
 window.addEventListener('keyup', e => {
@@ -2026,6 +2056,7 @@ window.addEventListener('keyup', e => {
   keyboard[k] = false
   keyboard_last_pressed[k] = null
   first_undo_press = false
+  first_key_press = false
 })
 
 function isKeyDown (k) {
