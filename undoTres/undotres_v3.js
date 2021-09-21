@@ -3,7 +3,7 @@
 // let canvasTxt = window.canvasTxt.default
 
 let pintar = new PintarJS();
-pintar.clearColor = PintarJS.Color.fromHex('5e5e5e'); // F7A36B B7B4E2
+pintar.clearColor = PintarJS.Color.fromHex('4e4e4e'); // F7A36B B7B4E2 5e5e5e
 //pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
 
 let canvas = document.getElementById('canvas')
@@ -416,7 +416,7 @@ let texto_NM_texture = new PintarJS.Texture("imgs/texts_select.png", () => {
 let texto_credits_texture = new PintarJS.Texture("imgs/texts_credits.png", () => {
   texto_credits_sprite = new PintarJS.Sprite(texto_credits_texture)
   texto_credits_sprite.size = new PintarJS.Point(896, 576)
-  texto_credits_sprite.color = PintarJS.Color.fromHex('#4f69ba')
+  //texto_credits_sprite.color = PintarJS.Color.fromHex('#4f69ba')
 });
 /*let raw_player_sprites = [
   new PintarJS.Sprite(player_texture)
@@ -626,21 +626,11 @@ function drawLevel (level) {
         player_sprite = raw_player_sprites[player_spr_n]
         player_sprite.position = new PintarJS.Point(OFFX + opi*TILE, OFFY + opj*TILE)
         player_sprite.color = PintarJS.Color.fromHex(COLORS.crates[true_timeline_undos.at(-1) - 1])
-        player_sprite.color.a = 0.7
+        player_sprite.color.a = 0.4
         pintar.drawSprite(player_sprite);
       //}
     }
     player_sprite.color = PintarJS.Color.white()
-    /*opt = 0.8
-    if (1 - turn_time < opt) {
-      opi = lerp(prevPlayerState[0], playerState[0], opt)
-      opj = lerp(prevPlayerState[1], playerState[1], opt)
-      player_sprite = raw_player_sprites[player_spr_n]
-      player_sprite.position = new PintarJS.Point(OFFX + opi*TILE, OFFY + opj*TILE)
-      player_sprite.color.a = 0.7
-      pintar.drawSprite(player_sprite);
-      player_sprite.color = PintarJS.Color.white();
-    }*/
   }
   player_sprite = raw_player_sprites[player_spr_n]
   player_sprite.position = new PintarJS.Point(OFFX + pi*TILE, OFFY + pj*TILE)
@@ -1446,6 +1436,7 @@ function loadLevel (n) {
 
   if (n >= 2) ENABLE_RESTART = true
   if (n >= 3) ENABLE_UNDO_2 = true
+  if (n >= 7) ENABLE_UNDO_3 = true
 }
 
 function recalcTileSize (level) {
@@ -1465,7 +1456,7 @@ function recalcTileSize (level) {
   // let tile_w = Math.floor(canvas.width / (level.w * 16)) * 16
   // let tile_h = Math.floor(canvas.height / (level.h * 16)) * 16
 
-  console.log(tile_w, tile_h);
+  //console.log(tile_w, tile_h);
   // tile_w = Math.min(tile_w, 64)
   // tile_h = Math.min(tile_h, 64)
   // let tile_w = 32
@@ -1544,7 +1535,7 @@ function draw (timestamp) {
     }
   })
 
-  console.log(first_undo_press)
+  //console.log(first_undo_press)
 
   let cur_level = levels[cur_level_n]
 
@@ -1567,7 +1558,7 @@ function draw (timestamp) {
     let ends_below_half = level_transition_time <= 0.5
     if (starts_above_half && ends_below_half) {
       //nextLevel()
-      console.log("gonna load: ", next_level);
+      //console.log("gonna load: ", next_level);
       loadLevel(next_level)
     }
     // if (level_transition_time <= 0) nextLevel();
@@ -2001,9 +1992,9 @@ function draw (timestamp) {
   if (!HALT) window.requestAnimationFrame(draw)
 }
 
-window.addEventListener('mousemove', e => _mouseEvent(e))
+/*window.addEventListener('mousemove', e => _mouseEvent(e))
 window.addEventListener('mousedown', e => _mouseEvent(e))
-window.addEventListener('mouseup', e => _mouseEvent(e))
+window.addEventListener('mouseup', e => _mouseEvent(e))*/
 // document.onContextMenu = e => e.preventDefault();
 
 function _mouseEvent (e) {
@@ -2014,10 +2005,10 @@ function _mouseEvent (e) {
   return false
 }
 
-window.addEventListener('wheel', e => {
+/*window.addEventListener('wheel', e => {
   let d = e.deltaY > 0 ? 1 : -1
   return mouse.wheel = d
-})
+})*/
 
 let mouse = { x: 0, y: 0, buttons: 0, wheel: 0 }
 let mouse_prev = Object.assign({}, mouse)
@@ -2063,6 +2054,9 @@ window.addEventListener('keydown', e => {
   keyboard_last_pressed[k] = Date.now()
   if (k == '1' || k == '2' || k == '3') first_undo_press = true
   first_key_press = true
+
+  e.preventDefault()
+  return false;
 })
 
 window.addEventListener('keyup', e => {
@@ -2071,6 +2065,9 @@ window.addEventListener('keyup', e => {
   keyboard_last_pressed[k] = null
   first_undo_press = false
   first_key_press = false
+
+  e.preventDefault()
+  return false;
 })
 
 function isKeyDown (k) {
