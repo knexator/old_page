@@ -156,6 +156,7 @@ let in_last_level = false
 let intro_time = 1
 let next_level = null
 let first_undo_press = false
+let won_cur_level = false
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
 let TURN_SPEED = 0.15 //0.3
@@ -258,13 +259,15 @@ let COLORS = {
 }
 COLORS.background = COLORS.floor // #75366D
 COLORS.true_background = '#5e5e5e' // COLORS.wall // #75366D
-COLORS.transition = COLORS.floor // COLORS.wall // #75366D
+//COLORS.transition = COLORS.floor // COLORS.wall // #75366D
 COLORS.floor = COLORS.true_background
 COLORS.crates = [
   COLORS.crate1,
   COLORS.crate2,
   COLORS.crate3,
 ]
+
+COLORS.transition = '#383F69' // 383F69 5e5e5e
 
 // BACK_COLORS = [COLORS.true_background, COLORS.crate1, COLORS.crate2, COLORS.crate3]
 BACK_COLORS = [COLORS.true_background, COLORS.machine1, COLORS.machine2, COLORS.machine3]
@@ -346,6 +349,35 @@ let world_texture = new PintarJS.Texture("imgs/world.png", () => {
   black_sprite  = new PintarJS.Sprite(world_texture)
   black_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 9), _4x10);
 });
+let gradients_texture = new PintarJS.Texture("imgs/gradients.png", () => {
+  //let _4x4 = new PintarJS.Point(4, 4)
+  raw_gradient_sprites = [];
+
+
+  //for (let k=0; k<16; k++) {
+  let cur = new PintarJS.Sprite(gradients_texture)
+  cur.sourceRectangle = new PintarJS.Rectangle(0, 0, 48, 32);
+  cur.size = new PintarJS.Point(48, 32);
+  raw_gradient_sprites.push(cur)
+
+  cur = cur.clone()
+  cur.sourceRectangle = new PintarJS.Rectangle(48, 0, 32, 48);
+  cur.size = new PintarJS.Point(32, 48);
+  raw_gradient_sprites.push(cur)
+
+  cur = cur.clone()
+  cur.sourceRectangle = new PintarJS.Rectangle(0, 32, 32, 48);
+  cur.size = new PintarJS.Point(32, 48);
+  raw_gradient_sprites.push(cur)
+
+  cur = cur.clone()
+  cur.sourceRectangle = new PintarJS.Rectangle(32, 48, 48, 32);
+  cur.size = new PintarJS.Point(48, 32);
+  raw_gradient_sprites.push(cur)
+  //}
+  //raw_player_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(2, 0), _4x4);
+  //player_sprite = raw_player_sprites[0]
+});
 
 /*let raw_player_sprites = [
   new PintarJS.Sprite(player_texture)
@@ -366,7 +398,6 @@ function drawSpr(spr, i,j) {
 }
 
 function drawLevel (level) {
-  pintar._renderer.setShader(null);
   if (in_last_level) {
     if (level.extraDrawCode) level.extraDrawCode()
     return
@@ -464,6 +495,13 @@ function drawLevel (level) {
   // console.log(player_forward);
 
   let pt = player_forward ? forwardsT : backwardsT
+
+  if (level_transition_time > 0.5 && won_cur_level) {
+    pt = (1-level_transition_time) * 4
+    //pt += 1
+    //console.log(1-level_transition_time);
+  }
+
   let pi = lerp(prevPlayerState[0], playerState[0], pt)
   let pj = lerp(prevPlayerState[1], playerState[1], pt)
   // drawSpr(playerSpr, pi, pj);
@@ -533,13 +571,14 @@ function drawLevel (level) {
     player_spr_n -= 8
   }*/
   //if (!player_forward) {
-  if (true_timeline_undos.at(-1) > 0) {
+  if (true_timeline_undos.at(-1) > 0 && turn_time > 0.0) {
     //let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
     //let opts = [1.0, 0.6, 0.2]
+    //let opts = [0.0]
     let opts = [1.0]
     for (var i = 0; i < opts.length; i++) {
       let opt = opts[i]
-      if (1 - turn_time < opt && 1) {// - turn_time > opt - 0.66) {
+      //if (1 - turn_time < opt && 1) {// - turn_time > opt - 0.66) {
         let opi = lerp(prevPlayerState[0], playerState[0], opt)
         let opj = lerp(prevPlayerState[1], playerState[1], opt)
         player_sprite = raw_player_sprites[player_spr_n]
@@ -547,7 +586,7 @@ function drawLevel (level) {
         player_sprite.color = PintarJS.Color.fromHex(COLORS.crates[true_timeline_undos.at(-1) - 1])
         player_sprite.color.a = 0.7
         pintar.drawSprite(player_sprite);
-      }
+      //}
     }
     player_sprite.color = PintarJS.Color.white()
     /*opt = 0.8
@@ -586,7 +625,172 @@ function drawLevel (level) {
   /*drawEntranceGradient(level)
   drawExitGradient(level)*/
 
+  pintar._renderer.setShader(null);
+  /*let entrance_spr = geo_sprites['X']
+  //console.log(level.enter);
+  entrance_spr.position = new PintarJS.Point(OFFX + 2*TILE, OFFY + 5*TILE)
+  entrance_spr.scale = new PintarJS.Point(TILE/16, TILE/16)
+  pintar.drawSprite(entrance_spr);
+  entrance_spr.position = new PintarJS.Point(OFFX + 8*TILE, OFFY + 5*TILE)
+  pintar.drawSprite(entrance_spr);*/
+
+  drawEntranceGradient(level)
+  drawExitGradient(level)
+
   if (level.extraDrawCode) level.extraDrawCode()
+}
+
+
+function drawEntranceGradient (level) {
+  let [ei, ej] = level.player.history[0]
+  let [di, dj] = level.enter
+
+  let gradSpr = raw_gradient_sprites[dir2gradSpr(di, dj)]
+  //gradSpr.color = PintarJS.Color.red()
+  gradSpr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+  if (di == 0) {
+    if (dj > 0) {
+      ei -= 1
+      ej -= 2
+    } else {
+      ei -= 1
+      ej += 1
+    }
+  } else {
+    if (di > 0) {
+      ei -= 2
+      ej -= 1
+    } else {
+      ei += 1
+      ej -= 1
+    }
+  }
+  gradSpr.position = new PintarJS.Point(
+    OFFX + ei*TILE,
+    OFFY + ej*TILE
+  )
+  pintar.drawSprite(gradSpr)
+}
+
+function dir2gradSpr(di,dj) {
+  return dj == 0 ?
+    (di > 0 ? 1 : 2) :
+    (dj > 0 ? 3 : 0)
+}
+
+function drawExitGradient (level) {
+  let [ei, ej] = level.targets[0]
+  let [di, dj] = level.exit
+  di *= -1
+  dj *= -1
+
+  let gradSpr = raw_gradient_sprites[dir2gradSpr(di, dj)]
+  //gradSpr.color = PintarJS.Color.red()
+  gradSpr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+  if (di == 0) {
+    if (dj > 0) {
+      ei -= 1
+      ej -= 2
+    } else {
+      ei -= 1
+      ej += 1
+    }
+  } else {
+    if (di > 0) {
+    } else {
+      ei += 1
+      ej -= 1
+    }
+  }
+  gradSpr.position = new PintarJS.Point(
+    OFFX + ei*TILE,
+    OFFY + ej*TILE
+  )
+  pintar.drawSprite(gradSpr)
+}
+
+let text_logo_sprite = new PintarJS.TextSprite("Tres\nUndos")
+text_logo_sprite.font = "Helvetica"
+text_logo_sprite.color = PintarJS.Color.white();
+text_logo_sprite.strokeWidth = 2;
+text_logo_sprite.strokeColor = PintarJS.Color.black();
+text_logo_sprite.fontSize = 128;
+text_logo_sprite.position = new PintarJS.Point(20, 100);
+function drawIntroText () {
+  pintar.drawText(text_logo_sprite)
+  /*if (intro_time > 0) {
+    ctx.fillStyle = hexToRGB(COLORS.wall, 1 - intro_time)
+  } else {
+    ctx.fillStyle = COLORS.wall
+  }
+  ctx.textAlign = 'center'
+  ctx.font = (TILE * 2.5).toString() + 'px Salsa'
+  ctx.fillText('Undo', OFFX + TILE * 3.5, OFFY + TILE * 2.5)
+  ctx.fillText('Tres', OFFX + TILE * 3.5, OFFY + TILE * 5)
+
+  ctx.fillStyle = COLORS.wall
+  ctx.font = (TILE * 0.45).toString() + 'px Verdana'
+  ctx.fillText('Arrow Keys or', OFFX + TILE * 12, OFFY + TILE * 7.6)
+  ctx.fillText('WASD to Move', OFFX + TILE * 12, OFFY + TILE * 8.1)
+
+  ctx.fillText('Z to Undo', OFFX + TILE * 12, OFFY + TILE * 8.8)*/
+}
+
+function drawSecondText () {
+  /*ctx.fillStyle = COLORS.wall
+  ctx.textAlign = 'left'
+  let x = OFFX + TILE * 4.2
+  let y = OFFY + TILE * 5.6
+  ctx.font = (TILE * 0.5).toString() + 'px Verdana'
+  ctx.fillText('Z to undo', x, y)
+
+  if (ENABLE_RESTART) {
+    y += TILE * 0.6
+    ctx.fillText('R to reset', x, y)
+    ENABLE_RESTART = true
+  } else {
+    let moved_orange = levels[1].crates[1].history.findIndex(([i, j]) => i != 4 || j != 2)
+    if (moved_orange == -1) return
+    let balance = 0
+    for (let k = moved_orange; k < true_timeline_undos.length; k++) {
+      if (true_timeline_undos[k] == 0) {
+        balance += 1
+      } else {
+        balance -= 1
+      }
+    }
+    if (balance < -2) {
+      setTimeout(function () { ENABLE_RESTART = true }, 1000)
+    }
+  }*/
+}
+
+function drawEndScreen () {
+  /*ctx.fillStyle = COLORS.wall
+  ctx.textAlign = 'center'
+  ctx.font = (TILE * 4.5).toString() + 'px Salsa'
+  let x = OFFX + TILE * 6
+  ctx.fillText('Thanks for', x, OFFY + TILE * 2)
+  ctx.fillText('Playing!', x, OFFY + TILE * 6)*/
+}
+
+function drawXtoReallyText () {
+  /*ctx.fillStyle = COLORS.wall
+  ctx.textAlign = 'left'
+  let x = OFFX + TILE * 3.2
+  let y = OFFY - TILE * 0.2
+  ctx.font = (TILE * 0.5).toString() + 'px Verdana'
+
+  let text1 = 'X to '
+  let text2 = 'really'
+  let text3 = ' undo'
+  let text1Width = ctx.measureText(text1).width
+  let text2Width = ctx.measureText(text2).width
+
+  ctx.fillText(text1, x, y)
+  ctx.fillText(text3, x + text1Width + text2Width, y)
+  ctx.font = 'italic ' + (TILE * 0.5).toString() + 'px Verdana'
+  ctx.fillText(text2, x + text1Width, y)*/
 }
 
 function hexToRGB (hex, alpha) {
@@ -604,10 +808,52 @@ function hexToRGB (hex, alpha) {
 
 function drawScreen () {
   pintar.startFrame();
-  /*raw_player_sprites.position = new PintarJS.Point(16, 16);
-  pintar.drawSprite(raw_player_sprites[0]);
-  pintar.drawSprite(wall_sprites[0]);*/
-  drawLevel(levels[cur_level_n])
+  if (level_transition_time > 0.5) {
+    let t = (level_transition_time - 0.5) * 2
+    let cur_level = levels[cur_level_n]
+    drawLevel(cur_level)
+    //ctx.fillStyle = COLORS.transition // ctx.fillStyle = COLORS.background; // 'black' floorWin
+
+    let di = levels[next_level].enter[0]
+    let dj = levels[next_level].enter[1]
+    let x_start = di < 0 ? canvas.width * t : 0
+    let x_end = di > 0 ? canvas.width * (1 - t) : canvas.width
+    let y_start = dj < 0 ? canvas.height * t : 0
+    let y_end = dj > 0 ? canvas.height * (1 - t) : canvas.height
+    //ctx.fillRect(x_start, y_start, x_end - x_start, y_end - y_start)
+
+    pintar.drawRectangle(
+      new PintarJS.ColoredRectangle(
+        new PintarJS.Point(x_start, y_start),
+        new PintarJS.Point(x_end - x_start, y_end - y_start),
+        PintarJS.Color.fromHex(COLORS.transition), null, true));
+
+
+  } else if (level_transition_time > 0) {
+    turn_time = 1
+    let t = level_transition_time * 2
+    let cur_level = levels[cur_level_n]
+    drawLevel(cur_level)
+    //ctx.fillStyle = COLORS.transition // ctx.fillStyle = COLORS.background; // 'black'
+    let di = cur_level.enter[0]
+    let dj = cur_level.enter[1]
+    let x_start = di > 0 ? canvas.width * (1 - t) : 0
+    let x_end = di < 0 ? canvas.width * t : canvas.width
+    let y_start = dj > 0 ? canvas.height * (1 - t) : 0
+    let y_end = dj < 0 ? canvas.height * t : canvas.height
+
+    //ctx.fillRect(x_start, y_start, x_end - x_start, y_end - y_start)
+    pintar.drawRectangle(
+      new PintarJS.ColoredRectangle(
+        new PintarJS.Point(x_start, y_start),
+        new PintarJS.Point(x_end - x_start, y_end - y_start),
+        PintarJS.Color.fromHex(COLORS.transition), null, true));
+  } else {
+    let cur_level = levels[cur_level_n]
+    drawLevel(cur_level)
+  }
+
+  //drawLevel(levels[cur_level_n])
   pintar.endFrame();
 }
 
@@ -776,10 +1022,10 @@ function getCoveredGoals (level) {
 }
 
 levels = hole_levels_raw.map(([str, enter, exit]) => str2level(str, enter, exit))
-/*levels[0].extraDrawCode = drawIntroText
+levels[0].extraDrawCode = drawIntroText
 levels[1].extraDrawCode = drawSecondText
 levels[5].extraDrawCode = drawXtoReallyText
-levels.at(-1).extraDrawCode = drawEndScreen*/
+levels.at(-1).extraDrawCode = drawEndScreen
 
 let cur_level_n = 0
 let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
@@ -1139,6 +1385,7 @@ function initTransitionToPrevLevel () {
 }
 
 function loadLevel (n) {
+  won_cur_level = false
   in_last_level = n == levels.length - 1
   cur_level_n = n
   true_timeline_undos = []
@@ -1408,6 +1655,7 @@ function draw (timestamp) {
             // player exited the level
             // nextLevel();
             initTransitionToNextLevel()
+            won_cur_level = true
             /* transitionSound.play();
             screen_transition_turn = true
             level_transition_time = 1 */
@@ -1415,6 +1663,7 @@ function draw (timestamp) {
             neutralTurn(cur_level);
             [pi, pj] = cur_level.player.history.at(-1)
             cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
+            //cur_level.player.history[real_tick] = [pi + cur_di*2, pj + cur_dj*2]
           } else { // player did an original move
             [pi, pj] = cur_level.player.history[real_tick - 1]
             let bad_move = (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
