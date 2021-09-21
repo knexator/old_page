@@ -3,7 +3,7 @@
 // let canvasTxt = window.canvasTxt.default
 
 let pintar = new PintarJS();
-pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
+pintar.clearColor = PintarJS.Color.fromHex('5e5e5e'); // F7A36B B7B4E2
 
 let canvas = document.getElementById('canvas')
 //let ctx = canvas.getContext('webgl2')
@@ -289,7 +289,7 @@ let world_texture = new PintarJS.Texture("imgs/world.png", () => {
   let geoData = {
     '#': [0,0],
     //',': [1,0], //[3,10],
-    '.': [0,10],
+    '.': [0,9],
     'A': [0,6],
     'B': [1,6],
     'C': [2,6],
@@ -308,8 +308,9 @@ let world_texture = new PintarJS.Texture("imgs/world.png", () => {
     'L': [3,4],
     'M': [0,7],
     'm': [2,8],
+    'X': [0,10]
   }
-  let _4x10 = new PintarJS.Point(4, 10)
+  let _4x10 = new PintarJS.Point(4, 11)
   Object.entries(geoData).forEach(([k,v]) => {
     let spr = new PintarJS.Sprite(world_texture)
     spr.setSourceFromSpritesheet(new PintarJS.Point(v[0], v[1]), _4x10);
@@ -325,7 +326,7 @@ let world_texture = new PintarJS.Texture("imgs/world.png", () => {
   crate_hole_sprites = []
   for (let k=0; k<3; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
-    curSpr.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
+    curSpr.setSourceFromSpritesheet(new PintarJS.Point(2, 9), _4x10);
     curSpr.color = new PintarJS.Color.fromHex(COLORS.crates[k]);
     crate_sprites.push(curSpr)
 
@@ -340,10 +341,10 @@ let world_texture = new PintarJS.Texture("imgs/world.png", () => {
     crate_hole_sprites.push(curSpr)
   }*/
   hole_sprite  = new PintarJS.Sprite(world_texture)
-  hole_sprite.setSourceFromSpritesheet(new PintarJS.Point(1, 9), new PintarJS.Point(4, 10));
+  hole_sprite.setSourceFromSpritesheet(new PintarJS.Point(1, 9), _4x10);
 
   black_sprite  = new PintarJS.Sprite(world_texture)
-  black_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 9), new PintarJS.Point(4, 10));
+  black_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 9), _4x10);
 });
 
 /*let raw_player_sprites = [
@@ -531,6 +532,35 @@ function drawLevel (level) {
     // edge case: pushed into a hole
     player_spr_n -= 8
   }*/
+  //if (!player_forward) {
+  if (true_timeline_undos.at(-1) > 0) {
+    //let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
+    //let opts = [1.0, 0.6, 0.2]
+    let opts = [1.0]
+    for (var i = 0; i < opts.length; i++) {
+      let opt = opts[i]
+      if (1 - turn_time < opt && 1) {// - turn_time > opt - 0.66) {
+        let opi = lerp(prevPlayerState[0], playerState[0], opt)
+        let opj = lerp(prevPlayerState[1], playerState[1], opt)
+        player_sprite = raw_player_sprites[player_spr_n]
+        player_sprite.position = new PintarJS.Point(OFFX + opi*TILE, OFFY + opj*TILE)
+        player_sprite.color = PintarJS.Color.fromHex(COLORS.crates[true_timeline_undos.at(-1) - 1])
+        player_sprite.color.a = 0.7
+        pintar.drawSprite(player_sprite);
+      }
+    }
+    player_sprite.color = PintarJS.Color.white()
+    /*opt = 0.8
+    if (1 - turn_time < opt) {
+      opi = lerp(prevPlayerState[0], playerState[0], opt)
+      opj = lerp(prevPlayerState[1], playerState[1], opt)
+      player_sprite = raw_player_sprites[player_spr_n]
+      player_sprite.position = new PintarJS.Point(OFFX + opi*TILE, OFFY + opj*TILE)
+      player_sprite.color.a = 0.7
+      pintar.drawSprite(player_sprite);
+      player_sprite.color = PintarJS.Color.white();
+    }*/
+  }
   player_sprite = raw_player_sprites[player_spr_n]
   player_sprite.position = new PintarJS.Point(OFFX + pi*TILE, OFFY + pj*TILE)
   player_sprite.scale = new PintarJS.Point(TILE/16, TILE/16)
@@ -1121,6 +1151,7 @@ function loadLevel (n) {
   })
   cur_level.player.history.splice(1)
   cur_level.player.inmune_history.splice(1)
+  cur_level.player.inHole.value.splice(1)
   recalcTileSize()
   turn_time = 1
   /* let undoButtons = document.getElementById("footer").children;
