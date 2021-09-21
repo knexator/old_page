@@ -491,9 +491,11 @@ function drawLevel (level) {
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
     drawSpr(crate_hole_sprites[inmune], ci, cj)
   })
-  /*sortedCrates.reverse()
+  sortedCrates.reverse()
+  pintar._renderer.setShader(wobblyShader);
   sortedCrates.forEach(crate => {
     if (!crate.inHole.get()) return
+    if (!crate.inHole.value.at(-2) && turn_time > 0) return
     let state = crate.history.at(-1)
     let prevState = crate.history.at(-2)
     if (prevState === undefined) prevState = state
@@ -501,9 +503,10 @@ function drawLevel (level) {
     let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
     let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
-    drawSpr(crateSprsB[inmune], ci, cj)
+    drawSpr(crate_hole_sprites[inmune], ci, cj)
   })
-  sortedCrates.reverse()*/
+  sortedCrates.reverse()
+  pintar._renderer.setShader(null);
 
   // draw holes
   level.holes.forEach(([i, j]) => {
@@ -646,7 +649,11 @@ function drawLevel (level) {
 
   pintar._renderer.setShader(wobblyShader);
   sortedCrates.forEach(crate => {
-    if (crate.inHole.get()) return
+    if (crate.inHole.get()) {
+      if (crate.inHole.value.at(-2) || turn_time == 0) {
+        return
+      }
+    }
     let state = crate.history.at(-1)
     let prevState = crate.history.at(-2)
     if (prevState === undefined) prevState = state
