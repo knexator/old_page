@@ -159,6 +159,7 @@ let next_level = null
 let first_undo_press = false
 let first_key_press = false
 let won_cur_level = false
+let player_parity = 0
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
 let TURN_SPEED = 0.15 //0.3
@@ -994,6 +995,7 @@ function neutralTurn (level) {
   level.player.history.push([pi, pj])
   level.player.inmune_history.push(level.player.inmune_history.at(-1))
   level.player.inHole.add()
+  player_parity = 1 - player_parity
   /*let last_spr = level.player.inHole.value.at(-1)
   if (last_spr % 2 == 0) {
     last_spr +=1
@@ -1432,6 +1434,7 @@ function loadLevel (n) {
   cur_level.player.history.splice(1)
   cur_level.player.inmune_history.splice(1)
   cur_level.player.inHole.value.splice(1)
+  cur_level.player.inHole.value[0] = dir2spr(cur_level.enter[0], cur_level.enter[1], false) + player_parity
   recalcTileSize()
   turn_time = 1
   /* let undoButtons = document.getElementById("footer").children;
@@ -1656,11 +1659,13 @@ function draw (timestamp) {
               cur_level.player.history[real_tick] = [i, j]
               cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[player_tick]
               cur_level.player.inHole.value[real_tick] = cur_level.player.inHole.value[player_tick]
+              player_parity = 1 - player_parity
             } else { // player is inmune to this undo level
               [i, j] = cur_level.player.history[real_tick - 1]
               cur_level.player.history[real_tick] = [i, j]
               cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1]
               cur_level.player.inHole.value[real_tick] = cur_level.player.inHole.value[real_tick - 1]
+              player_parity = 1 - player_parity
             }
             cur_level.crates.forEach(crate => {
               let crate_tick = get_original_tick_2(real_tick, crate.inmune_history)
@@ -1759,8 +1764,8 @@ function draw (timestamp) {
                     holeSound.play()
                     neutralTurn(cur_level)
                     cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
-                    let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
-                    cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + parity
+                    //let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
+                    cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + player_parity
                     pushing_crates.forEach(pushing_crate => {
           						cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j]
           						cur_level.crates[pushing_crate].inHole.value[real_tick] = true
@@ -1795,8 +1800,8 @@ function draw (timestamp) {
                       pushSound.play()
                       neutralTurn(cur_level)
                       cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
-                      let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
-                      cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + parity
+                      //let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
+                      cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + player_parity
           					  pushing_crates.forEach(pushing_crate => {
   						          cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j]
           					  })
@@ -1808,8 +1813,8 @@ function draw (timestamp) {
                 stepSound.play()
                 neutralTurn(cur_level)
                 cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
-                let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
-                cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, false) + parity
+                //let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
+                cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, false) + player_parity
               }
             }
           }
