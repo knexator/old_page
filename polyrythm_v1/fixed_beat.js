@@ -292,12 +292,15 @@ function timeSinceLastTap(arr, cur_t) {
     return cur_t - arr[arr.length - 1];
 }
 window.addEventListener('touchstart', e => {
-    if (e.targetTouches[0].pageX < canvas.width / 2) {
-        touched_left = true;
+  let touches = e.changedTouches;
+  for (let k=0; k<touches.length; k++) {
+    let touch = touches[k]
+    if (touch.pageX < canvas.width / 2) {
+      touched_left = true
+    } else {
+      touched_right = true
     }
-    else {
-        touched_right = true;
-    }
+  }
 });
 window.addEventListener('mousemove', e => _mouseEvent(e));
 window.addEventListener('mousedown', e => _mouseEvent(e));
