@@ -1,0 +1,27 @@
+<style>
+  .mouse_instructions {
+    // background-color: #444;
+    color: white;
+    width: 800px;
+    font-family: Arial;
+  }
+
+  input {
+    background: green
+  }
+</style>
+<body style="background: #555" oncontextmenu="return false">
+<canvas width=800 height=400 style="background: url('./pool_table.png')"></canvas>
+<br><br><br>
+<button type="button" id="collapse" style="width: 800; height: 30" onclick="collapse()">Collapse!</button>
+<br><br>
+<input type="range" id="slider" value="0" min="0" max="511" step="1" style="width: 800">
+<br><br>
+<div class="mouse_instructions">
+  <p>Left mouse click+drag to shoot</p>
+  <p>Right click to "collapse" into the selected world</p>
+  <p>Mouse wheel to fine tune which world is selected</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/pintar@2.1.5/dist/pintar.min.js"></script>
+<script src="mousePickBetter.js" charset="utf-8"></script>
+</body>
