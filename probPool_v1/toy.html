@@ -1,0 +1,30 @@
+<style>
+  body {
+    background: #555; // 49a83e
+    display: flex;
+    justify-content: center;
+  }
+
+  .mouse_instructions {
+    // background-color: #444;
+    color: white;
+    width: 800px;
+    font-family: Arial;
+  }
+
+  .centered {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    /* bring your own prefixes */
+    transform: translate(-50%, -50%);
+  }
+
+</style>
+<body oncontextmenu="return false">
+<div class="centered">
+  <canvas width=800 height=400 style="background: url('./pool_table.png')"></canvas>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/pintar@2.1.5/dist/pintar.min.js"></script>
+<script src="toy.js" charset="utf-8"></script>
+</body>
