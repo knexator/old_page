@@ -358,9 +358,10 @@ class OutlineBallShader extends PintarJS.ShaderBase {
       float distSq = dot(v_texCoord, v_texCoord);
       float alpha = smoothstep(0.25, .23, distSq);
       float outline = smoothstep(0.05, 0.04, abs(distSq - .24));
+      vec3 outline_color = vec3(0.0);
       // float weight = smoothstep(0.25, .23, distSq) * ${DEBUG_TRUE_OPACITY ? 1.0 / N_WORLDS : 0.05};
       // gl_FragColor = vec4(u_color + 0.0 * v_texCoord, 1.0);
-      gl_FragColor = vec4((u_color * (1.0 - outline) + outline) * alpha, alpha);
+      gl_FragColor = vec4((u_color * (1.0 - outline) + outline * outline_color) * alpha, alpha);
       //
     }
       `;
