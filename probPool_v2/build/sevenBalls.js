@@ -14,6 +14,7 @@ let CHAOS_AMOUNT = 0.001;
 let PICK_TOLERANCE = 0.0005;
 let ALLOW_NO_PICK = true;
 let INITIAL_SPACING = 0.1;
+let OPAQUE_BALLS = false;
 let balls_pos = [];
 let balls_vel = [];
 let balls_won = [];
@@ -257,7 +258,7 @@ window.addEventListener("load", _e => {
 });
 class BallShader extends PintarJS.ShaderBase {
     get uniformNames() {
-        return ["u_pos", "u_color"];
+        return ["u_pos", "u_color", "u_transparent"];
     }
     get vertexShaderCode() {
         return `
@@ -291,6 +292,7 @@ class BallShader extends PintarJS.ShaderBase {
 
     // uniform vec2 u_balls_pos[${N_WORLDS}];
     uniform vec3 u_color;
+    uniform float u_transparent;
 
     // the texCoords passed in from the vertex shader.
     varying vec2 v_texCoord;
@@ -299,8 +301,11 @@ class BallShader extends PintarJS.ShaderBase {
     void main()
     {
       float distSq = dot(v_texCoord, v_texCoord);
-      float weight = smoothstep(0.25, .23, distSq) * ${DEBUG_TRUE_OPACITY ? 1.0 / N_WORLDS : 0.05};
+      float weight = smoothstep(0.25, .23, distSq);
       // gl_FragColor = vec4(u_color.xy * 0.0 + v_texCoord, 0.0, 1.0);
+      if (u_transparent < 0.5) {
+        weight *= ${DEBUG_TRUE_OPACITY ? 1.0 / N_WORLDS : 0.05};
+      }
       gl_FragColor = vec4(u_color * weight, weight);
     }
       `;
@@ -311,6 +316,7 @@ class BallShader extends PintarJS.ShaderBase {
     prepare(_renderable, _viewport) {
         this._gl.uniform3f(this.uniforms.u_color, ...colors[cur_drawing]);
         this._gl.uniform2f(this.uniforms.u_pos, balls_pos[cur_drawing][cur_selected * 2], balls_pos[cur_drawing][cur_selected * 2 + 1]);
+        this._gl.uniform1f(this.uniforms.u_transparent, OPAQUE_BALLS ? 1.0 : 0.0);
     }
 }
 class OutlineBallShader extends PintarJS.ShaderBase {
@@ -622,11 +628,22 @@ function update(cur_time) {
     pintar.startFrame();
     pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend);
     pintar._renderer.setShader(ballShader); // simpler version
-    for (let k = 0; k < N_BALLS; k++) {
-        cur_drawing = k;
+    if (OPAQUE_BALLS) {
         for (let n = 0; n < N_WORLDS; n++) {
             cur_selected = n;
-            ballShader.draw();
+            for (let k = 0; k < N_BALLS; k++) {
+                cur_drawing = k;
+                ballShader.draw();
+            }
+        }
+    }
+    else {
+        for (let k = 0; k < N_BALLS; k++) {
+            cur_drawing = k;
+            for (let n = 0; n < N_WORLDS; n++) {
+                cur_selected = n;
+                ballShader.draw();
+            }
         }
     }
     cur_selected = really_selected;
