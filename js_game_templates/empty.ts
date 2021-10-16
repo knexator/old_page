@@ -16,7 +16,11 @@ window.addEventListener("load", _e => {
   window.requestAnimationFrame(update);
 });
 
-function update() {
+let last_time = 0
+function update(curTime: number) {
+  let deltaTime = curTime - last_time
+  deltaTime = Math.min(deltaTime, 30.0)
+  last_time = curTime;
   // ctx.clearRect(0,0,canvas.width,canvas.height);
 
   if (wasButtonPressed("left")) console.log("0 pressed");
