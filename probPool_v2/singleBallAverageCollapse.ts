@@ -18,6 +18,7 @@ let PICK_TOLERANCE = 0.0005
 let ALLOW_NO_PICK = true
 let INITIAL_SPACING = 0.1
 let OPAQUE_BALLS = false
+let COLLAPSE_WHITE = false
 
 let balls_pos: Float32Array[] = []
 let balls_vel: Float32Array[] = []
@@ -163,6 +164,118 @@ for (let k = 0; k < N_WORLDS * 2; k += 2) {
 }
 
 function collapse() {
+  if (COLLAPSE_WHITE) {
+    collapse_White()
+  } else {
+    collapse_noWhite()
+  }
+}
+
+function collapse_White() {
+  if (cur_selected === null) return;
+  let [n_w, n_b] = cur_selected;
+
+  let mean_px = 0;
+  let mean_py = 0;
+  let mean_vx = 0;
+  let mean_vy = 0;
+  let n_won = 0;
+  let n_lost = 0;
+  let example_won = null;
+  for (let k = 0; k < N_WORLDS * 2; k += 2) {
+    if (balls_won[n_b][k / 2] === 0) {
+      mean_px += balls_pos[n_b][k]
+      mean_py += balls_pos[n_b][k + 1]
+      mean_vx += balls_vel[n_b][k]
+      mean_vy += balls_vel[n_b][k + 1]
+      n_lost += 1
+    } else {
+      if (!example_won) example_won = [balls_pos[n_b][k], balls_pos[n_b][k + 1]]
+      n_won += 1
+    }
+  }
+  mean_px /= N_WORLDS
+  mean_py /= N_WORLDS
+  mean_vx /= N_WORLDS
+  mean_vy /= N_WORLDS
+
+
+  if (n_lost > n_won) {
+    let cur_ball_pos = balls_pos[n_b]
+    let cur_ball_vel = balls_vel[n_b]
+    for (let k = 0; k < N_WORLDS * 2; k += 2) {
+      cur_ball_pos[k] = mean_px
+      cur_ball_pos[k + 1] = mean_py
+      cur_ball_vel[k] = mean_vx
+      cur_ball_vel[k + 1] = mean_vy
+      balls_won[n_b][k / 2] = 0
+    }
+  } else {
+    let cur_ball_pos = balls_pos[n_b]
+    let cur_ball_vel = balls_vel[n_b]
+    for (let k = 0; k < N_WORLDS * 2; k += 2) {
+      cur_ball_pos[k] = example_won![0]
+      cur_ball_pos[k + 1] = example_won![1]
+      cur_ball_vel[k] = 0
+      cur_ball_vel[k + 1] = 0
+      balls_won[n_b][k / 2] = 1
+    }
+  }
+
+  n_b = 0
+  mean_px = 0;
+  mean_py = 0;
+  mean_vx = 0;
+  mean_vy = 0;
+  n_won = 0;
+  n_lost = 0;
+  example_won = null;
+  for (let k = 0; k < N_WORLDS * 2; k += 2) {
+    if (balls_won[n_b][k / 2] === 0) {
+      mean_px += balls_pos[n_b][k]
+      mean_py += balls_pos[n_b][k + 1]
+      mean_vx += balls_vel[n_b][k]
+      mean_vy += balls_vel[n_b][k + 1]
+      n_lost += 1
+    } else {
+      if (!example_won) example_won = [balls_pos[n_b][k], balls_pos[n_b][k + 1]]
+      n_won += 1
+    }
+  }
+  mean_px /= N_WORLDS
+  mean_py /= N_WORLDS
+  mean_vx /= N_WORLDS
+  mean_vy /= N_WORLDS
+
+
+  if (n_lost > n_won) {
+    let cur_ball_pos = balls_pos[n_b]
+    let cur_ball_vel = balls_vel[n_b]
+    for (let k = 0; k < N_WORLDS * 2; k += 2) {
+      cur_ball_pos[k] = mean_px
+      cur_ball_pos[k + 1] = mean_py
+      cur_ball_vel[k] = mean_vx
+      cur_ball_vel[k + 1] = mean_vy
+      balls_won[n_b][k / 2] = 0
+    }
+  } else {
+    let cur_ball_pos = balls_pos[n_b]
+    let cur_ball_vel = balls_vel[n_b]
+    for (let k = 0; k < N_WORLDS * 2; k += 2) {
+      cur_ball_pos[k] = example_won![0]
+      cur_ball_pos[k + 1] = example_won![1]
+      cur_ball_vel[k] = 0
+      cur_ball_vel[k + 1] = 0
+      balls_won[n_b][k / 2] = 1
+    }
+  }
+  for (let k = 0; k < N_WORLDS * 2; k += 2) {
+    balls_pos[0][k] += Math.cos(Math.PI * k / N_WORLDS) * CHAOS_AMOUNT;
+    balls_pos[0][k + 1] += Math.sin(Math.PI * k / N_WORLDS) * CHAOS_AMOUNT;
+  }
+}
+
+function collapse_noWhite() {
   if (cur_selected === null) return;
   let [n_w, n_b] = cur_selected;
 

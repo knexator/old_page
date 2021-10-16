@@ -15,6 +15,7 @@ let PICK_TOLERANCE = 0.0005;
 let ALLOW_NO_PICK = true;
 let INITIAL_SPACING = 0.1;
 let OPAQUE_BALLS = false;
+let COLLAPSE_WHITE = false;
 let balls_pos = [];
 let balls_vel = [];
 let balls_won = [];
@@ -172,6 +173,20 @@ function collapse() {
         balls_vel[n_b][k] = balls_vel[n_b][n_w * 2];
         balls_vel[n_b][k + 1] = balls_vel[n_b][n_w * 2 + 1];
         balls_won[n_b][k / 2] = balls_won[n_b][n_w];
+    }
+    if (COLLAPSE_WHITE) {
+        n_b = 0;
+        for (let k = 0; k < N_WORLDS * 2; k += 2) {
+            balls_pos[n_b][k] = balls_pos[n_b][n_w * 2];
+            balls_pos[n_b][k + 1] = balls_pos[n_b][n_w * 2 + 1];
+            if (n_b === 0) {
+                balls_pos[n_b][k] += Math.cos(Math.PI * k / N_WORLDS) * CHAOS_AMOUNT;
+                balls_pos[n_b][k + 1] += Math.sin(Math.PI * k / N_WORLDS) * CHAOS_AMOUNT;
+            }
+            balls_vel[n_b][k] = balls_vel[n_b][n_w * 2];
+            balls_vel[n_b][k + 1] = balls_vel[n_b][n_w * 2 + 1];
+            balls_won[n_b][k / 2] = balls_won[n_b][n_w];
+        }
     }
 }
 function selectClosestToMouse_anyColor() {
@@ -621,6 +636,12 @@ function update(cur_time) {
     if (cur_selected !== null) {
         pintar._renderer.setShader(outlineBallShader); // outline selected
         outlineBallShader.draw();
+        if (COLLAPSE_WHITE) {
+            let temp = cur_selected[1];
+            cur_selected[1] = 0;
+            outlineBallShader.draw();
+            cur_selected[1] = temp;
+        }
     }
     if (isButtonDown("left") && last_pressed) {
         cur_taco_tail = [
