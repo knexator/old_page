@@ -158,6 +158,7 @@ let first_undo_press = false
 let first_key_press = false
 let won_cur_level = false
 let player_parity = 0
+let real_times = [0,0,0]
 
 let DEFAULT_PLAYER_INMUNE_LEVEL = 0
 let TURN_SPEED = 0.15 // 0.3
@@ -287,6 +288,35 @@ let player_texture = new PintarJS.Texture('imgs/zelda.png', () => {
   // raw_player_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(2, 0), _4x4);
   player_sprite = raw_player_sprites[0]
 })
+let gearBox_texture = new PintarJS.Texture('imgs/gearBox.png', () => {
+  let _4x4 = new PintarJS.Point(20, 1)
+  raw_gearBox_sprites = []
+  for (let k = 0; k < 3; k++) {
+    let cur = new PintarJS.Sprite(gearBox_texture)
+    cur.setSourceFromSpritesheet(new PintarJS.Point(0, 0), _4x4)
+    cur.color = new PintarJS.Color.fromHex(COLORS.crates[k])
+    raw_gearBox_sprites.push(cur)
+  }
+})
+let animBlock_texture = new PintarJS.Texture('imgs/animBlock.png', () => {
+  let _4x4 = new PintarJS.Point(4, 1)
+  raw_animBlock_sprites = []
+  for (let k = 0; k < 3; k++) {
+    let cur = new PintarJS.Sprite(animBlock_texture)
+    cur.setSourceFromSpritesheet(new PintarJS.Point(0, 0), _4x4)
+    cur.color = new PintarJS.Color.fromHex(COLORS.crates[k])
+    raw_animBlock_sprites.push(cur)
+  }
+})
+let rotatingBlock_texture = new PintarJS.Texture('imgs/rotationBlock.png', () => {
+  rotatingBlock_sprites = []
+  for (let k = 0; k < 3; k++) {
+    let cur = new PintarJS.Sprite(rotatingBlock_texture)
+    cur.color = new PintarJS.Color.fromHex(COLORS.crates[k])
+    cur.origin = PintarJS.Point.half()
+    rotatingBlock_sprites.push(cur)
+  }
+})
 let world_texture = new PintarJS.Texture('imgs/world.png', () => {
   // wall_sprites = [];
   geo_sprites = {}
@@ -357,6 +387,12 @@ let world_texture = new PintarJS.Texture('imgs/world.png', () => {
 
   holeCoverBroken_sprite = new PintarJS.Sprite(world_texture)
   holeCoverBroken_sprite.setSourceFromSpritesheet(new PintarJS.Point(2, 10), _4x10)
+
+  paintBlob_sprite = new PintarJS.Sprite(world_texture)
+  paintBlob_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 10), _4x10)
+
+  paintBlobBroken_sprite = new PintarJS.Sprite(world_texture)
+  paintBlobBroken_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 2), _4x10)
 })
 let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // let _4x4 = new PintarJS.Point(4, 4)
@@ -527,6 +563,17 @@ function drawLevel (level) {
     pintar.drawSprite(spr)
   })
 
+  // draw paint blobs
+  level.paintBlobs.forEach(paintBlob => {
+    let spr = paintBlob.value.at(-1) ? paintBlob_sprite : paintBlobBroken_sprite
+    let [hi, hj] = paintBlob.position
+    spr.position = new PintarJS.Point(OFFX + hi * TILE, OFFY + hj * TILE)
+    spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    spr.color = PintarJS.Color.fromHex(COLORS.crates[paintBlob.inmune.at(-1)])
+    // console.log("hola");
+    pintar.drawSprite(spr)
+  })
+
   let playerState = level.player.history.at(-1)
   let prevPlayerState = level.player.history.at(-2)
   if (prevPlayerState === undefined) {
@@ -566,9 +613,27 @@ function drawLevel (level) {
     let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
     let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
+    // console.log(raw_gearBox_sprites[inmune])
+    /*let crate_sprite = raw_gearBox_sprites[inmune]
+    let spr_n = mod(Math.floor(real_times[inmune]) + 9, 20)
+    crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(spr_n, 0), new PintarJS.Point(20, 1))
+    crate_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)*/
+
     let crate_sprite = crate_sprites[inmune]
-    crate_sprite.position = new PintarJS.Point(OFFX + ci * TILE, OFFY + cj * TILE)
     crate_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+
+    /*let crate_sprite = raw_animBlock_sprites[inmune]
+    let spr_n = mod(get_timeline_length(crate.history.length - 1, inmune), 4)
+    crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(spr_n, 0), new PintarJS.Point(4, 1))
+    crate_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)*/
+
+    /*let crate_sprite = rotatingBlock_sprites[inmune]
+    let spr_n = mod(get_timeline_length(crate.history.length - 1, inmune), 4)
+    crate_sprite.rotation = get_timeline_length(crate.history.length - 1, inmune) * 60
+    ci += .5
+    cj += .5*/
+
+    crate_sprite.position = new PintarJS.Point(OFFX + ci * TILE, OFFY + cj * TILE)
     pintar.drawSprite(crate_sprite)
     // drawSpr(crateSprs[inmune], ci, cj)
     // drawSpr(crateSprsA[inmune], ci, cj);
@@ -577,37 +642,6 @@ function drawLevel (level) {
     // result[state[1]][state[0]] += (inmune + 1).toString();
   })
 
-  // drawSpr(playerSpr, playerState[0], playerState[1]);
-  // ctx.fillText("@", playerState[0]*TILE+OFFX, playerState[1]*TILE+OFFY);
-  // result[playerState[1]][playerState[0]] = '@' + level.player.inmune_history.at(-1);
-  // level.crates.forEach(crate => {
-  /* sortedCrates.forEach(crate => {
-    if (crate.inHole.get()) return
-    let state = crate.history.at(-1)
-    let prevState = crate.history.at(-2)
-    if (prevState === undefined) prevState = state
-    let inmune = crate.inmune_history.at(-1)
-    // let crate_forward = get_times_directions(true_timeline_undos.length - 1)[inmune] == 1
-    let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
-    let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
-    let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
-    drawSpr(crate_sprites[inmune], ci, cj)
-    // drawSpr(crateSprsA[inmune], ci, cj);
-    // drawSpr(crateSpr, state[0], state[1]);
-    // ctx.fillText((inmune+1).toString(), state[0]*TILE+OFFX, state[1]*TILE+OFFY);
-    // result[state[1]][state[0]] += (inmune + 1).toString();
-  }) */
-
-  // let player_scale_x = player_forward ? (1 - turn_time) * .7 + .35 : (turn_time) * .7 + .35;
-  // if (turn_time == 0) player_scale_x = 1;
-  // player_scale_x = 1 - 6.66*player_scale_x + 15*player_scale_x*player_scale_x - 8.3*player_scale_x*player_scale_x*player_scale_x
-  // drawSprScaled(playerSpr, pi, pj, player_scale_x, 1);
-  // drawSpr(playerSpr, pi, pj)
-  // let sprOffset = Math.floor(pt * 2) % 2;
-  // if (globalT === undefined) globalT = 0
-  // globalT += TURN_SPEED / 10
-  // let sprOffset = 1 - (Math.floor(globalT * 1.99) % 2);
-  // let sprOffset = 1 - (Math.floor(turn_time * 1.99) % 2);
   let sprOffset = level_transition_time > 0.5 && won_cur_level ? 1 : 0
   let odd = level.player.inHole.value.at(-1) % 2 == 1
   if (odd) sprOffset = -sprOffset
@@ -657,22 +691,16 @@ function drawLevel (level) {
     let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
     drawSpr(crate_sprites[inmune], ci, cj)
-    // drawSpr(crateSpr, state[0], state[1]);
-    // ctx.fillText((inmune+1).toString(), state[0]*TILE+OFFX, state[1]*TILE+OFFY);
-    // result[state[1]][state[0]] += (inmune + 1).toString();
+
+    /*let crate_sprite = raw_gearBox_sprites[inmune]
+    let spr_n = mod(real_times[inmune], 20)
+    crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(spr_n, 0), new PintarJS.Point(20, 1))
+    crate_sprite.position = new PintarJS.Point(OFFX + ci * TILE, OFFY + cj * TILE)
+    crate_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+    drawSpr(crate_sprite, ci, cj)*/
   })
 
-  /* drawEntranceGradient(level)
-  drawExitGradient(level) */
-
   pintar._renderer.setShader(null)
-  /* let entrance_spr = geo_sprites['X']
-  //console.log(level.enter);
-  entrance_spr.position = new PintarJS.Point(OFFX + 2*TILE, OFFY + 5*TILE)
-  entrance_spr.scale = new PintarJS.Point(TILE/16, TILE/16)
-  pintar.drawSprite(entrance_spr);
-  entrance_spr.position = new PintarJS.Point(OFFX + 8*TILE, OFFY + 5*TILE)
-  pintar.drawSprite(entrance_spr); */
 
   drawEntranceGradient(level)
   drawExitGradient(level)
@@ -681,6 +709,7 @@ function drawLevel (level) {
 }
 
 function drawEntranceGradient (level) {
+  if (ALLOW_EDITOR) return;
   let [ei, ej] = level.player.history[0]
   let [di, dj] = level.enter
 
@@ -718,6 +747,7 @@ function dir2gradSpr (di, dj) {
 }
 
 function drawExitGradient (level) {
+  if (ALLOW_EDITOR) return;
   let [ei, ej] = level.targets[0]
   let [di, dj] = level.exit
   di *= -1
@@ -1008,6 +1038,10 @@ function neutralTurn (level) {
     holeCover.inmune.push(holeCover.inmune.at(-1))
   });
 
+  level.paintBlobs.forEach((paintBlob, i) => {
+    paintBlob.add()
+    paintBlob.inmune.push(paintBlob.inmune.at(-1))
+  });
 
   fallFlying(level)
 }
@@ -1033,7 +1067,7 @@ function isWon (level) {
       return ti == ci && tj == cj
     })
   }) */
-
+  if (ALLOW_EDITOR) return false;
   let [pi, pj] = level.player.history.at(-1)
   let [ti, tj] = level.targets[0]
   return pi == ti && pj == tj
@@ -1095,6 +1129,7 @@ function str2level (str, enter, exit) {
   let machines = []
   let holes = []
   let holeCovers = []
+  let paintBlobs = []
   for (let j = 0; j < h; j++) {
     let row = []
     for (let i = 0; i < w; i++) {
@@ -1150,6 +1185,10 @@ function str2level (str, enter, exit) {
         holeCovers.push(new PropertyHistory(true, 'zxcv'.indexOf(chr)))
         holeCovers.at(-1).position = [i, j]
         geoChar = '.'
+      } else if ('uiop'.indexOf(chr) != -1) {
+        paintBlobs.push(new PropertyHistory(true, 'uiop'.indexOf(chr)))
+        paintBlobs.at(-1).position = [i, j]
+        geoChar = '.'
       }
 
       row.push(geoChar)
@@ -1158,7 +1197,7 @@ function str2level (str, enter, exit) {
   }
   let level = { geo: geo, player: player, crates: crates, targets: targets,
     buttons: buttons, doors: doors, player_target: player_target,
-    machines: machines, holes: holes, holeCovers: holeCovers,
+    machines: machines, holes: holes, holeCovers: holeCovers, paintBlobs: paintBlobs,
     w: w, h: h, enter: enter, exit: exit }
   /* neutralTurn(level);
   level.player.history[0][0] -= enter[0];
@@ -1316,10 +1355,17 @@ function level2str (level) {
   for (let j = 0; j < level.h; j++) {
     let row = []
     for (let i = 0; i < level.w; i++) {
-      if (level.geo[j][i]) {
+      let over_paint = level.paintBlobs.findIndex(paintBlob => {
+        let [hi, hj] = paintBlob.position;
+        return hi == i && hj == j;
+      });
+
+      if (!(level.geo[j][i] === '.' || level.geo[j][i] === ',')) {
         row.push('#')
       } else if (openHoleAt(level, i, j)) {
         row.push('_')
+      } else if (over_paint != -1) {
+        row.push('uiop'[level.paintBlobs[over_paint].inmune.at(-1)])
       } else {
         let isPlayer = i == pi && j == pj
         let isTarget = level.targets.some(([ti, tj]) => {
@@ -1345,7 +1391,7 @@ function level2str (level) {
 }
 
 function loadFromText () {
-  levels[cur_level_n] = str2level(document.getElementById('inText').value)
+  levels[cur_level_n] = str2level(document.getElementById('inText').value, [1,0], [1,0])
   loadLevel(cur_level_n)
 }
 function exportToText () {
@@ -1424,6 +1470,7 @@ function initTransitionToPrevLevel () {
 }
 
 function loadLevel (n) {
+  real_times = [0,0,0]
   won_cur_level = false
   in_last_level = n == levels.length - 1
   cur_level_n = n
@@ -1434,6 +1481,10 @@ function loadLevel (n) {
     crate.history.splice(1)
     crate.inmune_history.splice(1)
     crate.inHole.value.splice(1)
+  })
+  cur_level.paintBlobs.forEach(paintBlob => {
+    paintBlob.value.splice(1)
+    paintBlob.inmune.splice(1)
   })
   cur_level.player.history.splice(1)
   cur_level.player.inmune_history.splice(1)
@@ -1451,6 +1502,11 @@ function loadLevel (n) {
   if (n >= 2) ENABLE_RESTART = true
   if (n >= 3) ENABLE_UNDO_2 = true
   if (n >= 7) ENABLE_UNDO_3 = true
+  if (ALLOW_EDITOR) {
+    ENABLE_RESTART = true
+    ENABLE_UNDO_2 = true
+    ENABLE_UNDO_3 = true
+  }
 }
 
 function recalcTileSize (level) {
@@ -1475,7 +1531,11 @@ function recalcTileSize (level) {
   // tile_h = Math.min(tile_h, 64)
   // let tile_w = 32
   // let tile_h = 32
-  TILE = Math.floor(Math.min(tile_h, tile_w))
+  if (ALLOW_EDITOR) {
+    TILE = Math.floor(Math.min(tile_h, tile_w) * 0.6)
+  } else {
+    TILE = Math.floor(Math.min(tile_h, tile_w))
+  }  
   OFFX = Math.floor((canvas.width - (TILE * level.w)) / 2)
   OFFY = Math.floor((canvas.height - (TILE * level.h)) / 2)
   entranceGradient = undefined
@@ -1563,8 +1623,19 @@ function draw (timestamp) {
       // level_transition_time = 1
       // nextLevel()
     }
+    console.log('a')
     turn_time = Math.max(turn_time, 0)
-  }
+    let dirs = get_times_directions(true_timeline_undos.length - 1)
+    for (let k=0; k<real_times.length; k++) {
+      real_times[k] += dirs[k] * 20 / 11
+    }
+  }/* else {
+    let dirs = get_times_directions(true_timeline_undos.length - 1)
+    for (let k=0; k<real_times.length; k++) {
+      real_times[k] += dirs[k]
+    }
+  }*/
+
   if (level_transition_time > 0) {
     // console.log("in transition");
     let starts_above_half = level_transition_time > 0.5
@@ -1697,6 +1768,17 @@ function draw (timestamp) {
               } else {
                 holeCover.inmune[real_tick] = holeCover.inmune[real_tick - 1] // unchecked
                 holeCover.value[real_tick] = holeCover.value[real_tick - 1]
+              }
+            })
+
+            cur_level.paintBlobs.forEach(paintBlob => {
+              let paintBlob_tick = get_original_tick_2(real_tick, paintBlob.inmune)
+              if (paintBlob.value[paintBlob_tick] !== undefined) {
+                paintBlob.inmune[real_tick] = paintBlob.inmune[paintBlob_tick] // unchecked
+                paintBlob.value[real_tick] = paintBlob.value[paintBlob_tick] // unchecked
+              } else {
+                paintBlob.inmune[real_tick] = paintBlob.inmune[real_tick - 1] // unchecked
+                paintBlob.value[real_tick] = paintBlob.value[real_tick - 1]
               }
             })
 
@@ -1837,6 +1919,19 @@ function draw (timestamp) {
                       if (over_cover != -1) {
                         cur_level.holeCovers[over_cover].value[real_tick] = false
                       }
+
+                      let over_paint = cur_level.paintBlobs.findIndex(paintBlob => {
+                        let [hi, hj] = paintBlob.position;
+                        return paintBlob.get() && hi == next_space_i && hj == next_space_j
+                      })
+                      if (over_paint != -1) {
+                        cur_level.paintBlobs[over_paint].value[real_tick] = false
+                        let inmunity = cur_level.paintBlobs[over_paint].inmune.at(-1)
+                        pushing_crates.forEach(pushing_crate => {
+    						          cur_level.crates[pushing_crate].inmune_history[real_tick] = inmunity
+            					  })
+                      }
+                      console.log("over_paint: ", over_paint)
           					  // console.log(pushing_crates)
                     }
                   }
@@ -1926,13 +2021,17 @@ function draw (timestamp) {
     let mj = Math.round((mouse.y - OFFY) / TILE - 0.5)
     if (mi >= 0 && mi < cur_level.w && mj >= 0 && mj < cur_level.h) {
       if (isButtonDown(0)) {
-        cur_level.geo[mj][mi] = true
+        cur_level.geo[mj][mi] = '#'
       } else if (isButtonDown(1)) {
-        cur_level.geo[mj][mi] = false
+        cur_level.geo[mj][mi] = '.'
         cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
         cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
         cur_level.crates = cur_level.crates.filter(crate =>	{
           let [i, j] = crate.history.at(-1)
+          return i != mi || j != mj
+        })
+        cur_level.paintBlobs = cur_level.paintBlobs.filter(blob =>	{
+          let [i, j] = blob.position
           return i != mi || j != mj
         })
         cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
@@ -1942,9 +2041,9 @@ function draw (timestamp) {
         cur_level.crates.push(new Movable(mi, mj, 1, extra = true_timeline_undos.length))
       } else if (wasKeyPressed('c')) {
         cur_level.crates.push(new Movable(mi, mj, 2, extra = true_timeline_undos.length))
-      } else if (wasKeyPressed('v')) {
+      } /*else if (wasKeyPressed('v')) {
         cur_level.crates.push(new Movable(mi, mj, 3, extra = true_timeline_undos.length))
-      } else if (wasKeyPressed('p')) {
+      } */else if (wasKeyPressed('p')) {
         cur_level.buttons.push([mi, mj, 'p'])
       } else if (wasKeyPressed('P')) {
         cur_level.doors.push([mi, mj, 'P'])
@@ -1968,13 +2067,23 @@ function draw (timestamp) {
         resizeLevel(0, 0, -1, 0)
       } else if (wasKeyPressed('L')) {
         resizeLevel(0, 0, 0, -1)
-      } else if (wasKeyPressed('b')) { // undo machines
+      } else if (wasKeyPressed('t')) { // paint blobs
+        cur_level.paintBlobs.push(new PropertyHistory(true, 0))
+        cur_level.paintBlobs.at(-1).position = [mi, mj]
+      } else if (wasKeyPressed('y')) {
+        cur_level.paintBlobs.push(new PropertyHistory(true, 1))
+        cur_level.paintBlobs.at(-1).position = [mi, mj]
+      } else if (wasKeyPressed('u')) {
+        cur_level.paintBlobs.push(new PropertyHistory(true, 2))
+        cur_level.paintBlobs.at(-1).position = [mi, mj]
+      }
+      /* else if (wasKeyPressed('b')) { // undo machines
         cur_level.machines.push([mi, mj, 1])
       } else if (wasKeyPressed('n')) {
         cur_level.machines.push([mi, mj, 2])
       } else if (wasKeyPressed('m')) {
         cur_level.machines.push([mi, mj, 3])
-      }
+      }*/
     }
   }
 
@@ -2035,9 +2144,10 @@ function draw (timestamp) {
   if (!HALT) window.requestAnimationFrame(draw)
 }
 
-/* window.addEventListener('mousemove', e => _mouseEvent(e))
+
+window.addEventListener('mousemove', e => _mouseEvent(e))
 window.addEventListener('mousedown', e => _mouseEvent(e))
-window.addEventListener('mouseup', e => _mouseEvent(e)) */
+window.addEventListener('mouseup', e => _mouseEvent(e))
 // document.onContextMenu = e => e.preventDefault();
 
 function _mouseEvent (e) {
