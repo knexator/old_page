@@ -1,0 +1,15 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+      "outDir": "./build/",
+      // "outFile": "./build/build.js",
+      "target": "ES2015",
+      "module": "umd",
+      "strict": true,
+      // "moduleResolution": "node",
+      "noFallthroughCasesInSwitch": true,
+      "noImplicitReturns": true,
+      // "noUnusedLocals": true,
+      "noUnusedParameters": true
+    } // taken from https://www.stevefenton.co.uk/2013/01/getting-the-right-set-up-for-typescript/
+  }
