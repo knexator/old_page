@@ -7,7 +7,7 @@ hole_levels_raw = [
 ,,,,,,,B..1..D
 ,,,,,,,B.K._.D
 AAAAAAAe.MCCCE
-..O..zxc.D,,,,
+..O..1.._D,,,,
 CCCCCCCCCE,,,,`, [1, 0], [0, -1]],  // ,,,,,,#_..1.#
 [`\
 ,GAAAAF,,,

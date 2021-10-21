@@ -1553,7 +1553,7 @@ function getKeyRetriggerTime (key) {
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
   if (key == 'z' || key == 'x' || key == 'c') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // return first_key_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
-  return Infinity
+  return KEY_RETRIGGER_TIME
 }
 
 function fallFlying (level) {
@@ -1623,7 +1623,6 @@ function draw (timestamp) {
       // level_transition_time = 1
       // nextLevel()
     }
-    console.log('a')
     turn_time = Math.max(turn_time, 0)
     let dirs = get_times_directions(true_timeline_undos.length - 1)
     for (let k=0; k<real_times.length; k++) {
@@ -2124,6 +2123,13 @@ function draw (timestamp) {
     if (level_transition_time == 0) {
       initTransitionToPrevLevel()
     }
+  }
+  if (wasKeyPressed('l')) {
+    level_transition_time = 1
+    transitionSound.play()
+    screen_transition_turn = true
+    console.log("l")
+    next_level = 10
   }
 
   // drawLevel(cur_level)
