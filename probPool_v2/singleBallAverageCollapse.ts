@@ -3,6 +3,7 @@ declare let PintarJS: any;
 let pintar = new PintarJS();
 // pintar.makeFullscreen()
 
+let slider = document.getElementById("slider") as HTMLInputElement;
 let DEBUG_TRUE_OPACITY = false;
 
 let N_BALLS = 8 // 11 // 16
@@ -388,6 +389,7 @@ window.addEventListener("resize", _e => {
 });
 
 window.addEventListener("load", _e => {
+  slider = document.getElementById("slider");
   window.dispatchEvent(new Event('resize'));
   window.requestAnimationFrame(update);
 });
@@ -802,6 +804,24 @@ function update(cur_time: number) {
   if (wasButtonPressed("right")) {
     collapse()
     wheel_offset = 0;
+  }
+
+  for (let i=0; i<N_BALLS; i++) {
+    if (wasKeyPressed((i + 1).toString())) {
+      for (let k=0; k<N_WORLDS*2; k+=2) {
+        balls_pos[i][k] = mouse.x
+        balls_pos[i][k + 1] = mouse.y
+        balls_vel[i][k] = 0
+        balls_vel[i][k + 1] = 0
+        balls_won[i][k / 2] = 0
+      }
+    }
+  }
+
+  if (isButtonDown("left") && last_pressed) {
+    let dx = (mouse.x - last_pressed.x)
+    let dy = (mouse.y - last_pressed.y)
+    slider.value = Math.floor((dx*dx+dy*dy) * 40).toString();
   }
 
   cur_selected = [0,0]
