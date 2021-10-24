@@ -759,7 +759,7 @@ function update(cur_time) {
     if (isButtonDown("left") && last_pressed) {
         let dx = (mouse.x - last_pressed.x);
         let dy = (mouse.y - last_pressed.y);
-        slider.value = Math.floor((dx * dx + dy * dy) * 40).toString();
+        slider.value = Math.floor((dx * dx + dy * dy) * 2500).toString();
     }
     cur_selected = [0, 0];
     pintar.startFrame();
