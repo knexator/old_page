@@ -2,137 +2,100 @@
 import * as dat from 'dat.gui.min.js';
 
 import { drawBallAt } from 'graphics'
-import { pintar, ball_colors, pos_data, CONFIG } from 'base'
-import { IJ2K } from './board';
+import { pintar, ball_colors, pos_data, vel_data, won_data, CONFIG, IJ2K } from 'base'
+import { initialPosition } from 'board';
+import { advanceGame } from 'physics';
+import { engine_update, mouse, wasButtonPressed, wasButtonReleased } from 'engine';
+import { collapse, addChaos, select, drawSelected } from 'collapses';
 
 declare let PintarJS: any;
 
-// window.addEventListener("resize", e => {
-//   canvas.width = innerWidth;
-//   canvas.height = innerHeight;
-// });
-
-// window.addEventListener("load", _e => {
-//   // window.dispatchEvent(new Event('resize'));
-//   window.requestAnimationFrame(update);
-// });
-
+export let wheel_offset = 0
+// let cur_taco_head = [0, 0]
+// let cur_taco_tail = [0, 0]
 let last_time = 0
+let last_pressed: { y: number; x: number; } | null = null
+
+function init() {
+  wheel_offset = 0
+  // cur_taco_head = [0, 0]
+  // cur_taco_tail = [0, 0]
+  last_time = 0
+  last_pressed = null
+  // Reset initial positions & velocities
+  for (let i = 0; i < CONFIG.N_BALLS; i++) {
+    let cur_initial_pos = initialPosition(i)
+    for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+      let k = IJ2K(i, j, true)
+      pos_data[k] = cur_initial_pos[0]
+      pos_data[k + 1] = cur_initial_pos[1]
+      vel_data[k] = 0.0
+      vel_data[k + 1] = 0.0
+      won_data[IJ2K(i, j, false)] = 0
+    }
+  }
+  // Add noise to white ball
+  addChaos()
+}
+
 function update(curTime: number) {
   let deltaTime = curTime - last_time
   deltaTime = Math.min(deltaTime, 30.0)
   last_time = curTime;
   // ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  if (wasButtonPressed("left")) console.log("0 pressed");
-  if (isButtonDown("left")) console.log("0 down");
-  if (wasButtonReleased("left")) console.log("0 unpressed");
-
-  if (wasKeyPressed('a')) console.log("a pressed");
-  if (isKeyDown('a')) console.log("a down");
-  if (wasKeyReleased('a')) console.log("a unpressed");
-
-  pintar.startFrame()
-  pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
-
- // ball i, world j
-  for (let i = 0; i < CONFIG.N_BALLS; i++) {
+  if (wasButtonPressed("left")) {
+    last_pressed = { x: mouse.x, y: mouse.y }
+    // cur_taco_head = [
+    //   last_pressed.x,
+    //   last_pressed.y
+    // ]
+  } else if (wasButtonReleased("left") && last_pressed) {
     for (let j = 0; j < CONFIG.N_WORLDS; j++) {
-      let k = IJ2K(i, j, true)
-      console.log(ball_colors[j])
-      drawBallAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+      let k = IJ2K(0, j, true)
+      vel_data[k] -= (mouse.x - last_pressed.x) * CONFIG.FORCE_SCALER;
+      vel_data[k + 1] -= (mouse.y - last_pressed.y) * CONFIG.FORCE_SCALER;
     }
   }
 
+  wheel_offset += mouse.wheel
+
+  select()
+  if (wasButtonPressed("right")) {
+    collapse()
+    wheel_offset = 0;
+  }
+
+  advanceGame(deltaTime * 0.001)
+  // console.log(pos_data[0]);
+
+
+  pintar.startFrame()
+  pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
+  // ball i, world j
+  for (let i = 0; i < CONFIG.N_BALLS; i++) {
+    for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+      let k = IJ2K(i, j, true)
+      drawBallAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+    }
+  }
+  drawSelected()
   pintar.endFrame()
 
-  mouse_prev = Object.assign({}, mouse);
-  mouse.wheel = 0;
-  keyboard_prev = Object.assign({}, keyboard);
+  engine_update()
   window.requestAnimationFrame(update);
 }
 
-window.addEventListener('mousemove', e => _mouseEvent(e));
-window.addEventListener('mousedown', e => _mouseEvent(e));
-window.addEventListener('mouseup', e => _mouseEvent(e));
-
-function _mouseEvent(e: MouseEvent) {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
-  mouse.buttons = e.buttons;
-  return false;
-}
-
-window.addEventListener('wheel', e => {
-  let d = e.deltaY > 0 ? 1 : -1;
-  return mouse.wheel = d;
-});
-
-let mouse = { x: 0, y: 0, buttons: 0, wheel: 0 };
-let mouse_prev = Object.assign({}, mouse);
-
-type MouseButton = "left" | "right" | "middle"
-
-function isButtonDown(b: MouseButton) {
-  let i = b == "left" ? 0 : b == "right" ? 1 : 2;
-  return (mouse.buttons & (1 << i)) != 0;
-}
-
-function wasButtonPressed(b: MouseButton) {
-  let i = b == "left" ? 0 : b == "right" ? 1 : 2;
-  return ((mouse.buttons & (1 << i)) !== 0) && ((mouse_prev.buttons & (1 << i)) === 0);
-}
-
-function wasButtonReleased(b: MouseButton) {
-  let i = b == "left" ? 0 : b == "right" ? 1 : 2;
-  return ((mouse.buttons & (1 << i)) === 0) && ((mouse_prev.buttons & (1 << i)) !== 0);
-}
-
-let keyboard: Record<string, boolean> = {};
-let keyboard_prev: Record<string, boolean> = {};
-
-function keyMap(e: KeyboardEvent) {
-  // use key.code if key location is important
-  return e.key.toLowerCase();
-}
-
-window.addEventListener('keydown', e => {
-  let k = keyMap(e);
-  keyboard[k] = true;
-});
-
-window.addEventListener('keyup', e => {
-  let k = keyMap(e);
-  keyboard[k] = false;
-});
-
-function isKeyDown(k: string) {
-  return keyboard[k] || false;
-}
-
-function wasKeyPressed(k: string) {
-  return (keyboard[k] || false) && (!keyboard_prev[k] || false);
-}
-
-function wasKeyReleased(k: string) {
-  return (!keyboard[k] || false) && (keyboard_prev[k] || false);
-}
-
-
-
-let CONFIG_asdf = { stuff: "smooth" }
-
-let cube = { x: 3, y: 3, z: 1 }
-
+// CONFIG.init = init
 const gui = new dat.GUI();
-const cubeFolder = gui.addFolder('Cube')
-cubeFolder.add(cube, 'x', 0, Math.PI * 2)
-cubeFolder.add(cube, 'y', 0, Math.PI * 2)
-cubeFolder.add(cube, 'z', 0, Math.PI * 2)
-cubeFolder.open()
-const cameraFolder = gui.addFolder('Camera')
-cameraFolder.open()
+const initialFolder = gui.addFolder('Initial')
+// initialFolder.add(CONFIG, 'N_BALLS', 1, 16, 1)
+// initialFolder.add(CONFIG, 'N_WORLDS', 1, 512, 1)
+initialFolder.add(CONFIG, 'BALL_R', 0.0, 0.5)
+initialFolder.add(CONFIG, 'INITIAL_SPACING', 0.0, 0.5)
+// initialFolder.add(CONFIG, 'init')
+initialFolder.open()
+gui.remember(CONFIG);
 
-gui.add(CONFIG_asdf, "stuff", ["wireframe", "flat", "smooth", "glossy", "textured", "reflective"]).name("Shading");
-
+init();
 window.requestAnimationFrame(update);

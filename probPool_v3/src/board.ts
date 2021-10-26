@@ -1,16 +1,5 @@
 import { CONFIG } from 'base'
 
-// ball i, world j corresponds to won_data[ball_i, world_j]
-export function IJ2K(ball_i: number, world_j: number, xy_data: boolean) {
-  // Chunk by color, that is, ball_j
-  // p_11, p_21, p_31 ... p_12, p_22, ...
-  // For x/y, multiply by 2:
-  // p_11x, p_11y, p_21x, p_21y ... p_12x, p_12y ...
-  let res = world_j + ball_i * CONFIG.N_WORLDS
-  if (xy_data) return res * 2
-  return res
-}
-
 export function XY2Hole(x: number, y: number, corner: boolean) {
   if (corner) {
     if (x > 0) {
@@ -63,4 +52,25 @@ export function afterHolePos(ball_n: number, hole_n: number) {
     }
   }
   throw new Error("hole doesn't exists!")
+}
+
+export function initialPosition(ball_n: number) {
+  if (ball_n === 0) {
+    return [-.5, 0.0]
+  }
+  let n_i = ball_n;
+  let n_k = 2;
+  let i = 1;
+  while (n_i > 0) {
+    i += 1;
+    n_i -= n_k;
+    n_k += 1;
+  }
+  let j = n_i + i / 2 - .5;
+  if (i == 4) j+=1;
+  i -= 3;
+  return [
+    .5 + i * CONFIG.BALL_R * Math.sin(Math.PI / 3) * (2 + CONFIG.INITIAL_SPACING),
+    j * CONFIG.BALL_R * (2 + CONFIG.INITIAL_SPACING)
+  ]
 }

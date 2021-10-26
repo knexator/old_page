@@ -9,7 +9,8 @@ declare let PintarJS: any;
   extra_margin: .1,
 }*/
 
-let ball_shader: BallShader | null = null;
+export let ball_shader: BallShader | null = null;
+export let outline_ball_shader: OutlineBallShader | null = null;
 
 export function drawBallAt(pos_x: number, pos_y: number, color: Color) {
   if (!ball_shader) {
@@ -18,6 +19,17 @@ export function drawBallAt(pos_x: number, pos_y: number, color: Color) {
   }
   ball_shader.setUniform3f(ball_shader.uniforms.u_color, ...color)
   ball_shader.setUniform2f(ball_shader.uniforms.u_pos, pos_x, pos_y)
+  ball_shader.draw()
+}
+
+export function drawBallOutlineAt(pos_x: number, pos_y: number, color: Color) {
+  if (!outline_ball_shader) {
+    outline_ball_shader = new OutlineBallShader();
+    pintar._renderer.setShader(outline_ball_shader);
+  }
+  outline_ball_shader.setUniform3f(outline_ball_shader.uniforms.u_color, ...color)
+  outline_ball_shader.setUniform2f(outline_ball_shader.uniforms.u_pos, pos_x, pos_y)
+  outline_ball_shader.draw()
 }
 
 class BallShader extends PintarJS.ShaderBase {
@@ -28,15 +40,9 @@ class BallShader extends PintarJS.ShaderBase {
   get vertexShaderCode() {
     return `
       attribute vec2 a_position;
-
-      // screen resolution to project quad
-      // uniform vec2 u_resolution;
-
       uniform vec2 u_pos;
-
       // output texture coord
       varying vec2 v_texCoord;
-
       // main vertex shader func
       void main()
       {
@@ -79,5 +85,58 @@ class BallShader extends PintarJS.ShaderBase {
       balls_pos[cur_drawing][cur_selected * 2 + 1]
     );
     this._gl.uniform1f(this.uniforms.u_transparent, OPAQUE_BALLS ? 1.0 : 0.0)*/
+  }
+}
+
+class OutlineBallShader extends PintarJS.ShaderBase {
+  get uniformNames() {
+    return ["u_pos", "u_color"];
+  }
+
+  get vertexShaderCode() {
+    return `
+      attribute vec2 a_position;
+      uniform vec2 u_pos;
+      // output texture coord
+      varying vec2 v_texCoord;
+
+      // main vertex shader func
+      void main()
+      {
+        vec2 res = u_pos + (a_position - .5) * ${CONFIG.BALL_R * 2};
+        vec2 clip_pos = vec2(res.x / (1.0 + ${CONFIG.EXTRA_MARGIN}), res.y / (0.5 + ${CONFIG.EXTRA_MARGIN}));
+        gl_Position = vec4(clip_pos, 0, 1);
+        v_texCoord = a_position - .5;
+      }
+      `;
+  }
+
+  get fragmentShaderCode() {
+    return `
+    precision mediump float;
+
+    uniform vec3 u_color;
+
+    // the texCoords passed in from the vertex shader.
+    varying vec2 v_texCoord;
+
+    // main fragment shader func
+    void main()
+    {
+      float distSq = dot(v_texCoord, v_texCoord);
+      float weight = smoothstep(0.25, .23, distSq);
+      float outline = smoothstep(0.05, 0.04, abs(distSq - .24));
+      vec3 outline_color = vec3(0.0);
+      gl_FragColor = vec4((u_color * (1.0 - outline) + outline * outline_color) * weight, weight);
+    }
+      `
+  }
+
+  get haveTexture() {
+    return false;
+  }
+
+  prepare(_renderable: any, _viewport: any) {
+
   }
 }

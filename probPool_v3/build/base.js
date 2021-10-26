@@ -9,19 +9,22 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ball_colors = exports.won_data = exports.vel_data = exports.pos_data = exports.CONFIG = exports.pintar = void 0;
+    exports.ball_colors = exports.IJ2K = exports.won_data = exports.vel_data = exports.pos_data = exports.selected = exports.CONFIG = exports.pintar = void 0;
     exports.pintar = new PintarJS();
     exports.CONFIG = {
-        N_BALLS: 3,
+        N_BALLS: 8,
         N_WORLDS: 512,
         BALL_R: 0.03,
         EXTRA_MARGIN: 0.1,
         BORDER_R: 0.05,
         OPACITY: 0.10,
+        INITIAL_SPACING: 0.1,
+        FORCE_SCALER: 2,
+        CHAOS_AMOUNT: 0.001,
+        ALWAYS_PICK: false,
+        PERMANENT_HOLES: true,
         /*export let BALL_R_SQ = BALL_R * BALL_R
-        export let
         export let BORDER_R_SQ = BORDER_R * BORDER_R
-        export let FORCE_SCALER = 2
         export let CHAOS_AMOUNT = 0.001
         export let PICK_TOLERANCE = 0.0005
         export let ALLOW_NO_PICK = true
@@ -29,9 +32,25 @@
         export let OPAQUE_BALLS = false
         export let DEBUG_TRUE_OPACITY = false;*/
     };
+    exports.selected = {
+        ball: null,
+        world: null
+    };
     exports.pos_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.vel_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.won_data = new Int8Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS);
+    // ball i, world j corresponds to won_data[ball_i, world_j]
+    function IJ2K(ball_i, world_j, xy_data) {
+        // Chunk by color, that is, ball_j
+        // p_11, p_21, p_31 ... p_12, p_22, ...
+        // For x/y, multiply by 2:
+        // p_11x, p_11y, p_21x, p_21y ... p_12x, p_12y ...
+        let res = world_j + ball_i * exports.CONFIG.N_WORLDS;
+        if (xy_data)
+            return res * 2;
+        return res;
+    }
+    exports.IJ2K = IJ2K;
     exports.ball_colors = [
         "FFFFFF",
         "F7DE1B",

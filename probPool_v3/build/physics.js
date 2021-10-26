@@ -9,10 +9,10 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.advanceWorld = void 0;
+    exports.advanceGame = void 0;
     const base_1 = require("base");
     const board_1 = require("board");
-    function advanceWorld(deltaTime) {
+    function advanceGame(deltaTime) {
         let BORDER_R = base_1.CONFIG.BORDER_R;
         let BORDER_R_SQ = BORDER_R * BORDER_R;
         let BALL_R = base_1.CONFIG.BALL_R;
@@ -24,8 +24,8 @@
         // Velocity, crash against borders
         for (let i = 0; i < N_BALLS; i++) {
             for (let j = 0; j < N_WORLDS; j++) {
-                let k = (0, board_1.IJ2K)(i, j, true);
-                let k_won = (0, board_1.IJ2K)(i, j, false);
+                let k = (0, base_1.IJ2K)(i, j, true);
+                let k_won = (0, base_1.IJ2K)(i, j, false);
                 if (base_1.won_data[k_won] == 0) {
                     // Advance
                     base_1.pos_data[k] += deltaTime * base_1.vel_data[k];
@@ -87,19 +87,19 @@
             }
         }
         // Ball collisions
-        for (let i = 0; i < N_BALLS; i++) {
-            for (let j = 0; j < N_WORLDS; j++) {
-                let k1 = (0, board_1.IJ2K)(i, j, true);
-                if (base_1.won_data[(0, board_1.IJ2K)(i, j, false)] !== 0)
+        for (let j = 0; j < N_WORLDS; j++) {
+            for (let i1 = 0; i1 < N_BALLS; i1++) {
+                let k1 = (0, base_1.IJ2K)(i1, j, true);
+                if (base_1.won_data[(0, base_1.IJ2K)(i1, j, false)] !== 0)
                     continue;
                 let b1px = base_1.pos_data[k1];
                 let b1py = base_1.pos_data[k1 + 1];
                 let b1vx = base_1.vel_data[k1];
                 let b1vy = base_1.vel_data[k1 + 1];
-                for (let m = i + 1; m < N_BALLS; m++) {
-                    if (base_1.won_data[(0, board_1.IJ2K)(m, j, false)] !== 0)
+                for (let i2 = i1 + 1; i2 < N_BALLS; i2++) {
+                    if (base_1.won_data[(0, base_1.IJ2K)(i2, j, false)] !== 0)
                         continue;
-                    let k2 = (0, board_1.IJ2K)(i, j, true);
+                    let k2 = (0, base_1.IJ2K)(i2, j, true);
                     let b2px = base_1.pos_data[k2];
                     let b2py = base_1.pos_data[k2 + 1];
                     let b2vx = base_1.vel_data[k2];
@@ -134,7 +134,7 @@
             }
         }
     }
-    exports.advanceWorld = advanceWorld;
+    exports.advanceGame = advanceGame;
     function dotpart(vx, vy, nx, ny) {
         var dot = vx * nx + vy * ny;
         return [vx - dot * nx, vy - dot * ny];

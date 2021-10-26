@@ -1,7 +1,7 @@
-import { CONFIG, pos_data, vel_data, won_data } from 'base'
-import { IJ2K, XY2Hole, afterHolePos } from 'board'
+import { CONFIG, pos_data, vel_data, won_data, IJ2K } from 'base'
+import { XY2Hole, afterHolePos } from 'board'
 
-export function advanceWorld(deltaTime: number) {
+export function advanceGame(deltaTime: number) {
   let BORDER_R = CONFIG.BORDER_R
   let BORDER_R_SQ = BORDER_R * BORDER_R
   let BALL_R = CONFIG.BALL_R
@@ -82,17 +82,17 @@ export function advanceWorld(deltaTime: number) {
 
 
   // Ball collisions
-  for (let i = 0; i < N_BALLS; i++) {
-    for (let j = 0; j < N_WORLDS; j++) {
-      let k1 = IJ2K(i, j, true);
-      if (won_data[IJ2K(i, j, false)] !== 0) continue;
+  for (let j = 0; j < N_WORLDS; j++) {
+    for (let i1 = 0; i1 < N_BALLS; i1++) {
+      let k1 = IJ2K(i1, j, true);
+      if (won_data[IJ2K(i1, j, false)] !== 0) continue;
       let b1px = pos_data[k1]
       let b1py = pos_data[k1 + 1]
       let b1vx = vel_data[k1]
       let b1vy = vel_data[k1 + 1]
-      for (let m = i + 1; m < N_BALLS; m++) {
-        if (won_data[IJ2K(m, j, false)] !== 0) continue;
-        let k2 = IJ2K(i, j, true);
+      for (let i2 = i1 + 1; i2 < N_BALLS; i2++) {
+        if (won_data[IJ2K(i2, j, false)] !== 0) continue;
+        let k2 = IJ2K(i2, j, true);
         let b2px = pos_data[k2]
         let b2py = pos_data[k2 + 1]
         let b2vx = vel_data[k2]
@@ -106,7 +106,6 @@ export function advanceWorld(deltaTime: number) {
           let ny = -dx / dist;
           let [dd1x, dd1y] = dotpart(b1vx, b1vy, nx, ny);
           let [dd2x, dd2y] = dotpart(b2vx, b2vy, nx, ny);
-
 
           if (2 * BALL_R - dist > 0) {
             let push = (2 * BALL_R - dist) * 0.5 / dist;

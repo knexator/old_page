@@ -9,20 +9,8 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.afterHolePos = exports.XY2Hole = exports.IJ2K = void 0;
+    exports.initialPosition = exports.afterHolePos = exports.XY2Hole = void 0;
     const base_1 = require("base");
-    // ball i, world j corresponds to won_data[ball_i, world_j]
-    function IJ2K(ball_i, world_j, xy_data) {
-        // Chunk by color, that is, ball_j
-        // p_11, p_21, p_31 ... p_12, p_22, ...
-        // For x/y, multiply by 2:
-        // p_11x, p_11y, p_21x, p_21y ... p_12x, p_12y ...
-        let res = world_j + ball_i * base_1.CONFIG.N_WORLDS;
-        if (xy_data)
-            return res * 2;
-        return res;
-    }
-    exports.IJ2K = IJ2K;
     function XY2Hole(x, y, corner) {
         if (corner) {
             if (x > 0) {
@@ -86,4 +74,26 @@
         throw new Error("hole doesn't exists!");
     }
     exports.afterHolePos = afterHolePos;
+    function initialPosition(ball_n) {
+        if (ball_n === 0) {
+            return [-.5, 0.0];
+        }
+        let n_i = ball_n;
+        let n_k = 2;
+        let i = 1;
+        while (n_i > 0) {
+            i += 1;
+            n_i -= n_k;
+            n_k += 1;
+        }
+        let j = n_i + i / 2 - .5;
+        if (i == 4)
+            j += 1;
+        i -= 3;
+        return [
+            .5 + i * base_1.CONFIG.BALL_R * Math.sin(Math.PI / 3) * (2 + base_1.CONFIG.INITIAL_SPACING),
+            j * base_1.CONFIG.BALL_R * (2 + base_1.CONFIG.INITIAL_SPACING)
+        ];
+    }
+    exports.initialPosition = initialPosition;
 });

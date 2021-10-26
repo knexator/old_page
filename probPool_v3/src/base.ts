@@ -1,20 +1,22 @@
 declare let PintarJS: any;
-
 export let pintar = new PintarJS();
-
 export type Color = [number, number, number]
 
 export let CONFIG = {
-  N_BALLS: 3, // 11 // 16
+  N_BALLS: 8, // 11 // 16
   N_WORLDS: 512,
   BALL_R: 0.03, // 0.025
   EXTRA_MARGIN: 0.1,
   BORDER_R: 0.05,
   OPACITY: 0.10,
+  INITIAL_SPACING: 0.1,
+  FORCE_SCALER: 2,
+  CHAOS_AMOUNT: 0.001,
+  ALWAYS_PICK: false,
+
+  PERMANENT_HOLES: true,
   /*export let BALL_R_SQ = BALL_R * BALL_R
-  export let
   export let BORDER_R_SQ = BORDER_R * BORDER_R
-  export let FORCE_SCALER = 2
   export let CHAOS_AMOUNT = 0.001
   export let PICK_TOLERANCE = 0.0005
   export let ALLOW_NO_PICK = true
@@ -23,9 +25,24 @@ export let CONFIG = {
   export let DEBUG_TRUE_OPACITY = false;*/
 }
 
+export let selected = {
+  ball: null as number | null,
+  world: null as number | null
+}
 export let pos_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
 export let vel_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
 export let won_data: Int8Array = new Int8Array(CONFIG.N_BALLS * CONFIG.N_WORLDS)
+
+// ball i, world j corresponds to won_data[ball_i, world_j]
+export function IJ2K(ball_i: number, world_j: number, xy_data: boolean) {
+  // Chunk by color, that is, ball_j
+  // p_11, p_21, p_31 ... p_12, p_22, ...
+  // For x/y, multiply by 2:
+  // p_11x, p_11y, p_21x, p_21y ... p_12x, p_12y ...
+  let res = world_j + ball_i * CONFIG.N_WORLDS
+  if (xy_data) return res * 2
+  return res
+}
 
 export let ball_colors: Color[] = [
   "FFFFFF",
