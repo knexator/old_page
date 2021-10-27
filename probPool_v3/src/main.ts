@@ -1,7 +1,7 @@
 // ES6:
 import * as dat from 'dat.gui.min.js';
 
-import { drawBallAt } from 'graphics'
+import { ball_shader, drawBallAt, drawTaco, outline_ball_shader, taco_shader } from 'graphics'
 import { pintar, ball_colors, pos_data, vel_data, won_data, CONFIG, IJ2K } from 'base'
 import { initialPosition } from 'board';
 import { advanceGame } from 'physics';
@@ -56,6 +56,7 @@ function update(curTime: number) {
       vel_data[k] -= (mouse.x - last_pressed.x) * CONFIG.FORCE_SCALER;
       vel_data[k + 1] -= (mouse.y - last_pressed.y) * CONFIG.FORCE_SCALER;
     }
+    last_pressed = null
   }
 
   wheel_offset += mouse.wheel
@@ -73,13 +74,19 @@ function update(curTime: number) {
   pintar.startFrame()
   pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
   // ball i, world j
+  pintar._renderer.setShader(ball_shader);
   for (let i = 0; i < CONFIG.N_BALLS; i++) {
     for (let j = 0; j < CONFIG.N_WORLDS; j++) {
       let k = IJ2K(i, j, true)
       drawBallAt(pos_data[k], pos_data[k + 1], ball_colors[i])
     }
   }
+  pintar._renderer.setShader(outline_ball_shader);
   drawSelected()
+  if (last_pressed) {
+    pintar._renderer.setShader(taco_shader);
+    drawTaco(last_pressed, mouse)
+  }
   pintar.endFrame()
 
   engine_update()
@@ -88,13 +95,23 @@ function update(curTime: number) {
 
 // CONFIG.init = init
 const gui = new dat.GUI();
-const initialFolder = gui.addFolder('Initial')
-// initialFolder.add(CONFIG, 'N_BALLS', 1, 16, 1)
-// initialFolder.add(CONFIG, 'N_WORLDS', 1, 512, 1)
-initialFolder.add(CONFIG, 'BALL_R', 0.0, 0.5)
-initialFolder.add(CONFIG, 'INITIAL_SPACING', 0.0, 0.5)
-// initialFolder.add(CONFIG, 'init')
-initialFolder.open()
+// const initialFolder = gui.addFolder('Initial')
+// // initialFolder.add(CONFIG, 'N_BALLS', 1, 16, 1)
+// // initialFolder.add(CONFIG, 'N_WORLDS', 1, 512, 1)
+// initialFolder.add(CONFIG, 'BALL_R', 0.0, 0.5)
+// initialFolder.add(CONFIG, 'INITIAL_SPACING', 0.0, 0.5)
+// // initialFolder.add(CONFIG, 'init')
+// initialFolder.open()
+const collapseFolder = gui.addFolder('Collapse')
+collapseFolder.add(CONFIG, 'PERMANENT_HOLES')
+collapseFolder.add(CONFIG, 'COLLAPSE_EXTENT', ["ball", "world"])
+collapseFolder.add(CONFIG, 'COLLAPSE_TARGET', ["mean", "selected"])
+collapseFolder.add(CONFIG, 'AUTOCOLLAPSE_WHITE')
+collapseFolder.open()
+const gamefeelFolder = gui.addFolder('Gamefeel')
+gamefeelFolder.add(CONFIG, 'FORCE_SCALER', 0.01, 4)
+gamefeelFolder.add(CONFIG, 'CHAOS_AMOUNT', 0.0, .01)
+gamefeelFolder.open()
 gui.remember(CONFIG);
 
 init();

@@ -17,9 +17,9 @@ function selectClosestToMouse_anyColor() {
   let best_distSq = Infinity;
   for (let i = 0; i < CONFIG.N_BALLS; i++) {
     for (let j = 0; j < CONFIG.N_WORLDS; j++) {
-      let k = IJ2K(i,j,true)
+      let k = IJ2K(i, j, true)
       let dx = mx - pos_data[k]
-      let dy = my - pos_data[k+1]
+      let dy = my - pos_data[k + 1]
       let distSq = dx * dx + dy * dy;
       if (distSq < best_distSq + PICK_TOLERANCE) {
         if (distSq < best_distSq) {
@@ -44,17 +44,68 @@ function selectClosestToMouse_anyColor() {
 }
 
 export function collapse() {
-  console.log("collapse()")
+  // console.log("collapse()")
   // collapseIndividualMean(0)
   // addChaos()
   console.log(selected)
-  if (selected.ball === null) {
+  if (selected.ball === null || selected.world === null) {
     return;
     // throw new Error("selected_ball is not defined")
   }
-  collapseIndividualMean(selected.ball)
-  collapseIndividualMean(0)
+  if (CONFIG.COLLAPSE_EXTENT === "ball") {
+    collapseBall(selected.ball)
+  } else if (CONFIG.COLLAPSE_EXTENT === "world") {
+    for (let i=0; i<CONFIG.N_BALLS; i++) {
+      collapseBall(i)
+    }
+  } else {
+    throw new Error("unknown CONFIG.COLLAPSE_EXTENT")
+  }
+  /*collapseIndividualMean(selected.ball)
+  collapseIndividualMean(0)*/
+  if (CONFIG.AUTOCOLLAPSE_WHITE) {
+    collapseBall(0)
+  }
   addChaos()
+}
+
+function collapseBall(ball_i: number) {
+  if (CONFIG.COLLAPSE_TARGET === "mean") {
+    collapseIndividualMean(ball_i)
+  } else if (CONFIG.COLLAPSE_TARGET === "selected") {
+    collapseIndividualToSelected(ball_i)
+  } else {
+    throw new Error("unknown CONFIG.COLLAPSE_TARGET")
+  }
+}
+
+function collapseIndividualToSelected(ball_i: number) {
+  if (!selected.world) throw new Error("no world selected")
+  let target_k = IJ2K(ball_i, selected.world, true)
+  let px = pos_data[target_k]
+  let py = pos_data[target_k + 1]
+  let vx = vel_data[target_k]
+  let vy = vel_data[target_k + 1]
+  let ww = won_data[IJ2K(ball_i, selected.world, false)]
+  for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+    if (CONFIG.PERMANENT_HOLES) {
+      if (won_data[IJ2K(ball_i, j, false)] === 0) {
+        let k = IJ2K(ball_i, j, true)
+        pos_data[k] = px
+        pos_data[k + 1] = py
+        vel_data[k] = vx
+        vel_data[k + 1] = vy
+        won_data[IJ2K(ball_i, j, false)] = ww
+      }
+    } else {
+      let k = IJ2K(ball_i, j, true)
+      pos_data[k] = px
+      pos_data[k + 1] = py
+      vel_data[k] = vx
+      vel_data[k + 1] = vy
+      won_data[IJ2K(ball_i, j, false)] = ww
+    }
+  }
 }
 
 function collapseIndividualMean(ball_i: number) {
@@ -125,16 +176,22 @@ function collapseIndividualMean(ball_i: number) {
 export function drawSelected() {
   if (selected.ball === null || selected.world === null) return
   pintar._renderer.setShader(outline_ball_shader);
-  let k = IJ2K(selected.ball, selected.world, true)
-  drawBallOutlineAt(pos_data[k], pos_data[k+1], ball_colors[selected.ball])
-  pintar._renderer.setShader(ball_shader);
+  if (CONFIG.COLLAPSE_EXTENT === "world") {
+    for (let i=0; i<CONFIG.N_BALLS; i++) {
+      let k = IJ2K(i, selected.world, true)
+      drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+    }
+  } else {
+    let k = IJ2K(selected.ball, selected.world, true)
+    drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[selected.ball])
+  }
 }
 
 export function addChaos() {
   for (let j = 0; j < CONFIG.N_WORLDS; j++) {
     let k = IJ2K(0, j, true);
-    pos_data[k] += Math.cos(Math.PI * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
-    pos_data[k + 1] += Math.sin(Math.PI * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
+    pos_data[k] += Math.cos(Math.PI * 2 * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
+    pos_data[k + 1] += Math.sin(Math.PI * 2 * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
   }
 }
 
@@ -142,7 +199,7 @@ export function addChaos() {
 
 
 function mod(n: number, m: number) {
-    return ((n % m) + m) % m;
+  return ((n % m) + m) % m;
 }
 
 function indexOfSmallest<T>(a: Array<T>) {

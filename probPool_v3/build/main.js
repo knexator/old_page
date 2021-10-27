@@ -81,6 +81,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
                 base_1.vel_data[k] -= (engine_1.mouse.x - last_pressed.x) * base_1.CONFIG.FORCE_SCALER;
                 base_1.vel_data[k + 1] -= (engine_1.mouse.y - last_pressed.y) * base_1.CONFIG.FORCE_SCALER;
             }
+            last_pressed = null;
         }
         exports.wheel_offset += engine_1.mouse.wheel;
         (0, collapses_1.select)();
@@ -93,26 +94,42 @@ var __importStar = (this && this.__importStar) || function (mod) {
         base_1.pintar.startFrame();
         base_1.pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend);
         // ball i, world j
+        base_1.pintar._renderer.setShader(graphics_1.ball_shader);
         for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
             for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
                 let k = (0, base_1.IJ2K)(i, j, true);
                 (0, graphics_1.drawBallAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[i]);
             }
         }
+        base_1.pintar._renderer.setShader(graphics_1.outline_ball_shader);
         (0, collapses_1.drawSelected)();
+        if (last_pressed) {
+            base_1.pintar._renderer.setShader(graphics_1.taco_shader);
+            (0, graphics_1.drawTaco)(last_pressed, engine_1.mouse);
+        }
         base_1.pintar.endFrame();
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
     // CONFIG.init = init
     const gui = new dat.GUI();
-    const initialFolder = gui.addFolder('Initial');
-    // initialFolder.add(CONFIG, 'N_BALLS', 1, 16, 1)
-    // initialFolder.add(CONFIG, 'N_WORLDS', 1, 512, 1)
-    initialFolder.add(base_1.CONFIG, 'BALL_R', 0.0, 0.5);
-    initialFolder.add(base_1.CONFIG, 'INITIAL_SPACING', 0.0, 0.5);
-    // initialFolder.add(CONFIG, 'init')
-    initialFolder.open();
+    // const initialFolder = gui.addFolder('Initial')
+    // // initialFolder.add(CONFIG, 'N_BALLS', 1, 16, 1)
+    // // initialFolder.add(CONFIG, 'N_WORLDS', 1, 512, 1)
+    // initialFolder.add(CONFIG, 'BALL_R', 0.0, 0.5)
+    // initialFolder.add(CONFIG, 'INITIAL_SPACING', 0.0, 0.5)
+    // // initialFolder.add(CONFIG, 'init')
+    // initialFolder.open()
+    const collapseFolder = gui.addFolder('Collapse');
+    collapseFolder.add(base_1.CONFIG, 'PERMANENT_HOLES');
+    collapseFolder.add(base_1.CONFIG, 'COLLAPSE_EXTENT', ["ball", "world"]);
+    collapseFolder.add(base_1.CONFIG, 'COLLAPSE_TARGET', ["mean", "selected"]);
+    collapseFolder.add(base_1.CONFIG, 'AUTOCOLLAPSE_WHITE');
+    collapseFolder.open();
+    const gamefeelFolder = gui.addFolder('Gamefeel');
+    gamefeelFolder.add(base_1.CONFIG, 'FORCE_SCALER', 0.01, 4);
+    gamefeelFolder.add(base_1.CONFIG, 'CHAOS_AMOUNT', 0.0, .01);
+    gamefeelFolder.open();
     gui.remember(base_1.CONFIG);
     init();
     window.requestAnimationFrame(update);

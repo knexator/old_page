@@ -15,6 +15,9 @@ export let CONFIG = {
   ALWAYS_PICK: false,
 
   PERMANENT_HOLES: true,
+  COLLAPSE_EXTENT: "ball", // ball, world
+  COLLAPSE_TARGET: "mean", // mean, selected
+  AUTOCOLLAPSE_WHITE: true,
   /*export let BALL_R_SQ = BALL_R * BALL_R
   export let BORDER_R_SQ = BORDER_R * BORDER_R
   export let CHAOS_AMOUNT = 0.001

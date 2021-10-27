@@ -55,19 +55,74 @@
         }
     }
     function collapse() {
-        console.log("collapse()");
+        // console.log("collapse()")
         // collapseIndividualMean(0)
         // addChaos()
         console.log(base_1.selected);
-        if (base_1.selected.ball === null) {
+        if (base_1.selected.ball === null || base_1.selected.world === null) {
             return;
             // throw new Error("selected_ball is not defined")
         }
-        collapseIndividualMean(base_1.selected.ball);
-        collapseIndividualMean(0);
+        if (base_1.CONFIG.COLLAPSE_EXTENT === "ball") {
+            collapseBall(base_1.selected.ball);
+        }
+        else if (base_1.CONFIG.COLLAPSE_EXTENT === "world") {
+            for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+                collapseBall(i);
+            }
+        }
+        else {
+            throw new Error("unknown CONFIG.COLLAPSE_EXTENT");
+        }
+        /*collapseIndividualMean(selected.ball)
+        collapseIndividualMean(0)*/
+        if (base_1.CONFIG.AUTOCOLLAPSE_WHITE) {
+            collapseBall(0);
+        }
         addChaos();
     }
     exports.collapse = collapse;
+    function collapseBall(ball_i) {
+        if (base_1.CONFIG.COLLAPSE_TARGET === "mean") {
+            collapseIndividualMean(ball_i);
+        }
+        else if (base_1.CONFIG.COLLAPSE_TARGET === "selected") {
+            collapseIndividualToSelected(ball_i);
+        }
+        else {
+            throw new Error("unknown CONFIG.COLLAPSE_TARGET");
+        }
+    }
+    function collapseIndividualToSelected(ball_i) {
+        if (!base_1.selected.world)
+            throw new Error("no world selected");
+        let target_k = (0, base_1.IJ2K)(ball_i, base_1.selected.world, true);
+        let px = base_1.pos_data[target_k];
+        let py = base_1.pos_data[target_k + 1];
+        let vx = base_1.vel_data[target_k];
+        let vy = base_1.vel_data[target_k + 1];
+        let ww = base_1.won_data[(0, base_1.IJ2K)(ball_i, base_1.selected.world, false)];
+        for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+            if (base_1.CONFIG.PERMANENT_HOLES) {
+                if (base_1.won_data[(0, base_1.IJ2K)(ball_i, j, false)] === 0) {
+                    let k = (0, base_1.IJ2K)(ball_i, j, true);
+                    base_1.pos_data[k] = px;
+                    base_1.pos_data[k + 1] = py;
+                    base_1.vel_data[k] = vx;
+                    base_1.vel_data[k + 1] = vy;
+                    base_1.won_data[(0, base_1.IJ2K)(ball_i, j, false)] = ww;
+                }
+            }
+            else {
+                let k = (0, base_1.IJ2K)(ball_i, j, true);
+                base_1.pos_data[k] = px;
+                base_1.pos_data[k + 1] = py;
+                base_1.vel_data[k] = vx;
+                base_1.vel_data[k + 1] = vy;
+                base_1.won_data[(0, base_1.IJ2K)(ball_i, j, false)] = ww;
+            }
+        }
+    }
     function collapseIndividualMean(ball_i) {
         let mean_px = 0;
         let mean_py = 0;
@@ -137,16 +192,23 @@
         if (base_1.selected.ball === null || base_1.selected.world === null)
             return;
         base_1.pintar._renderer.setShader(graphics_1.outline_ball_shader);
-        let k = (0, base_1.IJ2K)(base_1.selected.ball, base_1.selected.world, true);
-        (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[base_1.selected.ball]);
-        base_1.pintar._renderer.setShader(graphics_1.ball_shader);
+        if (base_1.CONFIG.COLLAPSE_EXTENT === "world") {
+            for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+                let k = (0, base_1.IJ2K)(i, base_1.selected.world, true);
+                (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[i]);
+            }
+        }
+        else {
+            let k = (0, base_1.IJ2K)(base_1.selected.ball, base_1.selected.world, true);
+            (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[base_1.selected.ball]);
+        }
     }
     exports.drawSelected = drawSelected;
     function addChaos() {
         for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
             let k = (0, base_1.IJ2K)(0, j, true);
-            base_1.pos_data[k] += Math.cos(Math.PI * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
-            base_1.pos_data[k + 1] += Math.sin(Math.PI * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
+            base_1.pos_data[k] += Math.cos(Math.PI * 2 * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
+            base_1.pos_data[k + 1] += Math.sin(Math.PI * 2 * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
         }
     }
     exports.addChaos = addChaos;

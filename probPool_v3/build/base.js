@@ -23,6 +23,9 @@
         CHAOS_AMOUNT: 0.001,
         ALWAYS_PICK: false,
         PERMANENT_HOLES: true,
+        COLLAPSE_EXTENT: "ball",
+        COLLAPSE_TARGET: "mean",
+        AUTOCOLLAPSE_WHITE: true,
         /*export let BALL_R_SQ = BALL_R * BALL_R
         export let BORDER_R_SQ = BORDER_R * BORDER_R
         export let CHAOS_AMOUNT = 0.001
