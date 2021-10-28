@@ -29,13 +29,13 @@
                 if (base_1.won_data[k_won] == 0) {
                     // Advance
                     base_1.pos_data[k] += deltaTime * base_1.vel_data[k];
-                    base_1.vel_data[k] *= .99;
+                    base_1.vel_data[k] *= (1 - base_1.CONFIG.FRICTION);
                     base_1.pos_data[k + 1] += deltaTime * base_1.vel_data[k + 1];
-                    base_1.vel_data[k + 1] *= .99;
+                    base_1.vel_data[k + 1] *= (1 - base_1.CONFIG.FRICTION);
                     let x = Math.abs(base_1.pos_data[k]);
                     let y = Math.abs(base_1.pos_data[k + 1]);
                     // Check corner holes
-                    if (x > 1 - (1 + Math.SQRT2) * BORDER_R && y > .5 - (1 + Math.SQRT2) * BORDER_R) { // quick corner check
+                    if (base_1.CONFIG.HOLES_ENABLED && x > 1 - (1 + Math.SQRT2) * BORDER_R && y > .5 - (1 + Math.SQRT2) * BORDER_R) { // quick corner check
                         let dx = (1 - Math.SQRT2 * BORDER_R) - x;
                         let dy = (.5 - Math.SQRT2 * BORDER_R) - y;
                         if (dx * dx + dy * dy < BORDER_R) {
@@ -49,13 +49,13 @@
                     if (x > right_border) {
                         // Check horizontal borders
                         x = 2 * right_border - x;
-                        base_1.vel_data[k] *= -1;
+                        base_1.vel_data[k] *= -base_1.CONFIG.WALL_BOUNCE;
                         base_1.pos_data[k] = x * Math.sign(base_1.pos_data[k]);
                         // continue;
                     }
                     else if (y > top_border) {
                         // Check vertical borders & middle holes
-                        if (x < BORDER_R) { // fast check for middle hole
+                        if (base_1.CONFIG.HOLES_ENABLED && x < BORDER_R) { // fast check for middle hole
                             // let x = Math.abs(cur_ball_pos[k - 1])
                             // let y = top_border - cur_ball_pos[k]
                             let dy = top_border - y;
@@ -78,7 +78,7 @@
                             }*/
                         }
                         y = 2 * top_border - y;
-                        base_1.vel_data[k + 1] *= -1;
+                        base_1.vel_data[k + 1] *= -base_1.CONFIG.WALL_BOUNCE;
                         base_1.pos_data[k + 1] = y * Math.sign(base_1.pos_data[k + 1]);
                         //cur_ball_pos[k] = 2 * top_border - cur_ball_pos[k]
                         //cur_ball_vel[k] *= -1
@@ -114,7 +114,7 @@
                         let [dd1x, dd1y] = dotpart(b1vx, b1vy, nx, ny);
                         let [dd2x, dd2y] = dotpart(b2vx, b2vy, nx, ny);
                         if (2 * BALL_R - dist > 0) {
-                            let push = (2 * BALL_R - dist) * 0.5 / dist;
+                            let push = (2 * BALL_R - dist) * 0.5 * base_1.CONFIG.BALL_BOUNCE / dist;
                             // let push = Math.max(0, 2 * BALL_R - dist) * 0.5 / dist;
                             base_1.pos_data[k1] += dx * push;
                             base_1.pos_data[k1 + 1] += dy * push;

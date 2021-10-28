@@ -170,6 +170,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     collapseFolder.open();
     const gamefeelFolder = gui.addFolder('Gamefeel');
     gamefeelFolder.add(base_1.CONFIG, 'FORCE_SCALER', 0.01, 4);
+    gamefeelFolder.add(base_1.CONFIG, 'FRICTION', 0.00, 0.05);
+    gamefeelFolder.add(base_1.CONFIG, 'BALL_BOUNCE', 0.00, 1.00);
+    gamefeelFolder.add(base_1.CONFIG, 'WALL_BOUNCE', 0.00, 1.00);
+    gamefeelFolder.add(base_1.CONFIG, 'HOLES_ENABLED');
     gamefeelFolder.add(base_1.CONFIG, 'CHAOS_AMOUNT', 0.0, .01);
     gamefeelFolder.add(base_1.CONFIG, 'ANIM_DURATION', 0.01, 1.00);
     gamefeelFolder.open();

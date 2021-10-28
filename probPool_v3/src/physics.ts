@@ -19,14 +19,14 @@ export function advanceGame(deltaTime: number) {
       if (won_data[k_won] == 0) {
         // Advance
         pos_data[k] += deltaTime * vel_data[k]
-        vel_data[k] *= .99
+        vel_data[k] *= (1 - CONFIG.FRICTION)
         pos_data[k + 1] += deltaTime * vel_data[k + 1]
-        vel_data[k + 1] *= .99
+        vel_data[k + 1] *= (1 - CONFIG.FRICTION)
 
         let x = Math.abs(pos_data[k])
         let y = Math.abs(pos_data[k + 1])
         // Check corner holes
-        if (x > 1 - (1 + Math.SQRT2) * BORDER_R && y > .5 - (1 + Math.SQRT2) * BORDER_R) {  // quick corner check
+        if (CONFIG.HOLES_ENABLED && x > 1 - (1 + Math.SQRT2) * BORDER_R && y > .5 - (1 + Math.SQRT2) * BORDER_R) {  // quick corner check
           let dx = (1 - Math.SQRT2 * BORDER_R) - x
           let dy = (.5 - Math.SQRT2 * BORDER_R) - y
           if (dx * dx + dy * dy < BORDER_R) {
@@ -41,12 +41,12 @@ export function advanceGame(deltaTime: number) {
         if (x > right_border) {
           // Check horizontal borders
           x = 2 * right_border - x
-          vel_data[k] *= -1
+          vel_data[k] *= -CONFIG.WALL_BOUNCE
           pos_data[k] = x * Math.sign(pos_data[k])
           // continue;
         } else if (y > top_border) {
           // Check vertical borders & middle holes
-          if (x < BORDER_R) { // fast check for middle hole
+          if (CONFIG.HOLES_ENABLED && x < BORDER_R) { // fast check for middle hole
             // let x = Math.abs(cur_ball_pos[k - 1])
             // let y = top_border - cur_ball_pos[k]
             let dy = top_border - y
@@ -70,7 +70,7 @@ export function advanceGame(deltaTime: number) {
           }
 
           y = 2 * top_border - y
-          vel_data[k + 1] *= -1
+          vel_data[k + 1] *= -CONFIG.WALL_BOUNCE
           pos_data[k + 1] = y * Math.sign(pos_data[k + 1])
 
           //cur_ball_pos[k] = 2 * top_border - cur_ball_pos[k]
@@ -108,7 +108,7 @@ export function advanceGame(deltaTime: number) {
           let [dd2x, dd2y] = dotpart(b2vx, b2vy, nx, ny);
 
           if (2 * BALL_R - dist > 0) {
-            let push = (2 * BALL_R - dist) * 0.5 / dist;
+            let push = (2 * BALL_R - dist) * 0.5 * CONFIG.BALL_BOUNCE / dist;
             // let push = Math.max(0, 2 * BALL_R - dist) * 0.5 / dist;
             pos_data[k1] += dx * push;
             pos_data[k1 + 1] += dy * push;
