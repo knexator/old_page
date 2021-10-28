@@ -1,7 +1,13 @@
-import { selected, CONFIG, pos_data, vel_data, won_data, IJ2K, ball_colors, pintar } from 'base'
+import { selected, CONFIG, pos_data, vel_data, won_data, IJ2K, ball_colors, pintar, original_pos_data, original_won_data, original_vel_data, VARS } from 'base'
 import { mouse } from './engine';
-import { ball_shader, drawBallOutlineAt, outline_ball_shader } from './graphics';
+import { drawBallOutlineAt, outline_ball_shader } from './graphics';
 import { wheel_offset } from './main';
+
+function backupCurrent() {
+  original_pos_data.set(pos_data)
+  original_vel_data.set(vel_data)
+  original_won_data.set(won_data)
+}
 
 export function select() {
   let [selected_ball, selected_world] = selectClosestToMouse_anyColor()
@@ -47,15 +53,17 @@ export function collapse() {
   // console.log("collapse()")
   // collapseIndividualMean(0)
   // addChaos()
-  console.log(selected)
+  // console.log(selected)
   if (selected.ball === null || selected.world === null) {
     return;
     // throw new Error("selected_ball is not defined")
   }
+  backupCurrent()
+  VARS.anim_time = 1.0
   if (CONFIG.COLLAPSE_EXTENT === "ball") {
     collapseBall(selected.ball)
   } else if (CONFIG.COLLAPSE_EXTENT === "world") {
-    for (let i=0; i<CONFIG.N_BALLS; i++) {
+    for (let i = 0; i < CONFIG.N_BALLS; i++) {
       collapseBall(i)
     }
   } else {
@@ -177,7 +185,7 @@ export function drawSelected() {
   if (selected.ball === null || selected.world === null) return
   pintar._renderer.setShader(outline_ball_shader);
   if (CONFIG.COLLAPSE_EXTENT === "world") {
-    for (let i=0; i<CONFIG.N_BALLS; i++) {
+    for (let i = 0; i < CONFIG.N_BALLS; i++) {
       let k = IJ2K(i, selected.world, true)
       drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[i])
     }
@@ -189,9 +197,11 @@ export function drawSelected() {
 
 export function addChaos() {
   for (let j = 0; j < CONFIG.N_WORLDS; j++) {
-    let k = IJ2K(0, j, true);
-    pos_data[k] += Math.cos(Math.PI * 2 * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
-    pos_data[k + 1] += Math.sin(Math.PI * 2 * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
+    if (won_data[IJ2K(0, j, false)] === 0) {
+      let k = IJ2K(0, j, true);
+      pos_data[k] += Math.cos(Math.PI * 2 * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
+      pos_data[k + 1] += Math.sin(Math.PI * 2 * j / CONFIG.N_WORLDS) * CONFIG.CHAOS_AMOUNT;
+    }
   }
 }
 

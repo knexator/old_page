@@ -2,7 +2,7 @@
 import * as dat from 'dat.gui.min.js';
 
 import { ball_shader, drawBallAt, drawTaco, outline_ball_shader, taco_shader } from 'graphics'
-import { pintar, ball_colors, pos_data, vel_data, won_data, CONFIG, IJ2K } from 'base'
+import { pintar, ball_colors, pos_data, vel_data, won_data, CONFIG, IJ2K, VARS, original_pos_data } from 'base'
 import { initialPosition } from 'board';
 import { advanceGame } from 'physics';
 import { engine_update, mouse, wasButtonPressed, wasButtonReleased } from 'engine';
@@ -44,50 +44,76 @@ function update(curTime: number) {
   last_time = curTime;
   // ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  if (wasButtonPressed("left")) {
-    last_pressed = { x: mouse.x, y: mouse.y }
-    // cur_taco_head = [
-    //   last_pressed.x,
-    //   last_pressed.y
-    // ]
-  } else if (wasButtonReleased("left") && last_pressed) {
-    for (let j = 0; j < CONFIG.N_WORLDS; j++) {
-      let k = IJ2K(0, j, true)
-      vel_data[k] -= (mouse.x - last_pressed.x) * CONFIG.FORCE_SCALER;
-      vel_data[k + 1] -= (mouse.y - last_pressed.y) * CONFIG.FORCE_SCALER;
+  let anim_time = VARS.anim_time
+  if (anim_time > 0) {
+    console.log(anim_time);
+
+    anim_time = Math.max(anim_time - deltaTime * 0.001 / CONFIG.ANIM_DURATION, 0.0)
+    VARS.anim_time = anim_time
+
+    anim_time = 1 - anim_time
+    anim_time *= anim_time
+
+    pintar.startFrame()
+    // ball i, world j
+    pintar._renderer.setShader(ball_shader);
+    for (let i = 0; i < CONFIG.N_BALLS; i++) {
+      for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+        let k = IJ2K(i, j, true)
+        drawBallAt(
+          lerp(original_pos_data[k], pos_data[k], anim_time),
+          lerp(original_pos_data[k + 1], pos_data[k + 1], anim_time),
+           ball_colors[i]
+        )
+      }
     }
-    last_pressed = null
-  }
-
-  wheel_offset += mouse.wheel
-
-  select()
-  if (wasButtonPressed("right")) {
-    collapse()
-    wheel_offset = 0;
-  }
-
-  advanceGame(deltaTime * 0.001)
-  // console.log(pos_data[0]);
-
-
-  pintar.startFrame()
-  pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
-  // ball i, world j
-  pintar._renderer.setShader(ball_shader);
-  for (let i = 0; i < CONFIG.N_BALLS; i++) {
-    for (let j = 0; j < CONFIG.N_WORLDS; j++) {
-      let k = IJ2K(i, j, true)
-      drawBallAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+    pintar.endFrame()
+  } else {
+    if (wasButtonPressed("left")) {
+      last_pressed = { x: mouse.x, y: mouse.y }
+      // cur_taco_head = [
+      //   last_pressed.x,
+      //   last_pressed.y
+      // ]
+    } else if (wasButtonReleased("left") && last_pressed) {
+      for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+        let k = IJ2K(0, j, true)
+        vel_data[k] -= (mouse.x - last_pressed.x) * CONFIG.FORCE_SCALER;
+        vel_data[k + 1] -= (mouse.y - last_pressed.y) * CONFIG.FORCE_SCALER;
+      }
+      last_pressed = null
     }
+
+    wheel_offset += mouse.wheel
+
+    select()
+    if (wasButtonPressed("right")) {
+      collapse()
+      wheel_offset = 0;
+    }
+
+    advanceGame(deltaTime * 0.001)
+    // console.log(pos_data[0]);
+
+
+    pintar.startFrame()
+    pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
+    // ball i, world j
+    pintar._renderer.setShader(ball_shader);
+    for (let i = 0; i < CONFIG.N_BALLS; i++) {
+      for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+        let k = IJ2K(i, j, true)
+        drawBallAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+      }
+    }
+    pintar._renderer.setShader(outline_ball_shader);
+    drawSelected()
+    if (last_pressed) {
+      pintar._renderer.setShader(taco_shader);
+      drawTaco(last_pressed, mouse)
+    }
+    pintar.endFrame()
   }
-  pintar._renderer.setShader(outline_ball_shader);
-  drawSelected()
-  if (last_pressed) {
-    pintar._renderer.setShader(taco_shader);
-    drawTaco(last_pressed, mouse)
-  }
-  pintar.endFrame()
 
   engine_update()
   window.requestAnimationFrame(update);
@@ -111,8 +137,14 @@ collapseFolder.open()
 const gamefeelFolder = gui.addFolder('Gamefeel')
 gamefeelFolder.add(CONFIG, 'FORCE_SCALER', 0.01, 4)
 gamefeelFolder.add(CONFIG, 'CHAOS_AMOUNT', 0.0, .01)
+gamefeelFolder.add(CONFIG, 'ANIM_DURATION', 0.01, 1.00)
 gamefeelFolder.open()
 gui.remember(CONFIG);
 
+pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
 init();
 window.requestAnimationFrame(update);
+
+function lerp(a: number, b: number, t: number): number {
+  return a * (1 - t) + b * t
+}

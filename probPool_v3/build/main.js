@@ -68,46 +68,66 @@ var __importStar = (this && this.__importStar) || function (mod) {
         deltaTime = Math.min(deltaTime, 30.0);
         last_time = curTime;
         // ctx.clearRect(0,0,canvas.width,canvas.height);
-        if ((0, engine_1.wasButtonPressed)("left")) {
-            last_pressed = { x: engine_1.mouse.x, y: engine_1.mouse.y };
-            // cur_taco_head = [
-            //   last_pressed.x,
-            //   last_pressed.y
-            // ]
-        }
-        else if ((0, engine_1.wasButtonReleased)("left") && last_pressed) {
-            for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
-                let k = (0, base_1.IJ2K)(0, j, true);
-                base_1.vel_data[k] -= (engine_1.mouse.x - last_pressed.x) * base_1.CONFIG.FORCE_SCALER;
-                base_1.vel_data[k + 1] -= (engine_1.mouse.y - last_pressed.y) * base_1.CONFIG.FORCE_SCALER;
+        let anim_time = base_1.VARS.anim_time;
+        if (anim_time > 0) {
+            console.log(anim_time);
+            anim_time = Math.max(anim_time - deltaTime * 0.001 / base_1.CONFIG.ANIM_DURATION, 0.0);
+            base_1.VARS.anim_time = anim_time;
+            anim_time = 1 - anim_time;
+            anim_time *= anim_time;
+            base_1.pintar.startFrame();
+            // ball i, world j
+            base_1.pintar._renderer.setShader(graphics_1.ball_shader);
+            for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+                for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+                    let k = (0, base_1.IJ2K)(i, j, true);
+                    (0, graphics_1.drawBallAt)(lerp(base_1.original_pos_data[k], base_1.pos_data[k], anim_time), lerp(base_1.original_pos_data[k + 1], base_1.pos_data[k + 1], anim_time), base_1.ball_colors[i]);
+                }
             }
-            last_pressed = null;
+            base_1.pintar.endFrame();
         }
-        exports.wheel_offset += engine_1.mouse.wheel;
-        (0, collapses_1.select)();
-        if ((0, engine_1.wasButtonPressed)("right")) {
-            (0, collapses_1.collapse)();
-            exports.wheel_offset = 0;
-        }
-        (0, physics_1.advanceGame)(deltaTime * 0.001);
-        // console.log(pos_data[0]);
-        base_1.pintar.startFrame();
-        base_1.pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend);
-        // ball i, world j
-        base_1.pintar._renderer.setShader(graphics_1.ball_shader);
-        for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
-            for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
-                let k = (0, base_1.IJ2K)(i, j, true);
-                (0, graphics_1.drawBallAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[i]);
+        else {
+            if ((0, engine_1.wasButtonPressed)("left")) {
+                last_pressed = { x: engine_1.mouse.x, y: engine_1.mouse.y };
+                // cur_taco_head = [
+                //   last_pressed.x,
+                //   last_pressed.y
+                // ]
             }
+            else if ((0, engine_1.wasButtonReleased)("left") && last_pressed) {
+                for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+                    let k = (0, base_1.IJ2K)(0, j, true);
+                    base_1.vel_data[k] -= (engine_1.mouse.x - last_pressed.x) * base_1.CONFIG.FORCE_SCALER;
+                    base_1.vel_data[k + 1] -= (engine_1.mouse.y - last_pressed.y) * base_1.CONFIG.FORCE_SCALER;
+                }
+                last_pressed = null;
+            }
+            exports.wheel_offset += engine_1.mouse.wheel;
+            (0, collapses_1.select)();
+            if ((0, engine_1.wasButtonPressed)("right")) {
+                (0, collapses_1.collapse)();
+                exports.wheel_offset = 0;
+            }
+            (0, physics_1.advanceGame)(deltaTime * 0.001);
+            // console.log(pos_data[0]);
+            base_1.pintar.startFrame();
+            base_1.pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend);
+            // ball i, world j
+            base_1.pintar._renderer.setShader(graphics_1.ball_shader);
+            for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+                for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+                    let k = (0, base_1.IJ2K)(i, j, true);
+                    (0, graphics_1.drawBallAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[i]);
+                }
+            }
+            base_1.pintar._renderer.setShader(graphics_1.outline_ball_shader);
+            (0, collapses_1.drawSelected)();
+            if (last_pressed) {
+                base_1.pintar._renderer.setShader(graphics_1.taco_shader);
+                (0, graphics_1.drawTaco)(last_pressed, engine_1.mouse);
+            }
+            base_1.pintar.endFrame();
         }
-        base_1.pintar._renderer.setShader(graphics_1.outline_ball_shader);
-        (0, collapses_1.drawSelected)();
-        if (last_pressed) {
-            base_1.pintar._renderer.setShader(graphics_1.taco_shader);
-            (0, graphics_1.drawTaco)(last_pressed, engine_1.mouse);
-        }
-        base_1.pintar.endFrame();
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
@@ -129,8 +149,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const gamefeelFolder = gui.addFolder('Gamefeel');
     gamefeelFolder.add(base_1.CONFIG, 'FORCE_SCALER', 0.01, 4);
     gamefeelFolder.add(base_1.CONFIG, 'CHAOS_AMOUNT', 0.0, .01);
+    gamefeelFolder.add(base_1.CONFIG, 'ANIM_DURATION', 0.01, 1.00);
     gamefeelFolder.open();
     gui.remember(base_1.CONFIG);
+    base_1.pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend);
     init();
     window.requestAnimationFrame(update);
+    function lerp(a, b, t) {
+        return a * (1 - t) + b * t;
+    }
 });

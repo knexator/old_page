@@ -13,6 +13,7 @@ export let CONFIG = {
   FORCE_SCALER: 2,
   CHAOS_AMOUNT: 0.001,
   ALWAYS_PICK: false,
+  ANIM_DURATION: 0.3,  
 
   PERMANENT_HOLES: true,
   COLLAPSE_EXTENT: "ball", // ball, world
@@ -28,6 +29,9 @@ export let CONFIG = {
   export let DEBUG_TRUE_OPACITY = false;*/
 }
 
+export let VARS = {
+  anim_time: 0 as number,
+}
 export let selected = {
   ball: null as number | null,
   world: null as number | null
@@ -35,6 +39,10 @@ export let selected = {
 export let pos_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
 export let vel_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
 export let won_data: Int8Array = new Int8Array(CONFIG.N_BALLS * CONFIG.N_WORLDS)
+
+export let original_pos_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
+export let original_vel_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
+export let original_won_data: Int8Array = new Int8Array(CONFIG.N_BALLS * CONFIG.N_WORLDS)
 
 // ball i, world j corresponds to won_data[ball_i, world_j]
 export function IJ2K(ball_i: number, world_j: number, xy_data: boolean) {

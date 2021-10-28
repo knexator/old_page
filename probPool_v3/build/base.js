@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ball_colors = exports.IJ2K = exports.won_data = exports.vel_data = exports.pos_data = exports.selected = exports.CONFIG = exports.pintar = void 0;
+    exports.ball_colors = exports.IJ2K = exports.original_won_data = exports.original_vel_data = exports.original_pos_data = exports.won_data = exports.vel_data = exports.pos_data = exports.selected = exports.VARS = exports.CONFIG = exports.pintar = void 0;
     exports.pintar = new PintarJS();
     exports.CONFIG = {
         N_BALLS: 8,
@@ -22,6 +22,7 @@
         FORCE_SCALER: 2,
         CHAOS_AMOUNT: 0.001,
         ALWAYS_PICK: false,
+        ANIM_DURATION: 0.3,
         PERMANENT_HOLES: true,
         COLLAPSE_EXTENT: "ball",
         COLLAPSE_TARGET: "mean",
@@ -35,6 +36,9 @@
         export let OPAQUE_BALLS = false
         export let DEBUG_TRUE_OPACITY = false;*/
     };
+    exports.VARS = {
+        anim_time: 0,
+    };
     exports.selected = {
         ball: null,
         world: null
@@ -42,6 +46,9 @@
     exports.pos_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.vel_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.won_data = new Int8Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS);
+    exports.original_pos_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
+    exports.original_vel_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
+    exports.original_won_data = new Int8Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS);
     // ball i, world j corresponds to won_data[ball_i, world_j]
     function IJ2K(ball_i, world_j, xy_data) {
         // Chunk by color, that is, ball_j

@@ -14,6 +14,11 @@
     const engine_1 = require("./engine");
     const graphics_1 = require("./graphics");
     const main_1 = require("./main");
+    function backupCurrent() {
+        base_1.original_pos_data.set(base_1.pos_data);
+        base_1.original_vel_data.set(base_1.vel_data);
+        base_1.original_won_data.set(base_1.won_data);
+    }
     function select() {
         let [selected_ball, selected_world] = selectClosestToMouse_anyColor();
         base_1.selected.ball = selected_ball;
@@ -58,11 +63,13 @@
         // console.log("collapse()")
         // collapseIndividualMean(0)
         // addChaos()
-        console.log(base_1.selected);
+        // console.log(selected)
         if (base_1.selected.ball === null || base_1.selected.world === null) {
             return;
             // throw new Error("selected_ball is not defined")
         }
+        backupCurrent();
+        base_1.VARS.anim_time = 1.0;
         if (base_1.CONFIG.COLLAPSE_EXTENT === "ball") {
             collapseBall(base_1.selected.ball);
         }
@@ -206,9 +213,11 @@
     exports.drawSelected = drawSelected;
     function addChaos() {
         for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
-            let k = (0, base_1.IJ2K)(0, j, true);
-            base_1.pos_data[k] += Math.cos(Math.PI * 2 * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
-            base_1.pos_data[k + 1] += Math.sin(Math.PI * 2 * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
+            if (base_1.won_data[(0, base_1.IJ2K)(0, j, false)] === 0) {
+                let k = (0, base_1.IJ2K)(0, j, true);
+                base_1.pos_data[k] += Math.cos(Math.PI * 2 * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
+                base_1.pos_data[k + 1] += Math.sin(Math.PI * 2 * j / base_1.CONFIG.N_WORLDS) * base_1.CONFIG.CHAOS_AMOUNT;
+            }
         }
     }
     exports.addChaos = addChaos;
