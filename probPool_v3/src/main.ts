@@ -19,6 +19,10 @@ let std_sliders: any[];
 
 function initOnce() {
   std_sliders = []
+  pintar.canvas.insertAdjacentHTML('afterend',
+   `<input class="gameSlider" type="range" min="0" max="1" step="0.00001" \
+   style="width: 80%; background-color: #000;">`);
+  std_sliders.push(pintar.canvas.nextElementSibling)
   for (let i=0; i<CONFIG.N_BALLS; i++) {
     let stuff = pintar.canvas.insertAdjacentHTML('afterend',
      `<input class="gameSlider" type="range" min="0" max="1" step="0.00001" \
@@ -130,9 +134,13 @@ function update(curTime: number) {
     pintar.endFrame()
   }
 
+  let mean_std = 0.0
   for (let i = 0; i < CONFIG.N_BALLS; i++) {
-    std_sliders[i].value = ballPosSTD(i)
+    let cur_std = ballPosSTD(i)
+    mean_std += cur_std
+    std_sliders[i + 1].value = cur_std
   }
+  std_sliders[0].value = mean_std / CONFIG.N_BALLS
 
   engine_update()
   window.requestAnimationFrame(update);

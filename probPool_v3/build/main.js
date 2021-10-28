@@ -45,6 +45,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     let std_sliders;
     function initOnce() {
         std_sliders = [];
+        base_1.pintar.canvas.insertAdjacentHTML('afterend', `<input class="gameSlider" type="range" min="0" max="1" step="0.00001" \
+   style="width: 80%; background-color: #000;">`);
+        std_sliders.push(base_1.pintar.canvas.nextElementSibling);
         for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
             let stuff = base_1.pintar.canvas.insertAdjacentHTML('afterend', `<input class="gameSlider" type="range" min="0" max="1" step="0.00001" \
      style="width: 80%; background-color: #${base_1.ball_hex_colors[i]};">`);
@@ -140,9 +143,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
             }
             base_1.pintar.endFrame();
         }
+        let mean_std = 0.0;
         for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
-            std_sliders[i].value = (0, physics_1.ballPosSTD)(i);
+            let cur_std = (0, physics_1.ballPosSTD)(i);
+            mean_std += cur_std;
+            std_sliders[i + 1].value = cur_std;
         }
+        std_sliders[0].value = mean_std / base_1.CONFIG.N_BALLS;
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
