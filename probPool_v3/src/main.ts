@@ -2,9 +2,9 @@
 import * as dat from 'dat.gui.min.js';
 
 import { ball_shader, drawBallAt, drawTaco, outline_ball_shader, taco_shader } from 'graphics'
-import { pintar, ball_colors, pos_data, vel_data, won_data, CONFIG, IJ2K, VARS, original_pos_data } from 'base'
+import { pintar, ball_colors, pos_data, vel_data, won_data, CONFIG, IJ2K, VARS, original_pos_data, ball_hex_colors } from 'base'
 import { initialPosition } from 'board';
-import { advanceGame } from 'physics';
+import { advanceGame, ballPosSTD } from 'physics';
 import { engine_update, mouse, wasButtonPressed, wasButtonReleased } from 'engine';
 import { collapse, addChaos, select, drawSelected } from 'collapses';
 
@@ -15,6 +15,21 @@ export let wheel_offset = 0
 // let cur_taco_tail = [0, 0]
 let last_time = 0
 let last_pressed: { y: number; x: number; } | null = null
+let std_sliders: any[];
+
+function initOnce() {
+  std_sliders = []
+  for (let i=0; i<CONFIG.N_BALLS; i++) {
+    let stuff = pintar.canvas.insertAdjacentHTML('afterend',
+     `<input class="gameSlider" type="range" min="0" max="1" step="0.00001" \
+     style="width: 80%; background-color: #${ball_hex_colors[i]};">`);
+    std_sliders.push(pintar.canvas.nextElementSibling)
+  }
+
+  pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
+  init();
+  window.requestAnimationFrame(update);
+}
 
 function init() {
   wheel_offset = 0
@@ -115,6 +130,10 @@ function update(curTime: number) {
     pintar.endFrame()
   }
 
+  for (let i = 0; i < CONFIG.N_BALLS; i++) {
+    std_sliders[i].value = ballPosSTD(i)
+  }
+
   engine_update()
   window.requestAnimationFrame(update);
 }
@@ -141,9 +160,7 @@ gamefeelFolder.add(CONFIG, 'ANIM_DURATION', 0.01, 1.00)
 gamefeelFolder.open()
 gui.remember(CONFIG);
 
-pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend)
-init();
-window.requestAnimationFrame(update);
+initOnce()
 
 function lerp(a: number, b: number, t: number): number {
   return a * (1 - t) + b * t

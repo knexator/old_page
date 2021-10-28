@@ -13,7 +13,7 @@ export let CONFIG = {
   FORCE_SCALER: 2,
   CHAOS_AMOUNT: 0.001,
   ALWAYS_PICK: false,
-  ANIM_DURATION: 0.3,  
+  ANIM_DURATION: 0.3,
 
   PERMANENT_HOLES: true,
   COLLAPSE_EXTENT: "ball", // ball, world
@@ -55,7 +55,7 @@ export function IJ2K(ball_i: number, world_j: number, xy_data: boolean) {
   return res
 }
 
-export let ball_colors: Color[] = [
+export let ball_hex_colors = [
   "FFFFFF",
   "F7DE1B",
   "4C8AF0",
@@ -67,7 +67,9 @@ export let ball_colors: Color[] = [
   // "BB4B23",
   "04E762",
   "17BEBB",  //64B6AC
-].map(hex => {
+];
+
+export let ball_colors: Color[] = ball_hex_colors.map(hex => {
   let r = parseInt(hex.slice(0,2), 16) / 255;
   let g = parseInt(hex.slice(2,4), 16) / 255;
   let b = parseInt(hex.slice(4,6), 16) / 255;

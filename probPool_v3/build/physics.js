@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.advanceGame = void 0;
+    exports.ballPosSTD = exports.advanceGame = void 0;
     const base_1 = require("base");
     const board_1 = require("board");
     function advanceGame(deltaTime) {
@@ -139,4 +139,32 @@
         var dot = vx * nx + vy * ny;
         return [vx - dot * nx, vy - dot * ny];
     }
+    function ballPosSTD(ball_i) {
+        let mean_px = 0;
+        let mean_py = 0;
+        let n_lost = 0;
+        for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+            if (base_1.won_data[(0, base_1.IJ2K)(ball_i, j, false)] === 0) {
+                let k = (0, base_1.IJ2K)(ball_i, j, true);
+                mean_px += base_1.pos_data[k];
+                mean_py += base_1.pos_data[k + 1];
+                n_lost += 1;
+            }
+        }
+        if (n_lost === 0)
+            return 0;
+        mean_px /= n_lost;
+        mean_py /= n_lost;
+        let std = 0.0;
+        for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+            if (base_1.won_data[(0, base_1.IJ2K)(ball_i, j, false)] === 0) {
+                let k = (0, base_1.IJ2K)(ball_i, j, true);
+                let dx = mean_px - base_1.pos_data[k];
+                let dy = mean_py - base_1.pos_data[k + 1];
+                std += dx * dx + dy * dy;
+            }
+        }
+        return Math.sqrt(std / n_lost);
+    }
+    exports.ballPosSTD = ballPosSTD;
 });

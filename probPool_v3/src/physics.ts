@@ -136,3 +136,31 @@ function dotpart(vx: number, vy: number, nx: number, ny: number) {
   var dot = vx * nx + vy * ny;
   return [vx - dot * nx, vy - dot * ny];
 }
+
+export function ballPosSTD(ball_i: number) {
+  let mean_px = 0;
+  let mean_py = 0;
+  let n_lost = 0;
+  for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+    if (won_data[IJ2K(ball_i, j, false)] === 0) {
+      let k = IJ2K(ball_i, j, true)
+      mean_px += pos_data[k]
+      mean_py += pos_data[k + 1]
+      n_lost += 1
+    }
+  }
+  if (n_lost === 0) return 0;
+  mean_px /= n_lost;
+  mean_py /= n_lost;
+
+  let std = 0.0;
+  for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+    if (won_data[IJ2K(ball_i, j, false)] === 0) {
+      let k = IJ2K(ball_i, j, true)
+      let dx = mean_px - pos_data[k]
+      let dy = mean_py - pos_data[k + 1]
+      std += dx * dx + dy * dy
+    }
+  }
+  return Math.sqrt(std / n_lost)
+}

@@ -42,6 +42,18 @@ var __importStar = (this && this.__importStar) || function (mod) {
     // let cur_taco_tail = [0, 0]
     let last_time = 0;
     let last_pressed = null;
+    let std_sliders;
+    function initOnce() {
+        std_sliders = [];
+        for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+            let stuff = base_1.pintar.canvas.insertAdjacentHTML('afterend', `<input class="gameSlider" type="range" min="0" max="1" step="0.00001" \
+     style="width: 80%; background-color: #${base_1.ball_hex_colors[i]};">`);
+            std_sliders.push(base_1.pintar.canvas.nextElementSibling);
+        }
+        base_1.pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend);
+        init();
+        window.requestAnimationFrame(update);
+    }
     function init() {
         exports.wheel_offset = 0;
         // cur_taco_head = [0, 0]
@@ -128,6 +140,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
             }
             base_1.pintar.endFrame();
         }
+        for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+            std_sliders[i].value = (0, physics_1.ballPosSTD)(i);
+        }
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
@@ -152,9 +167,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     gamefeelFolder.add(base_1.CONFIG, 'ANIM_DURATION', 0.01, 1.00);
     gamefeelFolder.open();
     gui.remember(base_1.CONFIG);
-    base_1.pintar._renderer._setBlendMode(PintarJS.BlendModes.AlphaBlend);
-    init();
-    window.requestAnimationFrame(update);
+    initOnce();
     function lerp(a, b, t) {
         return a * (1 - t) + b * t;
     }

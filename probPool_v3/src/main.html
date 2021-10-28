@@ -12,14 +12,18 @@
     /* bring your own prefixes */
     transform: translate(-50%, -50%);
   }
+
+  .gameSlider {
+    /* position: fixed; */
+    /* left: 50%; */
+    /* transform: translate(-50%, 0); */
+    -webkit-appearance: none;
+  }
 </style>
 <body oncontextmenu="return false">
-<!--div class="centered">
-  <canvas width=800 height=400 style="background: url('./pool_table.png')"></canvas>
-</div-->
-<canvas class="centered" width=880 height=480 style="background: url('../pool_table_margin.png'); background-size: 100% 100%;"></canvas>
+<div class="centered">
+  <canvas width=880 height=480 style="background: url('../pool_table_margin.png'); background-size: 100% 100%;"></canvas>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/pintar@2.1.5/dist/pintar.min.js"></script>
 <script data-main="../build/main.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<!-- <script src="build/universal.js" charset="utf-8"></script> -->
-<!-- <input type="checkbox" onchange="OPAQUE_BALLS = !OPAQUE_BALLS"> -->
 </body>
