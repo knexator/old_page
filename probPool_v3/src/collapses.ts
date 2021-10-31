@@ -116,6 +116,31 @@ function collapseIndividualToSelected(ball_i: number) {
   }
 }
 
+export function collapseBallAt(ball_i: number, x: number, y: number) {
+  if (CONFIG.PERMANENT_HOLES) {
+    for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+      if (won_data[IJ2K(ball_i, j, false)] === 0) {
+        let k = IJ2K(ball_i, j, true)
+        pos_data[k] = x
+        pos_data[k + 1] = y
+        vel_data[k] = 0
+        vel_data[k + 1] = 0
+      }
+    }
+  } else {
+    for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+      let k = IJ2K(ball_i, j, true)
+      let k_won =
+        pos_data[k] = x
+      pos_data[k + 1] = y
+      vel_data[k] = 0
+      vel_data[k + 1] = 0
+      won_data[IJ2K(ball_i, j, false)] = 0
+    }
+  }
+  if (ball_i === 0) addChaos()
+}
+
 function collapseIndividualMean(ball_i: number) {
   let mean_px = 0;
   let mean_py = 0;

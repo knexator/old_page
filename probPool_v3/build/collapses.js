@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.addChaos = exports.drawSelected = exports.collapse = exports.select = void 0;
+    exports.addChaos = exports.drawSelected = exports.collapseBallAt = exports.collapse = exports.select = void 0;
     const base_1 = require("base");
     const engine_1 = require("./engine");
     const graphics_1 = require("./graphics");
@@ -130,6 +130,32 @@
             }
         }
     }
+    function collapseBallAt(ball_i, x, y) {
+        if (base_1.CONFIG.PERMANENT_HOLES) {
+            for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+                if (base_1.won_data[(0, base_1.IJ2K)(ball_i, j, false)] === 0) {
+                    let k = (0, base_1.IJ2K)(ball_i, j, true);
+                    base_1.pos_data[k] = x;
+                    base_1.pos_data[k + 1] = y;
+                    base_1.vel_data[k] = 0;
+                    base_1.vel_data[k + 1] = 0;
+                }
+            }
+        }
+        else {
+            for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
+                let k = (0, base_1.IJ2K)(ball_i, j, true);
+                let k_won = base_1.pos_data[k] = x;
+                base_1.pos_data[k + 1] = y;
+                base_1.vel_data[k] = 0;
+                base_1.vel_data[k + 1] = 0;
+                base_1.won_data[(0, base_1.IJ2K)(ball_i, j, false)] = 0;
+            }
+        }
+        if (ball_i === 0)
+            addChaos();
+    }
+    exports.collapseBallAt = collapseBallAt;
     function collapseIndividualMean(ball_i) {
         let mean_px = 0;
         let mean_py = 0;

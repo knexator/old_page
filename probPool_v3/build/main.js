@@ -117,6 +117,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
                 }
                 last_pressed = null;
             }
+            for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+                if ((0, engine_1.wasKeyPressed)(i.toString())) {
+                    (0, collapses_1.collapseBallAt)(i, engine_1.mouse.x, engine_1.mouse.y);
+                }
+            }
             exports.wheel_offset += engine_1.mouse.wheel;
             (0, collapses_1.select)();
             if ((0, engine_1.wasButtonPressed)("right")) {

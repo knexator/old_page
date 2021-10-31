@@ -5,8 +5,8 @@ import { ball_shader, drawBallAt, drawTaco, outline_ball_shader, taco_shader } f
 import { pintar, ball_colors, pos_data, vel_data, won_data, CONFIG, IJ2K, VARS, original_pos_data, ball_hex_colors } from 'base'
 import { initialPosition } from 'board';
 import { advanceGame, ballPosSTD } from 'physics';
-import { engine_update, mouse, wasButtonPressed, wasButtonReleased } from 'engine';
-import { collapse, addChaos, select, drawSelected } from 'collapses';
+import { engine_update, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
+import { collapse, addChaos, select, drawSelected, collapseBallAt } from 'collapses';
 
 declare let PintarJS: any;
 
@@ -101,6 +101,12 @@ function update(curTime: number) {
         vel_data[k + 1] -= (mouse.y - last_pressed.y) * CONFIG.FORCE_SCALER;
       }
       last_pressed = null
+    }
+
+    for (let i = 0; i < CONFIG.N_BALLS; i++) {
+      if (wasKeyPressed(i.toString())) {
+        collapseBallAt(i, mouse.x, mouse.y)
+      }
     }
 
     wheel_offset += mouse.wheel
