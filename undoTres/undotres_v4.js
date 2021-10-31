@@ -277,7 +277,7 @@ BACK_COLORS = [COLORS.true_background, COLORS.machine1, COLORS.machine2, COLORS.
 UNDO_PLAYER_COLORS = [COLORS.player, COLORS.machine1, COLORS.machine2, COLORS.machine3]
 
 PintarJS.Sprite.defaults.smoothingEnabled = false
-let player_texture = new PintarJS.Texture('imgs/zelda.png', () => {
+let player_texture = new PintarJS.Texture('imgs/zelda_new_2.png', () => {
   let _4x4 = new PintarJS.Point(4, 4)
   raw_player_sprites = []
   for (let k = 0; k < 16; k++) {
@@ -317,7 +317,7 @@ let rotatingBlock_texture = new PintarJS.Texture('imgs/rotationBlock.png', () =>
     rotatingBlock_sprites.push(cur)
   }
 })
-let world_texture = new PintarJS.Texture('imgs/world.png', () => {
+let world_texture = new PintarJS.Texture('imgs/world_new.png', () => {
   // wall_sprites = [];
   geo_sprites = {}
   let geoData = {
@@ -1535,7 +1535,8 @@ function recalcTileSize (level) {
     TILE = Math.floor(Math.min(tile_h, tile_w) * 0.6)
   } else {
     TILE = Math.floor(Math.min(tile_h, tile_w))
-  }  
+  }
+  TILE = 16
   OFFX = Math.floor((canvas.width - (TILE * level.w)) / 2)
   OFFY = Math.floor((canvas.height - (TILE * level.h)) / 2)
   entranceGradient = undefined
@@ -1553,7 +1554,8 @@ function getKeyRetriggerTime (key) {
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
   if (key == 'z' || key == 'x' || key == 'c') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // return first_key_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
-  return KEY_RETRIGGER_TIME
+  if ('wasdnm'.indexOf(key) != -1) return KEY_RETRIGGER_TIME
+  return Infinity  
 }
 
 function fallFlying (level) {
@@ -1612,6 +1614,7 @@ function draw (timestamp) {
   // console.log(first_undo_press)
 
   let cur_level = levels[cur_level_n]
+  recalcTileSize(cur_level)
 
   let starts_won = isWon(cur_level)
   // console.log(turn_time);
@@ -1780,6 +1783,8 @@ function draw (timestamp) {
                 paintBlob.value[real_tick] = paintBlob.value[real_tick - 1]
               }
             })
+            
+            fallFlying(cur_level)
 
             if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
               let boxes_moved = cur_level.crates.some(crate => {
@@ -2192,6 +2197,7 @@ function keyMap (e) {
   // use key.code if key location is important
   if (e.metaKey) return '.'
   if (ALLOW_EDITOR) return e.key
+  e.key = e.key.toLowerCase();
   if (e.key == 'ArrowLeft') return 'a'
   if (e.key == 'ArrowRight') return 'd'
   if (e.key == 'ArrowDown') return 's'
