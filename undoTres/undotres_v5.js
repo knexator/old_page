@@ -278,7 +278,8 @@ BACK_COLORS = [COLORS.true_background, COLORS.machine1, COLORS.machine2, COLORS.
 UNDO_PLAYER_COLORS = [COLORS.player, COLORS.machine1, COLORS.machine2, COLORS.machine3]
 
 PintarJS.Sprite.defaults.smoothingEnabled = false
-let player_texture = new PintarJS.Texture('imgs/zelda_new_12.png', () => {
+// let player_texture = new PintarJS.Texture('imgs/zelda_new_2_1.png', () => {
+let player_texture = new PintarJS.Texture('imgs/zelda_new_13.png', () => {
 // let player_texture = new PintarJS.Texture('imgs/zelda_new_2_1.png', () => {
   let _4x4 = new PintarJS.Point(4, 4)
   raw_player_sprites = []
@@ -425,10 +426,10 @@ let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // player_sprite = raw_player_sprites[0]
 })
 
-let texto_1_texture = new PintarJS.Texture('imgs/texts_1.png', () => {
+/*let texto_1_texture = new PintarJS.Texture('imgs/texts_1.png', () => {
   texto_1_sprite = new PintarJS.Sprite(texto_1_texture)
   texto_1_sprite.size = new PintarJS.Point(896, 576)
-})
+})*/
 let texto_2a_texture = new PintarJS.Texture('imgs/Text_2_a.png', () => {
   texto_2a_sprite = new PintarJS.Sprite(texto_2a_texture)
   texto_2a_sprite.size = new PintarJS.Point(640, 448)
@@ -467,7 +468,7 @@ let texto_credits_texture = new PintarJS.Texture('imgs/texts_credits.png', () =>
 // wall_sprites[0].sourceRectangle = new PintarJS.Rectangle(0, 0, 16, 16);
 
 pintar.makePixelatedScaling()
-pintar.makeFullscreen()
+// pintar.makeFullscreen()
 
 function drawSpr (spr, i, j) {
   spr.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
@@ -788,21 +789,39 @@ text_logo_sprite.strokeColor = PintarJS.Color.black();
 text_logo_sprite.fontSize = 128;
 text_logo_sprite.position = new PintarJS.Point(20, 100); */
 
+let text_0 = document.querySelectorAll('._0')
+let text_1 = document.querySelector('._1')
+let text_1a = document.querySelector('._1a')
+let text_3 = document.querySelector('._3')
+let text_6 = document.querySelector('._6')
+let text_7 = document.querySelector('._7')
+let text_end = document.querySelectorAll('._end')
+function setExtraDisplay (n) {
+  text_0.forEach(item => {
+    item.hidden = (n !== 0)
+  });
+  text_1.hidden = n !== 1
+  text_1a.hidden = (n !== 1) || !ENABLE_RESTART
+  drawSecondText()
+  text_3.hidden = n !== 3
+  text_6.hidden = n !== 6
+  text_7.hidden = n !== 7
+  text_end.forEach(item => {
+    item.hidden = (n !== levels.length - 1)
+  });
+}
+
 function drawIntroText () {
-  texto_1_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
-  texto_1_sprite.position = new PintarJS.Point(OFFX, OFFY)
-  pintar.drawSprite(texto_1_sprite)
+  // texto_1_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  // texto_1_sprite.position = new PintarJS.Point(OFFX, OFFY)
+  // pintar.drawSprite(texto_1_sprite)
 }
 
 function drawSecondText () {
-  if (ENABLE_RESTART) {
-    texto_2b_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
-    texto_2b_sprite.position = new PintarJS.Point(OFFX, OFFY)
-    pintar.drawSprite(texto_2b_sprite)
-  } else {
-    texto_2a_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
-    texto_2a_sprite.position = new PintarJS.Point(OFFX, OFFY)
-    pintar.drawSprite(texto_2a_sprite)
+  if (!ENABLE_RESTART) {
+    // texto_2a_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+    // texto_2a_sprite.position = new PintarJS.Point(OFFX, OFFY)
+    // pintar.drawSprite(texto_2a_sprite)
     let moved_orange = levels[1].crates[1].history.findIndex(([i, j]) => i != 4 || j != 2)
     if (moved_orange == -1) return
     let balance = 0
@@ -814,39 +833,42 @@ function drawSecondText () {
       }
     }
     if (balance < -2) {
-      setTimeout(function () { ENABLE_RESTART = true }, 1000)
+      setTimeout(function () {
+        ENABLE_RESTART = true;
+        text_1a.hidden = false;
+      }, 1000)
     }
   }
 }
 
 function drawEndScreen () {
-  texto_credits_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  /*texto_credits_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
   texto_credits_sprite.position = new PintarJS.Point(OFFX, OFFY)
-  pintar.drawSprite(texto_credits_sprite)
+  pintar.drawSprite(texto_credits_sprite)*/
 }
 
 function drawXtoReallyText () {
-  texto_3_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  /*texto_3_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
   texto_3_sprite.position = new PintarJS.Point(OFFX, OFFY)
-  pintar.drawSprite(texto_3_sprite)
+  pintar.drawSprite(texto_3_sprite)*/
 }
 
 function drawCtoRRText () {
-  texto_r_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  /*texto_r_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
   texto_r_sprite.position = new PintarJS.Point(OFFX, OFFY)
-  pintar.drawSprite(texto_r_sprite)
+  pintar.drawSprite(texto_r_sprite)*/
 }
 
 function drawSkipText () {
-  texto_NM_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  /*texto_NM_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
   texto_NM_sprite.position = new PintarJS.Point(OFFX, OFFY)
-  pintar.drawSprite(texto_NM_sprite)
+  pintar.drawSprite(texto_NM_sprite)*/
 }
 
 function drawRecapText () {
-  texto_recap_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
+  /*texto_recap_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
   texto_recap_sprite.position = new PintarJS.Point(OFFX, OFFY)
-  pintar.drawSprite(texto_recap_sprite)
+  pintar.drawSprite(texto_recap_sprite)*/
 }
 
 function hexToRGB (hex, alpha) {
@@ -877,11 +899,11 @@ function drawScreen () {
     let y_end = dj > 0 ? canvas.height * (1 - t) : canvas.height
     // ctx.fillRect(x_start, y_start, x_end - x_start, y_end - y_start)
 
-    pintar.drawRectangle(
-      new PintarJS.ColoredRectangle(
-        new PintarJS.Point(x_start, y_start),
-        new PintarJS.Point(x_end - x_start, y_end - y_start),
-        PintarJS.Color.fromHex(COLORS.transition), null, true))
+    // pintar.drawRectangle(
+    //   new PintarJS.ColoredRectangle(
+    //     new PintarJS.Point(x_start, y_start),
+    //     new PintarJS.Point(x_end - x_start, y_end - y_start),
+    //     PintarJS.Color.fromHex(COLORS.transition), null, true))
   } else if (level_transition_time > 0) {
     turn_time = 1
     let t = level_transition_time * 2
@@ -896,11 +918,11 @@ function drawScreen () {
     let y_end = dj < 0 ? canvas.height * t : canvas.height
 
     // ctx.fillRect(x_start, y_start, x_end - x_start, y_end - y_start)
-    pintar.drawRectangle(
-      new PintarJS.ColoredRectangle(
-        new PintarJS.Point(x_start, y_start),
-        new PintarJS.Point(x_end - x_start, y_end - y_start),
-        PintarJS.Color.fromHex(COLORS.transition), null, true))
+    // pintar.drawRectangle(
+    //   new PintarJS.ColoredRectangle(
+    //     new PintarJS.Point(x_start, y_start),
+    //     new PintarJS.Point(x_end - x_start, y_end - y_start),
+    //     PintarJS.Color.fromHex(COLORS.transition), null, true))
   } else {
     let cur_level = levels[cur_level_n]
     drawLevel(cur_level)
@@ -1237,18 +1259,29 @@ let true_timeline_undos = []
 
 let HALT = false
 
+let main_container = document.getElementById("container")
+let transitionElement = document.getElementById('transition')
+
 window.addEventListener('resize', e => {
   // canvas.width = innerWidth
   // canvas.height = innerHeight
   // pintar.resizeAndCenter(64, 64);
-  setTimeout(recalcTileSize, 100)
+  // setTimeout(recalcTileSize, 100)
   // if (in_last_level) drawScreen()
+  let width  = canvas.clientWidth;
+  var height = canvas.clientHeight;
+  if (canvas.width !== width ||  canvas.height !== height) {
+    canvas.width  = width;
+    canvas.height = height;
+    main_container.style.fontSize = (width / 40)  + 'px';
+  }
 })
 
 window.addEventListener('load', e => {
+  main_container = document.getElementById("container")
   loadLevel(0) // 152 159 60
   window.dispatchEvent(new Event('resize'))
-  setTimeout(function () { window.dispatchEvent(new Event('resize')) }, 100)
+  // setTimeout(function () { window.dispatchEvent(new Event('resize')) }, 100)
   window.requestAnimationFrame(draw)
 })
 
@@ -1462,8 +1495,19 @@ function nextLevel () {
   } */
 }
 
+/*transitionElement.style.animation="openUp 4s linear 0 infinite forwards both";*/
+
 function initTransitionToNextLevel () {
   if (cur_level_n < levels.length - 1) {
+    // transitionElement.style.animation="flashUp .5s linear";
+
+    let di = levels[cur_level_n + 1].enter[0]
+    let dj = levels[cur_level_n + 1].enter[1]
+    if (di ===  1 && dj === 0) transitionElement.className = "flashRightClass"
+    if (di === -1 && dj === 0) transitionElement.className = "flashLeftClass"
+    if (di === 0 && dj ===  1) transitionElement.className = "flashDownClass"
+    if (di === 0 && dj === -1) transitionElement.className = "flashUpClass"
+    setTimeout(() => transitionElement.className = "", 500)
     level_transition_time = 1
     transitionSound.play()
     screen_transition_turn = true
@@ -1473,6 +1517,13 @@ function initTransitionToNextLevel () {
 
 function initTransitionToPrevLevel () {
   if (cur_level_n > 0) {
+    let di = levels[cur_level_n - 1].enter[0]
+    let dj = levels[cur_level_n - 1].enter[1]
+    if (di ===  1 && dj === 0) transitionElement.className = "flashRightClass"
+    if (di === -1 && dj === 0) transitionElement.className = "flashLeftClass"
+    if (di === 0 && dj ===  1) transitionElement.className = "flashDownClass"
+    if (di === 0 && dj === -1) transitionElement.className = "flashUpClass"
+    setTimeout(() => transitionElement.className = "", 500)
     level_transition_time = 1
     transitionSound.play()
     screen_transition_turn = true
@@ -1518,6 +1569,7 @@ function loadLevel (n) {
     ENABLE_UNDO_2 = true
     ENABLE_UNDO_3 = true
   }
+  setExtraDisplay(n)
 }
 
 function recalcTileSize (level) {
@@ -1532,8 +1584,8 @@ function recalcTileSize (level) {
   if (!level) level = levels[cur_level_n]
   // let tile_w = Math.min(canvas.width / (level.w), 64)
   // let tile_h = Math.min(canvas.height / (level.h), 64)
-  let tile_w = Math.floor(canvas.width / (level.w * 1)) * 1
-  let tile_h = Math.floor(canvas.height / (level.h * 1)) * 1
+  let tile_w = Math.floor(canvas.width / level.w)
+  let tile_h = Math.floor(canvas.height / level.h)
   // let tile_w = Math.floor(canvas.width / (level.w * 16)) * 16
   // let tile_h = Math.floor(canvas.height / (level.h * 16)) * 16
 
