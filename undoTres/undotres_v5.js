@@ -291,7 +291,7 @@ let player_texture = new PintarJS.Texture('imgs/zelda_new_13.png', () => {
   // raw_player_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(2, 0), _4x4);
   player_sprite = raw_player_sprites[0]
 })
-let gearBox_texture = new PintarJS.Texture('imgs/gearBox.png', () => {
+/*let gearBox_texture = new PintarJS.Texture('imgs/gearBox.png', () => {
   let _4x4 = new PintarJS.Point(20, 1)
   raw_gearBox_sprites = []
   for (let k = 0; k < 3; k++) {
@@ -300,8 +300,8 @@ let gearBox_texture = new PintarJS.Texture('imgs/gearBox.png', () => {
     cur.color = new PintarJS.Color.fromHex(COLORS.crates[k])
     raw_gearBox_sprites.push(cur)
   }
-})
-let animBlock_texture = new PintarJS.Texture('imgs/animBlock.png', () => {
+})*/
+/*let animBlock_texture = new PintarJS.Texture('imgs/animBlock.png', () => {
   let _4x4 = new PintarJS.Point(4, 1)
   raw_animBlock_sprites = []
   for (let k = 0; k < 3; k++) {
@@ -310,8 +310,8 @@ let animBlock_texture = new PintarJS.Texture('imgs/animBlock.png', () => {
     cur.color = new PintarJS.Color.fromHex(COLORS.crates[k])
     raw_animBlock_sprites.push(cur)
   }
-})
-let rotatingBlock_texture = new PintarJS.Texture('imgs/rotationBlock.png', () => {
+})*/
+/*let rotatingBlock_texture = new PintarJS.Texture('imgs/rotationBlock.png', () => {
   rotatingBlock_sprites = []
   for (let k = 0; k < 3; k++) {
     let cur = new PintarJS.Sprite(rotatingBlock_texture)
@@ -319,7 +319,7 @@ let rotatingBlock_texture = new PintarJS.Texture('imgs/rotationBlock.png', () =>
     cur.origin = PintarJS.Point.half()
     rotatingBlock_sprites.push(cur)
   }
-})
+})*/
 let world_texture = new PintarJS.Texture('imgs/world_new.png', () => {
   // wall_sprites = [];
   geo_sprites = {}
@@ -430,7 +430,7 @@ let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   texto_1_sprite = new PintarJS.Sprite(texto_1_texture)
   texto_1_sprite.size = new PintarJS.Point(896, 576)
 })*/
-let texto_2a_texture = new PintarJS.Texture('imgs/Text_2_a.png', () => {
+/*let texto_2a_texture = new PintarJS.Texture('imgs/Text_2_a.png', () => {
   texto_2a_sprite = new PintarJS.Sprite(texto_2a_texture)
   texto_2a_sprite.size = new PintarJS.Point(640, 448)
 })
@@ -459,7 +459,7 @@ let texto_credits_texture = new PintarJS.Texture('imgs/texts_credits.png', () =>
   texto_credits_sprite = new PintarJS.Sprite(texto_credits_texture)
   texto_credits_sprite.size = new PintarJS.Point(896, 576)
   // texto_credits_sprite.color = PintarJS.Color.fromHex('#4f69ba')
-})
+})*/
 /* let raw_player_sprites = [
   new PintarJS.Sprite(player_texture)
 ]
