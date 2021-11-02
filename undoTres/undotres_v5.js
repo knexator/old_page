@@ -1276,8 +1276,8 @@ window.addEventListener('resize', e => {
     main_container.style.fontSize = (width / 40)  + 'px';
   }
 })
-
 window.addEventListener('load', e => {
+	window.focus();
   main_container = document.getElementById("container")
   loadLevel(0) // 152 159 60
   window.dispatchEvent(new Event('resize'))
@@ -2232,6 +2232,7 @@ window.addEventListener('mouseup', e => _mouseEvent(e))
 // document.onContextMenu = e => e.preventDefault();
 
 function _mouseEvent (e) {
+	window.focus()
   mouse.x = e.clientX
   mouse.y = e.clientY
   mouse.buttons = e.buttons
