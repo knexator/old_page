@@ -320,6 +320,7 @@ let player_texture = new PintarJS.Texture('imgs/zelda_new_13.png', () => {
     rotatingBlock_sprites.push(cur)
   }
 })*/
+let _4x10 = new PintarJS.Point(4, 11)
 let world_texture = new PintarJS.Texture('imgs/world_new.png', () => {
   // wall_sprites = [];
   geo_sprites = {}
@@ -349,16 +350,16 @@ let world_texture = new PintarJS.Texture('imgs/world_new.png', () => {
     'P': [3, 0],
     'X': [0, 10]
   }
-  let _4x10 = new PintarJS.Point(4, 11)
   Object.entries(geoData).forEach(([k, v]) => {
     let spr = new PintarJS.Sprite(world_texture)
     spr.setSourceFromSpritesheet(new PintarJS.Point(v[0], v[1]), _4x10)
     geo_sprites[k] = spr
   })
+  geoGlobalSprite = new PintarJS.Sprite(world_texture)
   // wall_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(0, 0), new PintarJS.Point(4, 10));
   floor_sprite = new PintarJS.Sprite(world_texture)
   // floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 9), new PintarJS.Point(4, 10));
-  floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 10), new PintarJS.Point(4, 10))
+  floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 9), _4x10)
   // crate_sprite = new PintarJS.Sprite(world_texture)
   // crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
   crate_sprites = []
@@ -426,6 +427,11 @@ let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // player_sprite = raw_player_sprites[0]
 })
 
+let modular_texture = new PintarJS.Texture('imgs/wall_modular.png', () => {
+  // wall_sprites = [];
+  geoModularSprite = new PintarJS.Sprite(modular_texture)
+})
+
 /*let texto_1_texture = new PintarJS.Texture('imgs/texts_1.png', () => {
   texto_1_sprite = new PintarJS.Sprite(texto_1_texture)
   texto_1_sprite.size = new PintarJS.Point(896, 576)
@@ -470,6 +476,121 @@ let texto_credits_texture = new PintarJS.Texture('imgs/texts_credits.png', () =>
 pintar.makePixelatedScaling()
 // pintar.makeFullscreen()
 
+/*
+let GEO_DATA = [
+  ['*,*##*.*', 0, 6],
+  ['*.*##*,*', 2, 6],
+  ['*#*,.*#*', 1, 6],
+  ['*#*.,*#*', 3, 6],
+
+  ['*#*#.*.*', 2, 5],
+  ['*#*.#*.*', 1, 5],
+  ['*.*#.*#*', 3, 5],
+  ['*.*.#*#*', 0, 5],
+
+  ['*,*#,.#*', 1, 3],
+  ['.#*#,*,*', 0, 3],
+  ['*#.,#*,*', 3, 3],
+  ['*,*,#*#.', 2, 3],
+
+  ['*.*..*#*', 2, 4],
+  ['*#*..*.*', 0, 4],
+  ['*.*#.*.*', 1, 4],
+  ['*.*.#*.*', 3, 4],
+
+  ['*#*.#*#*', 3, 1],
+  ['*#*#.*#*', 1, 1],
+  ['*.*##*#*', 2, 1],
+  ['*#*##*.*', 0, 1],
+
+  ['********', 1, 0],
+]
+
+function matchGeo(pattern, data) {
+  for (let k=0; k<8; k++) {
+    if (pattern[k]==='*') continue
+    if (data[k]!==pattern[k]) return false
+  }
+  return true
+}
+
+function findMatching(data) {
+  for (let k=0; k<GEO_DATA.length; k++) {
+    if (matchGeo(GEO_DATA[k][0], data)) {
+      return [GEO_DATA[k][1], GEO_DATA[k][2]]
+    }
+  }
+  throw new Error("nothing matched data: " + data)
+}
+
+function drawGeoSpr(geoChar, i, j) {
+  // geoGlobalSprite.setSourceFromSpritesheet(new PintarJS.Point(v[0], v[1]), _4x10)
+  if (geoChar === ',') {
+    return
+  } else if (geoChar === '.') {
+    floor_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
+    // console.log("drawing floor")
+    pintar.drawSprite(floor_sprite)
+  } else {
+    let [si, sj] = findMatching(geoChar)
+    geoGlobalSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), _4x10)
+    geoGlobalSprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
+    pintar.drawSprite(geoGlobalSprite)
+  }
+}
+*/
+
+let MODULAR_GEO_DATA = {
+  '#.#.': [3, 1],
+  '.#.#': [2, 0],
+  '..##': [3, 0],
+  '##..': [2, 1],
+
+  '#...': [1, 3],
+  '.#..': [0, 3],
+  '..#.': [1, 2],
+  '...#': [0, 2],
+
+  '.###': [1, 1],
+  '#.##': [0, 1],
+  '##.#': [1, 0],
+  '###.': [0, 0],
+
+  ',###': [2, 2],
+  '#,##': [3, 2],
+  '##,#': [2, 3],
+  '###,': [3, 3],
+
+  '#,#,': [1, 5],
+  ',#,#': [0, 4],
+  ',,##': [1, 4],
+  '##,,': [0, 5],
+
+  '#,,,': [3, 5],
+  ',#,,': [2, 5],
+  ',,#,': [3, 4],
+  ',,,#': [2, 4],
+}
+function drawModularGeoSpr(level,i,j) {
+  let tl = getGeo(level,i-1,j-1)
+  let tr = getGeo(level,i,j-1)
+  let bl = getGeo(level,i-1,j)
+  let br = getGeo(level,i,j)
+  let res = tl + tr + bl + br
+  if (res === '....' || res === ',,,,') return
+  // console.log(res)
+  let [si, sj] = MODULAR_GEO_DATA[res] || [0,0]
+  geoModularSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), new PintarJS.Point(4,8))
+  geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
+  // geoModularSprite.position = new PintarJS.Point(Math.floor(OFFX + (i-.5) * TILE), Math.floor(OFFY + (j-.5) * TILE))
+  pintar.drawSprite(geoModularSprite)
+}
+
+function getGeo(level,i,j) {
+  if (i < 0 || i >= level.w || j < 0 || j >= level.h) return ','
+  return level.geo[j][i]
+}
+
 function drawSpr (spr, i, j) {
   spr.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
   spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
@@ -488,13 +609,22 @@ function drawLevel (level) {
   } */
   // ctx.fillStyle = COLORS.wall
   // ctx.fillStyle = BACKGROUND_IS_WALL ? COLORS.floor : COLORS.wall
-  for (let j = 0; j < geo.length; j++) {
-    for (let i = 0; i < geo[0].length; i++) {
-      let cur_spr = geo_sprites[geo[j][i]]
+  for (let j = 0; j <= geo.length; j++) {
+    for (let i = 0; i <= geo[0].length; i++) {
+      // drawGeoSpr(geo[j][i], i, j)
+      if (j < geo.length && i < geo[0].length) {
+        if (geo[j][i] === '.') {
+          floor_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
+          // console.log("drawing floor")
+          pintar.drawSprite(floor_sprite)
+        }
+      }
+      drawModularGeoSpr(level, i, j)
+      /*let cur_spr = geo_sprites[geo[j][i]]
       if (!cur_spr) continue
       cur_spr.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
       cur_spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-      pintar.drawSprite(cur_spr)
+      pintar.drawSprite(cur_spr)*/
     }
   }
   // console.log("hola?");
@@ -797,6 +927,7 @@ let text_6 = document.querySelector('._6')
 let text_7 = document.querySelector('._7')
 let text_end = document.querySelectorAll('._end')
 function setExtraDisplay (n) {
+  if (ALLOW_EDITOR) return
   text_0.forEach(item => {
     item.hidden = (n !== 0)
   });
@@ -1222,6 +1353,8 @@ function str2level (str, enter, exit) {
         paintBlobs.push(new PropertyHistory(true, 'uiop'.indexOf(chr)))
         paintBlobs.at(-1).position = [i, j]
         geoChar = '.'
+      } else {
+        throw new Error("unexpected char: " + geoChar)
       }
 
       row.push(geoChar)
@@ -1244,6 +1377,7 @@ function str2level (str, enter, exit) {
   level.player.history.splice(1)
   level.player.inmune_history.splice(1) */
   level.player.inHole.value[0] = dir2spr(level.enter[0], level.enter[1], false)
+  fixDetail(level)
   return level
 }
 
@@ -1253,12 +1387,71 @@ function fixDetail(level) {
   let llegables = [[pi,pj]]
   let k = 0
   while (k < llegables.length) {
-	let [ci, cj] = llegables[k]
-	for (let d=0; d<4; d++) {
-	  let [di, dj] = DIRS[d];
-	  
-	}
-	k++
+    let [ci, cj] = llegables[k]
+    for (let d=0; d<4; d++) {
+      let [di, dj] = DIRS[d];
+      let ei = ci + di;
+      let ej = cj + dj;
+      if (ei < 0 || ei >= level.w || ej < 0 || ej >= level.h) continue
+      let chr = level.geo[ej][ei]
+      if ('.,_'.indexOf(chr) === -1) continue
+      let skip = false
+      for (let n = 0; n<llegables.length; n++) {
+        let [ni, nj] = llegables[n]
+        if (ni == ei && nj == ej) {
+          skip = true
+          break
+        }
+      }
+      if (skip) continue
+
+      llegables.push([ei, ej])
+    }
+    k++
+  }
+  for (let j = 0; j < level.h; j++) {
+    for (let i = 0; i < level.w; i++) {
+      let chr = level.geo[j][i]
+      if (chr === '.') level.geo[j][i] = ','
+    }
+  }
+  for (let k = 0; k < llegables.length; k++) {
+    let [ci, cj] = llegables[k]
+    level.geo[cj][ci] = '.'
+  }
+  return
+
+  for (let j = 0; j < level.h; j++) {
+    for (let i = 0; i < level.w; i++) {
+      let chr = level.geo[j][i]
+      if (',._1234uiO@*'.indexOf(chr) !== -1) continue
+      let surrounding = []
+      for (sj=-1; sj<=1; sj++) {
+        for (si=-1; si<=1; si++) {
+          if (si===0 && sj===0) continue
+          // , outside
+          // . inside
+          // # wall
+          let ei = i + si;
+          let ej = j + sj;
+          if (ei < 0 || ei >= level.w || ej < 0 || ej >= level.h) {
+            surrounding.push(',')
+          } else {
+            let char_2 = level.geo[ej][ei]
+            if (char_2 === ',') {
+              surrounding.push(',')
+            } else if ('._1234uiO@'.indexOf(char_2) !== -1) {
+              surrounding.push('.')
+            } else if (char_2.length > 1 || char_2 === '#') {
+              surrounding.push('#')
+            } else {
+              console.log("UNEXPECTED CHR: ", char_2)
+            }
+          }
+        }
+      }
+      level.geo[j][i] = surrounding.join('')
+    }
   }
 }
 
@@ -1609,17 +1802,20 @@ function recalcTileSize (level) {
   // tile_h = Math.min(tile_h, 64)
   // let tile_w = 32
   // let tile_h = 32
+  let prev_tile = TILE
   if (ALLOW_EDITOR) {
     TILE = Math.floor(Math.min(tile_h, tile_w) * 0.8)
   } else {
-    TILE = Math.floor(Math.min(tile_h, tile_w))
+    // TILE = Math.floor(Math.min(tile_h, tile_w))
+    TILE = Math.floor(Math.min(tile_h, tile_w) / 16) * 16
   }
   OFFX = Math.floor((canvas.width - (TILE * level.w)) / 2)
   OFFY = Math.floor((canvas.height - (TILE * level.h)) / 2)
-  entranceGradient = undefined
-  entranceGradient2 = undefined
-  exitGradient = undefined
-  exitGradient2 = undefined
+  if (prev_tile !== TILE) {
+    floor_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    geoGlobalSprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    geoModularSprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+  }
 }
 
 function doUndo (n) {

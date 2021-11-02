@@ -62,12 +62,21 @@ html, body {
   padding: 0;
 }
 
-canvas {
-  position: absolute
+#container {
+
 }
+
+canvas {
+  /* position: absolute */
+	width: 100%;
+  height: 100%;
+}
+
 </style></head>
 <body oncontextmenu="return false;">
+<div id="container">
 <canvas id="canvas"></canvas>
+</div>
 <div id="header">
 	<button onclick="loadFromText()">Text to game</button>
   <button onclick="prevLevel()" id="prevLevelButton">Prev</button><button id="curLevelButton" onclick="resetLevel()">Level 1</button><button onclick="nextLevel()" id="nextLevelButton">Next</button>
@@ -85,7 +94,7 @@ canvas {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
 <script src="howler.core.min.js"></script>
 <script src="levels_holes_v5.js"></script>
-<script src="undotres_v4.js"></script>
+<script src="undotres_v5.js"></script>
 <script>// @ts-nocheck
 ALLOW_EDITOR = true;
 
