@@ -1247,6 +1247,21 @@ function str2level (str, enter, exit) {
   return level
 }
 
+function fixDetail(level) {
+  let DIRS = [[0,1],[1,0],[0,-1],[-1,0]]
+  let [pi, pj] = level.player.history.at(-1)
+  let llegables = [[pi,pj]]
+  let k = 0
+  while (k < llegables.length) {
+	let [ci, cj] = llegables[k]
+	for (let d=0; d<4; d++) {
+	  let [di, dj] = DIRS[d];
+	  
+	}
+	k++
+  }
+}
+
 function dir2spr (di, dj, pushing) {
   if (di == 0) {
     return 1 + dj + (pushing ? 8 : 0)
