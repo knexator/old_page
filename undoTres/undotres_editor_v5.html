@@ -30,7 +30,7 @@ html, body {
 
 #header {
   position: absolute;
-  top: 0;
+  bottom: 0;
   height: 10%;
   width: 100%;
   //display: block;
@@ -68,12 +68,40 @@ html, body {
 
 canvas {
   /* position: absolute */
-	width: 100%;
+	width: 80%;
   height: 100%;
+}
+
+.split {
+    display: flex;
+    flex-direction: row;
+}
+
+.gutter {
+    background-color: #eee;
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUAAAAeCAYAAADkftS9AAAAIklEQVQoU2M4c+bMfxAGAgYYmwGrIIiDjrELjpo5aiZeMwF+yNnOs5KSvgAAAABJRU5ErkJggg==');
+    cursor: col-resize;
 }
 
 </style></head>
 <body oncontextmenu="return false;">
+	<div id="header">
+		<button onclick="loadFromText()">Text to game</button>
+	  <button onclick="prevLevel()" id="prevLevelButton">Prev</button><button id="curLevelButton" onclick="resetLevel()">Level 1</button><button onclick="nextLevel()" id="nextLevelButton">Next</button>
+		<button onclick="exportToText()">Game to text</button>
+	</div>
+	<div id="container">
+		<div class="split">
+	    <textarea id="inText" rows="8" cols="80" style="font-size: 34pt"></textarea>
+	    <canvas id="canvas"></canvas>
+		</div>
+	</div>
+<!--
 <div id="container">
 <canvas id="canvas"></canvas>
 </div>
@@ -83,17 +111,18 @@ canvas {
 	<button onclick="exportToText()">Game to text</button>
 </div>
 <div id="center">
-	<textarea id="inText" rows="8" cols="80" style="font-size: 34pt"></textarea>
+	<textarea id="inText" rows="8" cols="80" style="font-size: 34pt"></textarea>-->
 	<!--textarea id="outText" rows="8" cols="80" style="font-size: 34pt"></textarea-->
-</div>
+<!--/div-->
 <!--script src="swiped-events.min.js"></script-->
 <script>
 !function(t,e){"use strict";"function"!=typeof t.CustomEvent&&(t.CustomEvent=function(t,n){n=n||{bubbles:!1,cancelable:!1,detail:void 0};var a=e.createEvent("CustomEvent");return a.initCustomEvent(t,n.bubbles,n.cancelable,n.detail),a},t.CustomEvent.prototype=t.Event.prototype),e.addEventListener("touchstart",function(t){if("true"===t.target.getAttribute("data-swipe-ignore"))return;s=t.target,r=Date.now(),n=t.touches[0].clientX,a=t.touches[0].clientY,u=0,i=0},!1),e.addEventListener("touchmove",function(t){if(!n||!a)return;var e=t.touches[0].clientX,r=t.touches[0].clientY;u=n-e,i=a-r},!1),e.addEventListener("touchend",function(t){if(s!==t.target)return;var e=parseInt(l(s,"data-swipe-threshold","20"),10),o=parseInt(l(s,"data-swipe-timeout","500"),10),c=Date.now()-r,d="",p=t.changedTouches||t.touches||[];Math.abs(u)>Math.abs(i)?Math.abs(u)>e&&c<o&&(d=u>0?"swiped-left":"swiped-right"):Math.abs(i)>e&&c<o&&(d=i>0?"swiped-up":"swiped-down");if(""!==d){var b={dir:d.replace(/swiped-/,""),xStart:parseInt(n,10),xEnd:parseInt((p[0]||{}).clientX||-1,10),yStart:parseInt(a,10),yEnd:parseInt((p[0]||{}).clientY||-1,10)};s.dispatchEvent(new CustomEvent("swiped",{bubbles:!0,cancelable:!0,detail:b})),s.dispatchEvent(new CustomEvent(d,{bubbles:!0,cancelable:!0,detail:b}))}n=null,a=null,r=null},!1);var n=null,a=null,u=null,i=null,r=null,s=null;function l(t,n,a){for(;t&&t!==e.documentElement;){var u=t.getAttribute(n);if(u)return u;t=t.parentNode}return a}}(window,document);
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/split.js/1.6.2/split.min.js" integrity="sha512-to2k78YjoNUq8+hnJS8AwFg/nrLRFLdYYalb18SlcsFRXavCOTfBF3lNyplKkLJeB8YjKVTb1FPHGSy9sXfSdg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="pintar.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
 <script src="howler.core.min.js"></script>
-<script src="levels_holes_v5.js"></script>
+<script src="levels_holes_v6.js"></script>
 <script src="undotres_v5.js"></script>
 <script>// @ts-nocheck
 ALLOW_EDITOR = true;
@@ -108,6 +137,8 @@ ALLOW_MAGIC_INPUT = false;
 DEFAULT_FORBID_OVERLAP = false;
 
 KEEP_UNDOING_UNTIL_CRATE_MOVE = false;
+
+Split(['#inText', '#canvas'])
 
 // levels = hole_levels_raw.map(str => str2level(str));
 </script>

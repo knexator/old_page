@@ -570,6 +570,8 @@ let MODULAR_GEO_DATA = {
   ',#,,': [2, 5],
   ',,#,': [3, 4],
   ',,,#': [2, 4],
+
+  '####': [0, 6],
 }
 function drawModularGeoSpr(level,i,j) {
   let tl = getGeo(level,i-1,j-1)
@@ -579,7 +581,8 @@ function drawModularGeoSpr(level,i,j) {
   let res = tl + tr + bl + br
   if (res === '....' || res === ',,,,') return
   // console.log(res)
-  let [si, sj] = MODULAR_GEO_DATA[res] || [0,0]
+  let [si, sj] = MODULAR_GEO_DATA[res] || [-1, -1]
+  if (si === -1) return
   geoModularSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), new PintarJS.Point(4,8))
   geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
   // geoModularSprite.position = new PintarJS.Point(Math.floor(OFFX + (i-.5) * TILE), Math.floor(OFFY + (j-.5) * TILE))
@@ -1790,6 +1793,15 @@ function recalcTileSize (level) {
     return
   } */
   if (!level) level = levels[cur_level_n]
+
+  let width  = canvas.clientWidth;
+  var height = canvas.clientHeight;
+  if (canvas.width !== width ||  canvas.height !== height) {
+    canvas.width  = width;
+    canvas.height = height;
+    main_container.style.fontSize = (width / 40)  + 'px';
+  }
+
   // let tile_w = Math.min(canvas.width / (level.w), 64)
   // let tile_h = Math.min(canvas.height / (level.h), 64)
   let tile_w = Math.floor(canvas.width / level.w)
@@ -2299,6 +2311,7 @@ function draw (timestamp) {
     if (mi >= 0 && mi < cur_level.w && mj >= 0 && mj < cur_level.h) {
       if (isButtonDown(0)) {
         cur_level.geo[mj][mi] = '#'
+        fixDetail(cur_level)
       } else if (isButtonDown(1)) {
         cur_level.geo[mj][mi] = '.'
         cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
@@ -2312,12 +2325,19 @@ function draw (timestamp) {
           return i != mi || j != mj
         })
         cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+        fixDetail(cur_level)
       } else if (wasKeyPressed('f')) {
+        cur_level.geo[mj][mi] = '.'
         cur_level.crates.push(new Movable(mi, mj, 0, extra = true_timeline_undos.length))
+        fixDetail(cur_level)
       } else if (wasKeyPressed('g')) {
+        cur_level.geo[mj][mi] = '.'
         cur_level.crates.push(new Movable(mi, mj, 1, extra = true_timeline_undos.length))
+        fixDetail(cur_level)
       } else if (wasKeyPressed('c')) {
+        cur_level.geo[mj][mi] = '.'
         cur_level.crates.push(new Movable(mi, mj, 2, extra = true_timeline_undos.length))
+        fixDetail(cur_level)
       } /*else if (wasKeyPressed('v')) {
         cur_level.crates.push(new Movable(mi, mj, 3, extra = true_timeline_undos.length))
       } */else if (wasKeyPressed('p')) {
@@ -2327,7 +2347,9 @@ function draw (timestamp) {
       } else if (wasKeyPressed('q')) {
         cur_level.targets.push([mi, mj])
       } else if (wasKeyPressed('e')) {
+        cur_level.geo[mj][mi] = '.'
         cur_level.holes.push([mi, mj])
+        fixDetail(cur_level)
       } else if (wasKeyPressed('i')) { // level sizing (smaller)
         resizeLevel(1, 0, 0, 0)
       } else if (wasKeyPressed('j')) {
@@ -2345,14 +2367,20 @@ function draw (timestamp) {
       } else if (wasKeyPressed('L')) {
         resizeLevel(0, 0, 0, -1)
       } else if (wasKeyPressed('t')) { // paint blobs
+        cur_level.geo[mj][mi] = '.'
         cur_level.paintBlobs.push(new PropertyHistory(true, 0))
         cur_level.paintBlobs.at(-1).position = [mi, mj]
+        fixDetail(cur_level)
       } else if (wasKeyPressed('y')) {
+        cur_level.geo[mj][mi] = '.'
         cur_level.paintBlobs.push(new PropertyHistory(true, 1))
         cur_level.paintBlobs.at(-1).position = [mi, mj]
+        fixDetail(cur_level)
       } else if (wasKeyPressed('u')) {
+        cur_level.geo[mj][mi] = '.'
         cur_level.paintBlobs.push(new PropertyHistory(true, 2))
         cur_level.paintBlobs.at(-1).position = [mi, mj]
+        fixDetail(cur_level)
       }
       /* else if (wasKeyPressed('b')) { // undo machines
         cur_level.machines.push([mi, mj, 1])
@@ -2437,15 +2465,15 @@ function drawMenuScreen () {
       new PintarJS.Color(.2, .2, .2), null, true))
 }
 
-window.addEventListener('mousemove', e => _mouseEvent(e))
-window.addEventListener('mousedown', e => _mouseEvent(e))
-window.addEventListener('mouseup', e => _mouseEvent(e))
+canvas.addEventListener('mousemove', e => _mouseEvent(e))
+canvas.addEventListener('mousedown', e => _mouseEvent(e))
+canvas.addEventListener('mouseup', e => _mouseEvent(e))
 // document.onContextMenu = e => e.preventDefault();
 
 function _mouseEvent (e) {
 	window.focus()
-  mouse.x = e.clientX
-  mouse.y = e.clientY
+  mouse.x = e.offsetX
+  mouse.y = e.offsetY
   mouse.buttons = e.buttons
   if (!ALLOW_EDITOR) e.preventDefault()
   return false
