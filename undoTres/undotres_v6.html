@@ -1,0 +1,219 @@
+<head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Knewave&display=swap" rel="stylesheet">
+<style>
+body {
+	margin: 0;
+  overscroll-behavior: contain;
+	background-color: #4e4e4e
+}
+
+html, body {
+  font-size: 80%;
+  /* margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%; */
+
+	-webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+	cursor: default;
+}
+
+#container {
+    width: 100vw;
+    height: 56.25vw; /* height:width ratio = 9/16 = .5625  */
+    /* background: pink; */
+    max-height: 100vh;
+    max-width: 177.78vh; /* 16/9 = 1.778 */
+    margin: auto;
+    position: absolute;
+    top:0;bottom:0; /* vertical center */
+    left:0;right:0; /* horizontal center */
+		font-size: 22px;
+
+		display: flex;
+}
+
+#leftCol {
+	flex-grow: 1;
+}
+
+#rightCol {
+	display: flex;
+	flex-direction: column;
+	flex: 3 0 0;
+}
+
+#topArea {
+	flex: 1 0 0;
+}
+
+#canvasContainer {
+	flex: 3 0 0;
+}
+
+canvas {
+  /* position: absolute */
+	width: 100%;
+  height: 100%;
+}
+
+.titleText {
+	position: absolute;
+	font-size: 5.5em;
+	font-family: 'Knewave', cursive;
+	color: #4F69BA;
+	text-shadow: .04em .04em #383F69;
+}
+
+.usefulText {
+	position: absolute;
+	font-size: 1.2em;
+	font-family: 'Verdana';
+	color: #7988C0;
+}
+
+#transition {
+	position: absolute;
+	width: 0%;
+	height: 0%;
+	top: 0%;
+	left: 0%;
+	background-color: #383F69;
+}
+
+.flashUpClass {
+	animation-name: flashUp;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+.flashDownClass {
+	animation-name: flashDown;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+.flashLeftClass {
+	animation-name: flashLeft;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+.flashRightClass {
+	animation-name: flashRight;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+
+@keyframes flashUp {
+  0%   {
+		top: 100%;
+		height: 0%;
+		width: 100%;
+	}
+  50% {
+		top: 0%;
+		height: 100%;
+		width: 100%;
+	}
+	100% {
+		top: 0%;
+		height: 0%;
+		width: 100%;
+	}
+}
+@keyframes flashDown {
+  0%   {
+		top: 0%;
+		height: 0%;
+		width: 100%;
+	}
+  50% {
+		top: 0%;
+		height: 100%;
+		width: 100%;
+	}
+	100% {
+		top: 100%;
+		height: 0%;
+		width: 100%;
+	}
+}
+@keyframes flashLeft {
+  0%   {
+		left: 100%;
+		width: 0%;
+		height: 100%;
+	}
+  50% {
+		left: 0%;
+		width: 100%;
+		height: 100%;
+	}
+	100% {
+		left: 0%;
+		width: 0%;
+		height: 100%;
+	}
+}
+@keyframes flashRight {
+  0%   {
+		left: 0%;
+		width: 0%;
+		height: 100%;
+	}
+  50% {
+		left: 0%;
+		width: 100%;
+		height: 100%;
+	}
+	100% {
+		left: 100%;
+		width: 0%;
+		height: 100%;
+	}
+}
+
+</style></head>
+<body oncontextmenu="return false;">
+	<div id="container">
+		<div id="leftCol">
+			hola
+		</div>
+		<div id="rightCol">
+			<div id="topArea">
+				buenas
+			</div>
+			<div id="canvasContainer">
+				<canvas id="canvas"></canvas>
+				<p hidden class="_0 titleText" style="left: 18%;top: -22.25%;">Tres</p>
+				<p hidden class="_0 titleText" style="left: 11.5%;top: 7.5%;">Undos</p>
+				<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 75%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">WASD / Arrow Keys to Move</div>
+				<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 90%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
+				<div hidden class="_1 usefulText" style="font-size: 1.8em; text-align: center; left: 42%;top: 66%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
+				<div hidden class="_1a usefulText" style="font-size: 1.8em; text-align: center; left: 42%;top: 76%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">R to Reset</div>
+				<p hidden class="_3 usefulText" style="font-size: 1.2em; left: 35%;top: 6%;">X to <i>really</i> undo</p>
+				<div hidden class="_6 usefulText" style="font-size: 1.2em; text-align: left; left: 50%;top: 25%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Recap:<br>Z to undo<br>X to <i>really</i> undo</div>
+				<div hidden class="_7 usefulText" style="font-size: 1.2em; text-align: left; left: 23%;top: 11%;">C to <i>really</i>, <i><b>really</b></i> undo</div>
+				<div hidden class="_end titleText" style="font-size: 6.0em; text-align: center; left: 0%;top: 0%; min-width: 100%; min-height: 100%;">Thanks for Playing!</div>
+				<p hidden class="_end titleText" style="left: 70%; top: 77%; font-size: 1.5em">- @knexator</p>
+			</div>
+		</div>
+</div>
+<div id="transition"></div>
+<!--script>
+!function(t,e){"use strict";"function"!=typeof t.CustomEvent&&(t.CustomEvent=function(t,n){n=n||{bubbles:!1,cancelable:!1,detail:void 0};var a=e.createEvent("CustomEvent");return a.initCustomEvent(t,n.bubbles,n.cancelable,n.detail),a},t.CustomEvent.prototype=t.Event.prototype),e.addEventListener("touchstart",function(t){if("true"===t.target.getAttribute("data-swipe-ignore"))return;s=t.target,r=Date.now(),n=t.touches[0].clientX,a=t.touches[0].clientY,u=0,i=0},!1),e.addEventListener("touchmove",function(t){if(!n||!a)return;var e=t.touches[0].clientX,r=t.touches[0].clientY;u=n-e,i=a-r},!1),e.addEventListener("touchend",function(t){if(s!==t.target)return;var e=parseInt(l(s,"data-swipe-threshold","20"),10),o=parseInt(l(s,"data-swipe-timeout","500"),10),c=Date.now()-r,d="",p=t.changedTouches||t.touches||[];Math.abs(u)>Math.abs(i)?Math.abs(u)>e&&c<o&&(d=u>0?"swiped-left":"swiped-right"):Math.abs(i)>e&&c<o&&(d=i>0?"swiped-up":"swiped-down");if(""!==d){var b={dir:d.replace(/swiped-/,""),xStart:parseInt(n,10),xEnd:parseInt((p[0]||{}).clientX||-1,10),yStart:parseInt(a,10),yEnd:parseInt((p[0]||{}).clientY||-1,10)};s.dispatchEvent(new CustomEvent("swiped",{bubbles:!0,cancelable:!0,detail:b})),s.dispatchEvent(new CustomEvent(d,{bubbles:!0,cancelable:!0,detail:b}))}n=null,a=null,r=null},!1);var n=null,a=null,u=null,i=null,r=null,s=null;function l(t,n,a){for(;t&&t!==e.documentElement;){var u=t.getAttribute(n);if(u)return u;t=t.parentNode}return a}}(window,document);
+</script-->
+<script src="pintar.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
+<script src="howler.core.min.js"></script>
+<script src="levels_holes_v6.js"></script>
+<script src="undotres_v5.js"></script>
+<script>
+	ALLOW_EDITOR = true
+</script>
+</body>
