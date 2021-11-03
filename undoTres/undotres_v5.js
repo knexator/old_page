@@ -556,7 +556,10 @@ let MODULAR_GEO_DATA = {
   '##.#': [1, 0],
   '###.': [0, 0],
 
-  ',###': [2, 2],
+  '#..#': [2, 2],
+  '.##.': [3, 2],
+
+  /*',###': [2, 2],
   '#,##': [3, 2],
   '##,#': [2, 3],
   '###,': [3, 3],
@@ -571,7 +574,7 @@ let MODULAR_GEO_DATA = {
   ',,#,': [3, 4],
   ',,,#': [2, 4],
 
-  '####': [0, 6],
+  '####': [0, 6],*/
 }
 function drawModularGeoSpr(level,i,j) {
   let tl = getGeo(level,i-1,j-1)
@@ -579,19 +582,31 @@ function drawModularGeoSpr(level,i,j) {
   let bl = getGeo(level,i-1,j)
   let br = getGeo(level,i,j)
   let res = tl + tr + bl + br
-  if (res === '....' || res === ',,,,') return
+  if (res === '....' || res === ',,,,' || res === '####') return
   // console.log(res)
   let [si, sj] = MODULAR_GEO_DATA[res] || [-1, -1]
+  if (i <= 0 || i >= level.w || j <= 0 || j >= level.h) {
+    // partly outside
+    // console.log(res)
+    if (res.indexOf('.') !== -1) {
+      // floor touching the outside
+      if (!ALLOW_EDITOR) return
+    } else {
+      return
+    }
+  }
   if (si === -1) return
-  geoModularSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), new PintarJS.Point(4,8))
+  geoModularSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), new PintarJS.Point(4,4))
   geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
   // geoModularSprite.position = new PintarJS.Point(Math.floor(OFFX + (i-.5) * TILE), Math.floor(OFFY + (j-.5) * TILE))
   pintar.drawSprite(geoModularSprite)
 }
 
 function getGeo(level,i,j) {
-  if (i < 0 || i >= level.w || j < 0 || j >= level.h) return ','
-  return level.geo[j][i]
+  if (i < 0 || i >= level.w || j < 0 || j >= level.h) return '#'
+  let chr = level.geo[j][i]
+  if (chr === ',') return '#'
+  return chr
 }
 
 function drawSpr (spr, i, j) {
@@ -838,8 +853,10 @@ function drawLevel (level) {
 
   pintar._renderer.setShader(null)
 
-  drawEntranceGradient(level)
-  drawExitGradient(level)
+  if (!ALLOW_EDITOR) {
+    drawEntranceGradient(level)
+    drawExitGradient(level)
+  }
 
   if (level.extraDrawCode) level.extraDrawCode()
 }
@@ -1385,6 +1402,7 @@ function str2level (str, enter, exit) {
 }
 
 function fixDetail(level) {
+  return
   let DIRS = [[0,1],[1,0],[0,-1],[-1,0]]
   let [pi, pj] = level.player.history.at(-1)
   let llegables = [[pi,pj]]
@@ -1615,7 +1633,7 @@ function level2str (level) {
         return hi == i && hj == j;
       });
 
-      if (!(level.geo[j][i] === '.' || level.geo[j][i] === ',')) {
+      if (!(level.geo[j][i] === '.')) {
         row.push('#')
       } else if (openHoleAt(level, i, j)) {
         row.push('_')
