@@ -1,4 +1,5 @@
 <head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+	<link rel="shortcut icon" href="#">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Knewave&display=swap" rel="stylesheet">
@@ -11,18 +12,10 @@ body {
 
 html, body {
   font-size: 80%;
-  /* margin: 0;
+	margin: 0;
   padding: 0;
   width: 100%;
-  height: 100%; */
-
-	-webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-	cursor: default;
+  height: 100%;
 }
 
 #container {
@@ -36,26 +29,49 @@ html, body {
     top:0;bottom:0; /* vertical center */
     left:0;right:0; /* horizontal center */
 		font-size: 22px;
-
-		display: flex;
 }
 
 #leftCol {
-	flex-grow: 1;
-}
-
-#rightCol {
-	display: flex;
-	flex-direction: column;
-	flex: 3 0 0;
+	position: absolute;
+	width: 20%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	background: red;
+	overflow-y: auto;
+	/* overflow-y: scroll; */
 }
 
 #topArea {
-	flex: 1 0 0;
+	position: absolute;
+	width: 80%;
+	height: 20%;
+	right: 0;
+	top: 0;
+	background: blue;
 }
 
 #canvasContainer {
-	flex: 3 0 0;
+	position: absolute;
+	width: 80%;
+	height: 80%;
+	right: 0;
+	bottom: 0;
+	background: yellow;
+	-webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+	cursor: default;
+}
+
+.levelDraftContainer {
+	background-color: green;
+	white-space: pre-line;
+	font-family: 'Courier New', monospace;
+	overflow: hidden;
 }
 
 canvas {
@@ -182,26 +198,24 @@ canvas {
 <body oncontextmenu="return false;">
 	<div id="container">
 		<div id="leftCol">
-			hola
+
 		</div>
-		<div id="rightCol">
-			<div id="topArea">
-				buenas
-			</div>
-			<div id="canvasContainer">
-				<canvas id="canvas"></canvas>
-				<p hidden class="_0 titleText" style="left: 18%;top: -22.25%;">Tres</p>
-				<p hidden class="_0 titleText" style="left: 11.5%;top: 7.5%;">Undos</p>
-				<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 75%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">WASD / Arrow Keys to Move</div>
-				<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 90%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
-				<div hidden class="_1 usefulText" style="font-size: 1.8em; text-align: center; left: 42%;top: 66%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
-				<div hidden class="_1a usefulText" style="font-size: 1.8em; text-align: center; left: 42%;top: 76%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">R to Reset</div>
-				<p hidden class="_3 usefulText" style="font-size: 1.2em; left: 35%;top: 6%;">X to <i>really</i> undo</p>
-				<div hidden class="_6 usefulText" style="font-size: 1.2em; text-align: left; left: 50%;top: 25%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Recap:<br>Z to undo<br>X to <i>really</i> undo</div>
-				<div hidden class="_7 usefulText" style="font-size: 1.2em; text-align: left; left: 23%;top: 11%;">C to <i>really</i>, <i><b>really</b></i> undo</div>
-				<div hidden class="_end titleText" style="font-size: 6.0em; text-align: center; left: 0%;top: 0%; min-width: 100%; min-height: 100%;">Thanks for Playing!</div>
-				<p hidden class="_end titleText" style="left: 70%; top: 77%; font-size: 1.5em">- @knexator</p>
-			</div>
+		<div id="topArea">
+			buenas
+		</div>
+		<div id="canvasContainer">
+			<canvas id="canvas"></canvas>
+			<p hidden class="_0 titleText" style="left: 18%;top: -22.25%;">Tres</p>
+			<p hidden class="_0 titleText" style="left: 11.5%;top: 7.5%;">Undos</p>
+			<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 75%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">WASD / Arrow Keys to Move</div>
+			<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 90%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
+			<div hidden class="_1 usefulText" style="font-size: 1.8em; text-align: center; left: 42%;top: 66%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
+			<div hidden class="_1a usefulText" style="font-size: 1.8em; text-align: center; left: 42%;top: 76%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">R to Reset</div>
+			<p hidden class="_3 usefulText" style="font-size: 1.2em; left: 35%;top: 6%;">X to <i>really</i> undo</p>
+			<div hidden class="_6 usefulText" style="font-size: 1.2em; text-align: left; left: 50%;top: 25%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Recap:<br>Z to undo<br>X to <i>really</i> undo</div>
+			<div hidden class="_7 usefulText" style="font-size: 1.2em; text-align: left; left: 23%;top: 11%;">C to <i>really</i>, <i><b>really</b></i> undo</div>
+			<div hidden class="_end titleText" style="font-size: 6.0em; text-align: center; left: 0%;top: 0%; min-width: 100%; min-height: 100%;">Thanks for Playing!</div>
+			<p hidden class="_end titleText" style="left: 70%; top: 77%; font-size: 1.5em">- @knexator</p>
 		</div>
 </div>
 <div id="transition"></div>
@@ -214,6 +228,6 @@ canvas {
 <script src="levels_holes_v6.js"></script>
 <script src="undotres_v5.js"></script>
 <script>
-	ALLOW_EDITOR = true
+	// ALLOW_EDITOR = true
 </script>
 </body>

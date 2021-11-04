@@ -559,6 +559,8 @@ let MODULAR_GEO_DATA = {
   '#..#': [2, 2],
   '.##.': [3, 2],
 
+  '#.,,': [2, 3],
+
   /*',###': [2, 2],
   '#,##': [3, 2],
   '##,#': [2, 3],
@@ -585,16 +587,17 @@ function drawModularGeoSpr(level,i,j) {
   if (res === '....' || res === ',,,,' || res === '####') return
   // console.log(res)
   let [si, sj] = MODULAR_GEO_DATA[res] || [-1, -1]
-  if (i <= 0 || i >= level.w || j <= 0 || j >= level.h) {
-    // partly outside
-    // console.log(res)
-    if (res.indexOf('.') !== -1) {
-      // floor touching the outside
-      if (!ALLOW_EDITOR) return
-    } else {
-      return
-    }
-  }
+  // if (i <= 0 || i >= level.w || j <= 0 || j >= level.h) {
+  //   // partly outside
+  //   // console.log(res)
+  //   if (res.indexOf('.') !== -1) {
+  //     // floor touching the outside
+  //     return
+  //     // if (!ALLOW_EDITOR) return
+  //   } else {
+  //     return
+  //   }
+  // }
   if (si === -1) return
   geoModularSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), new PintarJS.Point(4,4))
   geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
@@ -603,7 +606,7 @@ function drawModularGeoSpr(level,i,j) {
 }
 
 function getGeo(level,i,j) {
-  if (i < 0 || i >= level.w || j < 0 || j >= level.h) return '#'
+  if (i < 0 || i >= level.w || j < 0 || j >= level.h) return ','
   let chr = level.geo[j][i]
   if (chr === ',') return '#'
   return chr
@@ -939,6 +942,55 @@ text_logo_sprite.strokeColor = PintarJS.Color.black();
 text_logo_sprite.fontSize = 128;
 text_logo_sprite.position = new PintarJS.Point(20, 100); */
 
+function deleteDraft(button) {
+  button.parentElement.parentElement.remove()
+}
+
+function playDraft(button) {
+  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.innerText, [1,0], [1,0])
+  true_timeline_undos = []
+}
+
+let editorSidebar = document.getElementById("leftCol");
+function enterEditor() {
+  setExtraDisplay(-1)
+
+
+  let curDiv = document.createElement('div');
+  curDiv.innerHTML = `<div class="levelDraftContainer">
+    <div class="draftText">
+
+    </div>
+    <div class="levelDraftBar">
+      <button type="button" name="deleteDraft" onclick="deleteDraft(this)">delete</button><button type="button" name="playDraft" onclick="playDraft(this)">play</button>
+    </div>
+  </div>`.trim();
+  // Get the last <li> element ("Milk") of <ul> with id="myList2"
+  // let itm = editorSidebar.lastElementChild;
+  // Copy the <li> element and its child nodes
+  // let cln = itm.cloneNode(true);
+  let curElement = curDiv.firstChild
+
+  curElement.firstElementChild.innerText = level2str(levels[cur_level_n])
+
+  // Append the cloned <li> element to <ul> with id="myList1"
+  editorSidebar.appendChild(curElement);
+  // console.log(cln)
+}
+
+function exitEditor() {
+  setExtraDisplay(cur_level_n)
+}
+
+function toggleEditor() {
+  if (ALLOW_EDITOR) {
+    exitEditor();
+  } else {
+    enterEditor();
+  }
+  ALLOW_EDITOR = !ALLOW_EDITOR
+}
+
 let text_0 = document.querySelectorAll('._0')
 let text_1 = document.querySelector('._1')
 let text_1a = document.querySelector('._1a')
@@ -947,7 +999,7 @@ let text_6 = document.querySelector('._6')
 let text_7 = document.querySelector('._7')
 let text_end = document.querySelectorAll('._end')
 function setExtraDisplay (n) {
-  if (ALLOW_EDITOR) return
+  // if (ALLOW_EDITOR) return
   text_0.forEach(item => {
     item.hidden = (n !== 0)
   });
@@ -1491,25 +1543,32 @@ let HALT = false
 let main_container = document.getElementById("container")
 let transitionElement = document.getElementById('transition')
 
-window.addEventListener('resize', e => {
+// window.addEventListener('resize', e => {
   // canvas.width = innerWidth
   // canvas.height = innerHeight
   // pintar.resizeAndCenter(64, 64);
   // setTimeout(recalcTileSize, 100)
   // if (in_last_level) drawScreen()
-  let width  = canvas.clientWidth;
-  var height = canvas.clientHeight;
-  if (canvas.width !== width ||  canvas.height !== height) {
-    canvas.width  = width;
-    canvas.height = height;
-    main_container.style.fontSize = (width / 40)  + 'px';
-  }
-})
+
+  // let width  = canvas.clientWidth;
+  // var height = canvas.clientHeight;
+  // const dpr = window.devicePixelRatio;
+  // const {width2, height2} = canvas.getBoundingClientRect();
+  // const width  = Math.floor(width2 * dpr);
+  // const height = Math.floor(height2 * dpr);
+  //
+  // if (canvas.width !== width ||  canvas.height !== height) {
+  //   // canvas.width = width;
+  //   // canvas.height = height;
+  //   // main_container.style.fontSize = (width / 40)  + 'px';
+  // }
+// })
+
 window.addEventListener('load', e => {
 	window.focus();
   main_container = document.getElementById("container")
   loadLevel(0) // 152 159 60
-  window.dispatchEvent(new Event('resize'))
+  // window.dispatchEvent(new Event('resize'))
   // setTimeout(function () { window.dispatchEvent(new Event('resize')) }, 100)
   window.requestAnimationFrame(draw)
 })
@@ -1812,18 +1871,29 @@ function recalcTileSize (level) {
   } */
   if (!level) level = levels[cur_level_n]
 
-  let width  = canvas.clientWidth;
-  var height = canvas.clientHeight;
-  if (canvas.width !== width ||  canvas.height !== height) {
-    canvas.width  = width;
+  // let width  = canvas.clientWidth;
+  // var height = canvas.clientHeight;
+  // if (canvas.width !== width ||  canvas.height !== height) {
+  //   canvas.width  = width;
+  //   canvas.height = height;
+  //   main_container.style.fontSize = (width / 40)  + 'px';
+  // }
+  const dpr = window.devicePixelRatio;
+  const {width, height} = canvas.getBoundingClientRect();
+  const displayWidth  = Math.round(width * dpr);
+  const displayHeight = Math.round(height * dpr);
+
+  // Check if the canvas is not the same size.
+  if (canvas.width !== displayWidth ||  canvas.height !== displayHeight) {
+    canvas.width = width;
     canvas.height = height;
     main_container.style.fontSize = (width / 40)  + 'px';
   }
 
   // let tile_w = Math.min(canvas.width / (level.w), 64)
   // let tile_h = Math.min(canvas.height / (level.h), 64)
-  let tile_w = Math.floor(canvas.width / level.w)
-  let tile_h = Math.floor(canvas.height / level.h)
+  let tile_w = Math.floor(canvas.width / (level.w))
+  let tile_h = Math.floor(canvas.height / (level.h))
   // let tile_w = Math.floor(canvas.width / (level.w * 16)) * 16
   // let tile_h = Math.floor(canvas.height / (level.h * 16)) * 16
 
@@ -1833,12 +1903,12 @@ function recalcTileSize (level) {
   // let tile_w = 32
   // let tile_h = 32
   let prev_tile = TILE
-  if (ALLOW_EDITOR) {
-    TILE = Math.floor(Math.min(tile_h, tile_w) * 0.8)
-  } else {
-    // TILE = Math.floor(Math.min(tile_h, tile_w))
-    TILE = Math.floor(Math.min(tile_h, tile_w) / 16) * 16
-  }
+  // if (ALLOW_EDITOR) {
+  //   TILE = Math.floor(Math.min(tile_h, tile_w) * 0.8)
+  // } else {
+  TILE = Math.floor(Math.min(tile_h, tile_w))
+  // TILE = Math.floor(Math.min(tile_h, tile_w) / 16) * 16
+  // }
   OFFX = Math.floor((canvas.width - (TILE * level.w)) / 2)
   OFFY = Math.floor((canvas.height - (TILE * level.h)) / 2)
   if (prev_tile !== TILE) {
@@ -1915,6 +1985,10 @@ function draw (timestamp) {
   })
 
   // console.log(first_undo_press)
+
+  if (wasKeyPressed("Shift")) {
+    toggleEditor()
+  }
 
   let cur_level = levels[cur_level_n]
   recalcTileSize(cur_level)
@@ -2238,7 +2312,7 @@ function draw (timestamp) {
     						          cur_level.crates[pushing_crate].inmune_history[real_tick] = inmunity
             					  })
                       }
-                      console.log("over_paint: ", over_paint)
+                      // console.log("over_paint: ", over_paint)
           					  // console.log(pushing_crates)
                     }
                   }
@@ -2329,6 +2403,17 @@ function draw (timestamp) {
     if (mi >= 0 && mi < cur_level.w && mj >= 0 && mj < cur_level.h) {
       if (isButtonDown(0)) {
         cur_level.geo[mj][mi] = '#'
+        cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
+        cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
+        cur_level.crates = cur_level.crates.filter(crate =>	{
+          let [i, j] = crate.history.at(-1)
+          return i != mi || j != mj
+        })
+        cur_level.paintBlobs = cur_level.paintBlobs.filter(blob =>	{
+          let [i, j] = blob.position
+          return i != mi || j != mj
+        })
+        cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
         fixDetail(cur_level)
       } else if (isButtonDown(1)) {
         cur_level.geo[mj][mi] = '.'
@@ -2524,6 +2609,7 @@ let keyboard_last_pressed = {}
 function keyMap (e) {
   // use key.code if key location is important
   if (e.key === "Escape") return 'Escape'
+  if (e.key === "Shift") return 'Shift'
   if (e.metaKey) return '.'
   if (ALLOW_EDITOR) return e.key
   e.key = e.key.toLowerCase();
