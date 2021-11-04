@@ -201,44 +201,44 @@ PropertyHistory.prototype.add = function (value = undefined) {
 }
 
 let goalSound = new Howl({
-  src: ['goal.wav']
+  src: ['sounds/goal.wav']
 })
 let wallSound = new Howl({
-  src: ['wall.wav']
+  src: ['sounds/wall.wav']
 })
 let stepSound = new Howl({
-  src: ['step.wav']
+  src: ['sounds/step.wav']
 })
 let pushSound = new Howl({
-  src: ['push.wav']
+  src: ['sounds/push.wav']
 })
 let winSound = new Howl({
-  src: ['win.wav']
+  src: ['sounds/win.wav']
 })
 let holeSound = new Howl({
-  src: ['hole.wav']
+  src: ['sounds/hole.wav']
 })
 let undoSounds = [
   new Howl({
-    src: ['undo1.wav']
+    src: ['sounds/undo1.wav']
   }),
   new Howl({
-    src: ['undo2.wav']
+    src: ['sounds/undo2.wav']
   }),
   new Howl({
-    src: ['undo3.wav']
+    src: ['sounds/undo3.wav']
   }),
   new Howl({
-    src: ['undo4.wav']
+    src: ['sounds/undo4.wav']
   })
 ]
 undoSounds[8] = undoSounds[0]
 let restartSound = new Howl({
-  src: ['restart.wav'],
+  src: ['sounds/restart.wav'],
   volume: 0.4
 })
 let transitionSound = new Howl({
-  src: ['transition.wav']
+  src: ['sounds/transition.wav']
 })
 
 // let using_machine_n_turns = 0;
