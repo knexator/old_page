@@ -69,6 +69,7 @@ html, body {
 
 .levelDraftContainer {
 	background-color: green;
+	border: thick double #32a1ce;
 	white-space: pre-line;
 	font-family: 'Courier New', monospace;
 	overflow: hidden;
@@ -93,6 +94,28 @@ canvas {
 	font-size: 1.2em;
 	font-family: 'Verdana';
 	color: #7988C0;
+}
+
+.squareButtonsContainer {
+	aspect-ratio: 1/1;
+	background: cyan;
+	height: 100%;
+	display: inline-block;
+}
+
+.squareButton {
+	background: green;
+
+	min-height: 33.33%;
+	max-height: 33.33%;
+	height: 33.33%;
+
+	min-width: 33.33%;
+	max-width: 33.33%;
+	width: 33.33%;
+
+	margin: 0;
+  padding: 0;
 }
 
 #transition {
@@ -198,10 +221,34 @@ canvas {
 <body oncontextmenu="return false;">
 	<div id="container">
 		<div id="leftCol">
-
 		</div>
 		<div id="topArea">
-			buenas
+			<!-- <div class="squareButtonsContainer"></div> -->
+			bigger:
+			<div class="squareButtonsContainer">
+							   <button type="button" name="button" class="squareButton" onclick="resizeLevel (1,1,0,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (1,0,0,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (1,0,0,1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,1,0,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (1,1,1,1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,0,1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,1,1,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,1,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,1,1)"></button>
+			</div>
+			smaller:
+			<div class="squareButtonsContainer">
+							   <button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,-1,0,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,0,0,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,0,0,-1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,-1,0,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,-1,-1,-1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,0,-1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,-1,-1,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,-1,0)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,-1,-1)"></button>
+			</div>
+			<button type="button" name="saveDraft" onclick="saveDraft()">save cur draft</button>
 		</div>
 		<div id="canvasContainer">
 			<canvas id="canvas"></canvas>

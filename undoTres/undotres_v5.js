@@ -12,6 +12,14 @@ let canvas = document.getElementById('canvas')
 let globalT = 0.0
 let last_t = null
 
+let true_timeline_undos = []
+
+let HALT = false
+
+let main_container = document.getElementById("container")
+let transitionElement = document.getElementById('transition')
+
+
 class WobblyShader extends PintarJS.DefaultShader
   {
   get fragmentShaderTextureCode () {
@@ -167,7 +175,7 @@ let TRANSITION_SPEED = 0.03
 let ALLOW_CHANGE_PLAYER = false
 let ALLOW_CHANGE_CRATES = false
 let ALLOW_EDITOR = false
-let ALLOW_MACHINES = true
+let ALLOW_MACHINES = false
 let ALLOW_CRATE_ON_TOP_OF_MACHINE = true
 let ALLOW_MAGIC_INPUT = false
 let KEEP_UNDOING_UNTIL_CRATE_MOVE = false
@@ -985,20 +993,16 @@ text_logo_sprite.strokeColor = PintarJS.Color.black();
 text_logo_sprite.fontSize = 128;
 text_logo_sprite.position = new PintarJS.Point(20, 100); */
 
-function deleteDraft(button) {
+function deleteDraft (button) {
   button.parentElement.parentElement.remove()
 }
 
-function playDraft(button) {
+function playDraft (button) {
   levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.innerText, [1,0], [1,0])
   true_timeline_undos = []
 }
 
-let editorSidebar = document.getElementById("leftCol");
-function enterEditor() {
-  setExtraDisplay(-1)
-
-
+function saveDraft (str) {
   let curDiv = document.createElement('div');
   curDiv.innerHTML = `<div class="levelDraftContainer">
     <div class="draftText">
@@ -1017,15 +1021,25 @@ function enterEditor() {
   curElement.firstElementChild.innerText = level2str(levels[cur_level_n])
 
   // Append the cloned <li> element to <ul> with id="myList1"
-  editorSidebar.appendChild(curElement);
+  editorSidebar.prepend(curElement);
+  // editorSidebar.appendChild(curElement);
   // console.log(cln)
 }
 
-function exitEditor() {
+let editorSidebar = document.getElementById("leftCol");
+function enterEditor () {
+  setExtraDisplay(-1)
+  ENABLE_RESTART = true
+  ENABLE_UNDO_2 = true
+  ENABLE_UNDO_3 = true
+  saveDraft()
+}
+
+function exitEditor () {
   setExtraDisplay(cur_level_n)
 }
 
-function toggleEditor() {
+function toggleEditor () {
   if (ALLOW_EDITOR) {
     exitEditor();
   } else {
@@ -1268,10 +1282,13 @@ function isDoorOpen (level, chr) {
 }
 
 function closedDoorAt (level, i, j) {
-  let doors = level.doors.filter(([di, dj, c]) => {
-    return i == di && j == dj
-  })
-  return !doors.every(([di, dj, c]) => isDoorOpen(level, c))
+  // hijacking this function, lol
+  return i <= 0 || i + 1 >= level.w || j <= 0 || j + 1 >= level.h
+
+  // let doors = level.doors.filter(([di, dj, c]) => {
+  //   return i == di && j == dj
+  // })
+  // return !doors.every(([di, dj, c]) => isDoorOpen(level, c))
 }
 
 function openHoleAt (level, i, j) {
@@ -1492,83 +1509,11 @@ function str2level (str, enter, exit) {
   level.player.history.splice(1)
   level.player.inmune_history.splice(1) */
   level.player.inHole.value[0] = dir2spr(level.enter[0], level.enter[1], false)
-  fixDetail(level)
+  real_times = [0,0,0]
+  won_cur_level = false
+  true_timeline_undos = []
+  input_queue = []
   return level
-}
-
-function fixDetail(level) {
-  return
-  let DIRS = [[0,1],[1,0],[0,-1],[-1,0]]
-  let [pi, pj] = level.player.history.at(-1)
-  let llegables = [[pi,pj]]
-  let k = 0
-  while (k < llegables.length) {
-    let [ci, cj] = llegables[k]
-    for (let d=0; d<4; d++) {
-      let [di, dj] = DIRS[d];
-      let ei = ci + di;
-      let ej = cj + dj;
-      if (ei < 0 || ei >= level.w || ej < 0 || ej >= level.h) continue
-      let chr = level.geo[ej][ei]
-      if ('.,_'.indexOf(chr) === -1) continue
-      let skip = false
-      for (let n = 0; n<llegables.length; n++) {
-        let [ni, nj] = llegables[n]
-        if (ni == ei && nj == ej) {
-          skip = true
-          break
-        }
-      }
-      if (skip) continue
-
-      llegables.push([ei, ej])
-    }
-    k++
-  }
-  for (let j = 0; j < level.h; j++) {
-    for (let i = 0; i < level.w; i++) {
-      let chr = level.geo[j][i]
-      if (chr === '.') level.geo[j][i] = ','
-    }
-  }
-  for (let k = 0; k < llegables.length; k++) {
-    let [ci, cj] = llegables[k]
-    level.geo[cj][ci] = '.'
-  }
-  return
-
-  for (let j = 0; j < level.h; j++) {
-    for (let i = 0; i < level.w; i++) {
-      let chr = level.geo[j][i]
-      if (',._1234uiO@*'.indexOf(chr) !== -1) continue
-      let surrounding = []
-      for (sj=-1; sj<=1; sj++) {
-        for (si=-1; si<=1; si++) {
-          if (si===0 && sj===0) continue
-          // , outside
-          // . inside
-          // # wall
-          let ei = i + si;
-          let ej = j + sj;
-          if (ei < 0 || ei >= level.w || ej < 0 || ej >= level.h) {
-            surrounding.push(',')
-          } else {
-            let char_2 = level.geo[ej][ei]
-            if (char_2 === ',') {
-              surrounding.push(',')
-            } else if ('._1234uiO@'.indexOf(char_2) !== -1) {
-              surrounding.push('.')
-            } else if (char_2.length > 1 || char_2 === '#') {
-              surrounding.push('#')
-            } else {
-              console.log("UNEXPECTED CHR: ", char_2)
-            }
-          }
-        }
-      }
-      level.geo[j][i] = surrounding.join('')
-    }
-  }
 }
 
 function dir2spr (di, dj, pushing) {
@@ -1578,13 +1523,6 @@ function dir2spr (di, dj, pushing) {
     return 5 + di + (pushing ? 8 : 0)
   }
 }
-
-let true_timeline_undos = []
-
-let HALT = false
-
-let main_container = document.getElementById("container")
-let transitionElement = document.getElementById('transition')
 
 // window.addEventListener('resize', e => {
   // canvas.width = innerWidth
@@ -1774,34 +1712,45 @@ function exportToText () {
 }
 
 function resizeLevel (a, b, c, d) {
-  exportToText()
+  // exportToText()
   let w = levels[cur_level_n].w
   let h = levels[cur_level_n].h
-  let text = document.getElementById('inText').value
+  let text = level2str(levels[cur_level_n])
+  // let text = document.getElementById('inText').value
   let rows = text.split('\n')
   if (a > 0) {
     rows.unshift('.'.repeat(w))
+    h += 1
   } else if (a < 0) {
     rows.shift()
+    h -= 1
   }
   if (b > 0) {
     rows = rows.map(row => '.' + row)
+    w += 1
   } else if (b < 0) {
     rows = rows.map(row => row.slice(1))
+    w -= 1
   }
   if (c > 0) {
     rows.push('.'.repeat(w))
+    h += 1
   } else if (c < 0) {
     rows.pop()
+    h -= 1
   }
   if (d > 0) {
     rows = rows.map(row => row + '.')
+    w += 1
   } else if (d < 0) {
     rows = rows.map(row => row.slice(0, -1))
+    w -= 1
   }
   text = rows.join('\n')
-  document.getElementById('inText').value = text
-  loadFromText()
+  levels[cur_level_n] = str2level(text, levels[cur_level_n].enter, levels[cur_level_n].exit)
+  // document.getElementById('inText').value = text
+  // loadFromText()
+
 }
 
 function resetLevel () {
@@ -1970,7 +1919,7 @@ function doUndo (n) {
 }
 
 function getKeyRetriggerTime (key) {
-  if ('123456789'.indexOf(key) != -1) return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
+  // if ('123456789'.indexOf(key) != -1) return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
   if (key == 'z' || key == 'x' || key == 'c') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // return first_key_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
@@ -2092,8 +2041,8 @@ function draw (timestamp) {
     } else {
       let pressed_key = input_queue.shift()
       let cur_undo = 0
-      for (let i = 1; i < 10; i++) {
-        if (pressed_key == i.toString()) cur_undo = i
+      for (let i = 0; i < 3; i++) {
+        if (pressed_key == 'zxc'[i]) cur_undo = i + 1
       }
       let cur_di = 0
       let cur_dj = 0
@@ -2102,10 +2051,12 @@ function draw (timestamp) {
       if (pressed_key == ('w')) cur_dj -= 1
       if (pressed_key == ('s')) cur_dj += 1
 
-      let magic_stuff_input = pressed_key == 'e' && ALLOW_MAGIC_INPUT
+      /*let magic_stuff_input = pressed_key == 'e' && ALLOW_MAGIC_INPUT
       let machine_input_back = pressed_key == 'z' && ALLOW_MACHINES
       let machine_input_front = pressed_key == 'x' && ALLOW_MACHINES
-      let machine_input = machine_input_back || machine_input_front
+      let machine_input = machine_input_back || machine_input_front*/
+      let machine_input = false
+      let magic_stuff_input = false
 
       let SKIP_TURN = false
       let SKIPPED_TURN = false
@@ -2449,19 +2400,21 @@ function draw (timestamp) {
     let mj = Math.round((mouse.y - OFFY) / TILE - 0.5)
     if (mi >= 0 && mi < cur_level.w && mj >= 0 && mj < cur_level.h) {
       if (isButtonDown(0)) {
-        cur_level.geo[mj][mi] = '#'
-        cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
-        cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
-        cur_level.crates = cur_level.crates.filter(crate =>	{
-          let [i, j] = crate.history.at(-1)
-          return i != mi || j != mj
-        })
-        cur_level.paintBlobs = cur_level.paintBlobs.filter(blob =>	{
-          let [i, j] = blob.position
-          return i != mi || j != mj
-        })
-        cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
-        fixDetail(cur_level)
+        let [pi, pj] = cur_level.player.history.at(-1)
+        if (pi !== mi || pj !== mj) {
+          cur_level.geo[mj][mi] = '#'
+          cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
+          cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
+          cur_level.crates = cur_level.crates.filter(crate =>	{
+            let [i, j] = crate.history.at(-1)
+            return i != mi || j != mj
+          })
+          cur_level.paintBlobs = cur_level.paintBlobs.filter(blob =>	{
+            let [i, j] = blob.position
+            return i != mi || j != mj
+          })
+          cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+        }
       } else if (isButtonDown(1)) {
         cur_level.geo[mj][mi] = '.'
         cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
@@ -2475,70 +2428,33 @@ function draw (timestamp) {
           return i != mi || j != mj
         })
         cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
-        fixDetail(cur_level)
-      } else if (wasKeyPressed('f')) {
-        cur_level.geo[mj][mi] = '.'
-        cur_level.crates.push(new Movable(mi, mj, 0, extra = true_timeline_undos.length))
-        fixDetail(cur_level)
-      } else if (wasKeyPressed('g')) {
-        cur_level.geo[mj][mi] = '.'
-        cur_level.crates.push(new Movable(mi, mj, 1, extra = true_timeline_undos.length))
-        fixDetail(cur_level)
-      } else if (wasKeyPressed('c')) {
-        cur_level.geo[mj][mi] = '.'
-        cur_level.crates.push(new Movable(mi, mj, 2, extra = true_timeline_undos.length))
-        fixDetail(cur_level)
-      } /*else if (wasKeyPressed('v')) {
-        cur_level.crates.push(new Movable(mi, mj, 3, extra = true_timeline_undos.length))
-      } */else if (wasKeyPressed('p')) {
-        cur_level.buttons.push([mi, mj, 'p'])
-      } else if (wasKeyPressed('P')) {
-        cur_level.doors.push([mi, mj, 'P'])
-      } else if (wasKeyPressed('q')) {
-        cur_level.targets.push([mi, mj])
-      } else if (wasKeyPressed('e')) {
-        cur_level.geo[mj][mi] = '.'
-        cur_level.holes.push([mi, mj])
-        fixDetail(cur_level)
-      } else if (wasKeyPressed('i')) { // level sizing (smaller)
-        resizeLevel(1, 0, 0, 0)
-      } else if (wasKeyPressed('j')) {
-        resizeLevel(0, 1, 0, 0)
-      } else if (wasKeyPressed('k')) {
-        resizeLevel(0, 0, 1, 0)
-      } else if (wasKeyPressed('l')) {
-        resizeLevel(0, 0, 0, 1)
-      } else if (wasKeyPressed('I')) { // level sizing (bigger)
-        resizeLevel(-1, 0, 0, 0)
-      } else if (wasKeyPressed('J')) {
-        resizeLevel(0, -1, 0, 0)
-      } else if (wasKeyPressed('K')) {
-        resizeLevel(0, 0, -1, 0)
-      } else if (wasKeyPressed('L')) {
-        resizeLevel(0, 0, 0, -1)
-      } else if (wasKeyPressed('t')) { // paint blobs
-        cur_level.geo[mj][mi] = '.'
-        cur_level.paintBlobs.push(new PropertyHistory(true, 0))
-        cur_level.paintBlobs.at(-1).position = [mi, mj]
-        fixDetail(cur_level)
-      } else if (wasKeyPressed('y')) {
-        cur_level.geo[mj][mi] = '.'
-        cur_level.paintBlobs.push(new PropertyHistory(true, 1))
-        cur_level.paintBlobs.at(-1).position = [mi, mj]
-        fixDetail(cur_level)
-      } else if (wasKeyPressed('u')) {
-        cur_level.geo[mj][mi] = '.'
-        cur_level.paintBlobs.push(new PropertyHistory(true, 2))
-        cur_level.paintBlobs.at(-1).position = [mi, mj]
-        fixDetail(cur_level)
+      } else if (mi > 0 && mi + 1 < cur_level.w && mj > 0 && mj + 1 < cur_level.h) {
+        if (wasKeyPressed('1')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.crates.push(new Movable(mi, mj, 0, extra = true_timeline_undos.length))
+        } else if (wasKeyPressed('2')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.crates.push(new Movable(mi, mj, 1, extra = true_timeline_undos.length))
+        } else if (wasKeyPressed('3')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.crates.push(new Movable(mi, mj, 2, extra = true_timeline_undos.length))
+        } else if (wasKeyPressed('e')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.holes.push([mi, mj])
+        } else if (wasKeyPressed('f')) { // paint blobs
+          cur_level.geo[mj][mi] = '.'
+          cur_level.paintBlobs.push(new PropertyHistory(true, 0))
+          cur_level.paintBlobs.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('g')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.paintBlobs.push(new PropertyHistory(true, 1))
+          cur_level.paintBlobs.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('v')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.paintBlobs.push(new PropertyHistory(true, 2))
+          cur_level.paintBlobs.at(-1).position = [mi, mj]
+        }
       }
-      /* else if (wasKeyPressed('b')) { // undo machines
-        cur_level.machines.push([mi, mj, 1])
-      } else if (wasKeyPressed('n')) {
-        cur_level.machines.push([mi, mj, 2])
-      } else if (wasKeyPressed('m')) {
-        cur_level.machines.push([mi, mj, 3])
-      }*/
     }
   }
 
@@ -2658,15 +2574,15 @@ function keyMap (e) {
   if (e.key === "Escape") return 'Escape'
   if (e.code === 'Backquote') return 'editor'
   if (e.metaKey) return '.'
-  if (ALLOW_EDITOR) return e.key
-  e.key = e.key.toLowerCase();
+  // if (ALLOW_EDITOR) return e.key
   if (e.key == 'ArrowLeft') return 'a'
   if (e.key == 'ArrowRight') return 'd'
   if (e.key == 'ArrowDown') return 's'
   if (e.key == 'ArrowUp') return 'w'
-  if (e.key == 'z') return '1'
-  if (e.key == 'x') return ENABLE_UNDO_2 ? '2' : '.'
-  if (e.key == 'c') return ENABLE_UNDO_3 ? '3' : '.'
+  e.key = e.key.toLowerCase();
+  if (e.key == 'z') return 'z'
+  if (e.key == 'x') return ENABLE_UNDO_2 ? 'x' : '.'
+  if (e.key == 'c') return ENABLE_UNDO_3 ? 'c' : '.'
   if (e.key == 'r') return ENABLE_RESTART ? 'r' : '.'
   // return '.'
   return e.key.toLowerCase()
@@ -2676,10 +2592,10 @@ window.addEventListener('keydown', e => {
   if (e.repeat) return
 
   let k = keyMap(e)
-  if ('wasdzx123456789'.indexOf(k) != -1) input_queue.push(k)
+  if ('wasdzxc'.indexOf(k) != -1) input_queue.push(k)
   keyboard[k] = true
   keyboard_last_pressed[k] = Date.now()
-  if (k == '1' || k == '2' || k == '3') first_undo_press = true
+  if (k == 'z' || k == 'x' || k == 'c') first_undo_press = true
   first_key_press = true
 
   //e.preventDefault()
