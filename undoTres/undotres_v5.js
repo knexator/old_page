@@ -1849,7 +1849,7 @@ function loadLevel (n) {
     ENABLE_UNDO_2 = true
     ENABLE_UNDO_3 = true
   }
-  setExtraDisplay(n)
+  setExtraDisplay(ALLOW_EDITOR ? -1 : n)
 }
 
 function recalcTileSize (level) {
@@ -2191,8 +2191,8 @@ function draw (timestamp) {
               (pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
               (cur_level.geo[pj + cur_dj][pi + cur_di] != '.') ||
               closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) ||
-              openHoleAt(cur_level, pi + cur_di, pj + cur_dj) ||
-              movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
+              openHoleAt(cur_level, pi + cur_di, pj + cur_dj)// ||
+              // movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
             // console.log(bad_move);
             if (bad_move) { // ignore this move
               wallSound.play()
