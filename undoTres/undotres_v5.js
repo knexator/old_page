@@ -3,7 +3,7 @@
 // let canvasTxt = window.canvasTxt.default
 
 let pintar = new PintarJS()
-pintar.clearColor = PintarJS.Color.fromHex('4e4e4e') // F7A36B B7B4E2 5e5e5e
+pintar.clearColor = PintarJS.Color.fromHex('4e4e4e') // F7A36B B7B4E2 5e5e5e 4e4e4e
 // pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
 
 let canvas = document.getElementById('canvas')
@@ -427,7 +427,7 @@ let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // player_sprite = raw_player_sprites[0]
 })
 
-let modular_texture = new PintarJS.Texture('imgs/wall_modular.png', () => {
+let modular_texture = new PintarJS.Texture('imgs/wall_modular_margin.png', () => {
   // wall_sprites = [];
   geoModularSprite = new PintarJS.Sprite(modular_texture)
 })
@@ -473,7 +473,7 @@ let texto_credits_texture = new PintarJS.Texture('imgs/texts_credits.png', () =>
 
 // wall_sprites[0].sourceRectangle = new PintarJS.Rectangle(0, 0, 16, 16);
 
-pintar.makePixelatedScaling()
+// pintar.makePixelatedScaling()
 // pintar.makeFullscreen()
 
 /*
@@ -559,24 +559,25 @@ let MODULAR_GEO_DATA = {
   '#..#': [2, 2],
   '.##.': [3, 2],
 
-  '#.,,': [2, 3],
+  '#.,,': [0, 4],
+  '.#,,': [1, 4],
+  ',,#.': [0, 5],
+  ',,.#': [1, 5],
 
-  /*',###': [2, 2],
-  '#,##': [3, 2],
-  '##,#': [2, 3],
-  '###,': [3, 3],
+  ',#,.': [3, 4],
+  ',.,#': [3, 5],
+  '.,#,': [2, 5],
+  '#,.,': [2, 4],
 
-  '#,#,': [1, 5],
-  ',#,#': [0, 4],
-  ',,##': [1, 4],
-  '##,,': [0, 5],
+  '..,,': [0, 6],
+  ',,..': [1, 6],
+  '.,.,': [2, 6],
+  ',.,.': [3, 6],
 
-  '#,,,': [3, 5],
-  ',#,,': [2, 5],
-  ',,#,': [3, 4],
-  ',,,#': [2, 4],
-
-  '####': [0, 6],*/
+  '.,,,': [2, 3],
+  ',.,,': [2, 3],
+  ',,.,': [2, 3],
+  ',,,.': [2, 3],
 }
 function drawModularGeoSpr(level,i,j) {
   let tl = getGeo(level,i-1,j-1)
@@ -599,11 +600,44 @@ function drawModularGeoSpr(level,i,j) {
   //   }
   // }
   if (si === -1) return
-  geoModularSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), new PintarJS.Point(4,4))
+  let k = 0;
+  if (bl === ',') k++
+  if (br === ',') k++
+  if (tl === ',') k++
+  if (tr === ',') k++
+  if (k === 2) {
+    if (bl === ',' && br === ',') {
+      j -= .5
+    } else if (tr === ',' && tl === ',') {
+      j += .5
+    } else if (tr === ',' && br === ',') {
+      i -= .5
+    } else if (tl === ',' && bl === ',') {
+      i += .5
+    }
+  }
+  globalSI = si
+  globalSJ = sj
+
+  setSourceFromSheet(geoModularSprite, si, sj, 4, 7, 2)
+  // geoModularSprite.setSourceFromSpritesheet(new PintarJS.Point(si,sj), new PintarJS.Point(4,7))
   geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
   // geoModularSprite.position = new PintarJS.Point(Math.floor(OFFX + (i-.5) * TILE), Math.floor(OFFY + (j-.5) * TILE))
   pintar.drawSprite(geoModularSprite)
 }
+
+function setSourceFromSheet(spr, i, j, ni, nj, margin, setSize=true) {
+  let w = (spr.texture.width - ni * margin * 2) / ni;
+  var h = (spr.texture.height - nj * margin * 2) / nj;
+  var x = (w + 2 * margin) * i + margin;
+  var y = (h + 2 * margin) * j + margin;
+  if (setSize || setSize === undefined) {
+      spr.width = w;
+      spr.height = h;
+  }
+  spr.sourceRectangle.set(x, y, w, h);
+}
+
 
 function getGeo(level,i,j) {
   if (i < 0 || i >= level.w || j < 0 || j >= level.h) return ','
@@ -630,22 +664,12 @@ function drawLevel (level) {
   } */
   // ctx.fillStyle = COLORS.wall
   // ctx.fillStyle = BACKGROUND_IS_WALL ? COLORS.floor : COLORS.wall
-  for (let j = 0; j <= geo.length; j++) {
-    for (let i = 0; i <= geo[0].length; i++) {
-      // drawGeoSpr(geo[j][i], i, j)
-      if (j < geo.length && i < geo[0].length) {
-        if (geo[j][i] === '.') {
-          floor_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
-          // console.log("drawing floor")
-          pintar.drawSprite(floor_sprite)
-        }
+  for (let j = 0; j < geo.length; j++) {
+    for (let i = 0; i < geo[0].length; i++) {
+      if (geo[j][i] === '.') {
+        floor_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
+        pintar.drawSprite(floor_sprite)
       }
-      drawModularGeoSpr(level, i, j)
-      /*let cur_spr = geo_sprites[geo[j][i]]
-      if (!cur_spr) continue
-      cur_spr.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
-      cur_spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-      pintar.drawSprite(cur_spr)*/
     }
   }
   // console.log("hola?");
@@ -856,10 +880,29 @@ function drawLevel (level) {
 
   pintar._renderer.setShader(null)
 
-  if (!ALLOW_EDITOR) {
-    drawEntranceGradient(level)
-    drawExitGradient(level)
+  for (let j = 0; j <= geo.length; j++) {
+    for (let i = 0; i <= geo[0].length; i++) {
+      // drawGeoSpr(geo[j][i], i, j)
+      // if (j < geo.length && i < geo[0].length) {
+      //   if (geo[j][i] === '.') {
+      //     floor_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
+      //     // console.log("drawing floor")
+      //     pintar.drawSprite(floor_sprite)
+      //   }
+      // }
+      drawModularGeoSpr(level, i, j)
+      /*let cur_spr = geo_sprites[geo[j][i]]
+      if (!cur_spr) continue
+      cur_spr.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
+      cur_spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+      pintar.drawSprite(cur_spr)*/
+    }
   }
+
+  // if (!ALLOW_EDITOR) {
+  //   drawEntranceGradient(level)
+  //   drawExitGradient(level)
+  // }
 
   if (level.extraDrawCode) level.extraDrawCode()
 }
@@ -1892,8 +1935,10 @@ function recalcTileSize (level) {
 
   // let tile_w = Math.min(canvas.width / (level.w), 64)
   // let tile_h = Math.min(canvas.height / (level.h), 64)
-  let tile_w = Math.floor(canvas.width / (level.w))
-  let tile_h = Math.floor(canvas.height / (level.h))
+  let tile_w = (canvas.width / (level.w))
+  let tile_h = (canvas.height / (level.h))
+  // let tile_w = Math.floor(canvas.width / (level.w))
+  // let tile_h = Math.floor(canvas.height / (level.h))
   // let tile_w = Math.floor(canvas.width / (level.w * 16)) * 16
   // let tile_h = Math.floor(canvas.height / (level.h * 16)) * 16
 
@@ -1906,7 +1951,9 @@ function recalcTileSize (level) {
   // if (ALLOW_EDITOR) {
   //   TILE = Math.floor(Math.min(tile_h, tile_w) * 0.8)
   // } else {
-  TILE = Math.floor(Math.min(tile_h, tile_w))
+  // TILE = Math.ceil(Math.min(tile_h, tile_w))
+  TILE = Math.min(tile_h, tile_w)
+  // TILE = Math.floor(Math.min(tile_h, tile_w))
   // TILE = Math.floor(Math.min(tile_h, tile_w) / 16) * 16
   // }
   OFFX = Math.floor((canvas.width - (TILE * level.w)) / 2)
@@ -1986,7 +2033,7 @@ function draw (timestamp) {
 
   // console.log(first_undo_press)
 
-  if (wasKeyPressed("Shift")) {
+  if (wasKeyPressed("editor")) {
     toggleEditor()
   }
 
@@ -2609,7 +2656,7 @@ let keyboard_last_pressed = {}
 function keyMap (e) {
   // use key.code if key location is important
   if (e.key === "Escape") return 'Escape'
-  if (e.key === "Shift") return 'Shift'
+  if (e.code === 'Backquote') return 'editor'
   if (e.metaKey) return '.'
   if (ALLOW_EDITOR) return e.key
   e.key = e.key.toLowerCase();
