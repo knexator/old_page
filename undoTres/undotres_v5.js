@@ -440,6 +440,21 @@ let modular_texture = new PintarJS.Texture('imgs/wall_modular_margin.png', () =>
   geoModularSprite = new PintarJS.Sprite(modular_texture)
 })
 
+document.getElementById('zPicker')?.addEventListener('input', e => {
+  crate_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
+  crate_hole_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
+})
+
+document.getElementById('xPicker')?.addEventListener('input', e => {
+  crate_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
+  crate_hole_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
+})
+
+document.getElementById('cPicker')?.addEventListener('input', e => {
+  crate_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
+  crate_hole_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
+})
+
 /*let texto_1_texture = new PintarJS.Texture('imgs/texts_1.png', () => {
   texto_1_sprite = new PintarJS.Sprite(texto_1_texture)
   texto_1_sprite.size = new PintarJS.Point(896, 576)
@@ -914,7 +929,7 @@ function drawLevel (level) {
 
   if (level.extraDrawCode) level.extraDrawCode()
 }
-
+/*
 function drawEntranceGradient (level) {
   if (ALLOW_EDITOR) return;
   let [ei, ej] = level.player.history[0]
@@ -984,7 +999,7 @@ function drawExitGradient (level) {
   )
   pintar.drawSprite(gradSpr)
 }
-
+*/
 /* let text_logo_sprite = new PintarJS.TextSprite("Tres\nUndos")
 text_logo_sprite.font = "Helvetica"
 text_logo_sprite.color = PintarJS.Color.white();
@@ -998,16 +1013,18 @@ function deleteDraft (button) {
 }
 
 function playDraft (button) {
-  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.innerText, [1,0], [1,0])
+  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.value, [1,0], [1,0])
+  // levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.innerText, [1,0], [1,0])
   true_timeline_undos = []
 }
 
 function saveDraft (str) {
   let curDiv = document.createElement('div');
-  curDiv.innerHTML = `<div class="levelDraftContainer">
-    <div class="draftText">
+  /*<div class="draftText">
 
-    </div>
+  </div>*/
+  curDiv.innerHTML = `<div class="levelDraftContainer">
+    <textarea rows="18" cols="32"></textarea>
     <div class="levelDraftBar">
       <button type="button" name="deleteDraft" onclick="deleteDraft(this)">delete</button><button type="button" name="playDraft" onclick="playDraft(this)">play</button>
     </div>
@@ -1018,7 +1035,8 @@ function saveDraft (str) {
   // let cln = itm.cloneNode(true);
   let curElement = curDiv.firstChild
 
-  curElement.firstElementChild.innerText = level2str(levels[cur_level_n])
+  curElement.firstElementChild.value = level2str(levels[cur_level_n])
+  // curElement.firstElementChild.innerText = level2str(levels[cur_level_n])
 
   // Append the cloned <li> element to <ul> with id="myList1"
   editorSidebar.prepend(curElement);
@@ -1027,16 +1045,19 @@ function saveDraft (str) {
 }
 
 let editorSidebar = document.getElementById("leftCol");
+let canvasContainer = document.getElementById("canvasContainer");
 function enterEditor () {
   setExtraDisplay(-1)
   ENABLE_RESTART = true
   ENABLE_UNDO_2 = true
   ENABLE_UNDO_3 = true
   saveDraft()
+  canvasContainer.className = "openEditor_canvasContainer_class"
 }
 
 function exitEditor () {
   setExtraDisplay(cur_level_n)
+  canvasContainer.className = "closeEditor_canvasContainer_class"
 }
 
 function toggleEditor () {
@@ -1364,6 +1385,7 @@ function isWon (level) {
     })
   }) */
   if (ALLOW_EDITOR) return false;
+  if (level.targets.length === 0) return false;
   let [pi, pj] = level.player.history.at(-1)
   let [ti, tj] = level.targets[0]
   return pi == ti && pj == tj
@@ -1416,7 +1438,7 @@ function str2level (str, enter, exit) {
   let w = str[0].length
   let h = str.length
   let geo = []
-  let player
+  let player = null;
   let crates = []
   let targets = []
   let buttons = []
@@ -1493,6 +1515,10 @@ function str2level (str, enter, exit) {
     }
     geo.push(row)
   }
+  if (player === null) return false
+  /*if (targets.length === 0) {
+    targets.push([0,0])
+  }*/
   let level = { geo: geo, player: player, crates: crates, targets: targets,
     buttons: buttons, doors: doors, player_target: player_target,
     machines: machines, holes: holes, holeCovers: holeCovers, paintBlobs: paintBlobs,
@@ -1711,6 +1737,68 @@ function exportToText () {
   document.getElementById('inText').value = level2str(levels[cur_level_n])
 }
 
+function _reverseString(str) {
+    return str.split("").reverse().join("");
+}
+function _flipHorizontal(str) {
+	lines = str.split("\n");
+	lines = lines.map(function(line) {
+	  return _reverseString(line);
+	});
+	return lines.join("\n");
+}
+function _flipVertical(str) {
+	return str.split("\n").reverse().join("\n");
+}
+//TODO: rewrite function below
+//I'm sure there is a cleaner way and it doesn't handle trailing whitespace as well as it could
+function _rotate(str) {
+	lines = str.split("\n");
+	spunArray = new Array();
+	longest = 0;
+	lines.forEach(function(line) {
+		if(line.length>longest) {
+			longest = line.length;
+		}
+	})
+	lines = lines.map(function(line) {
+		return line.padEnd(longest);
+	})
+	for(let y = 0;y<longest;y++) {
+		spunArray[y] = new Array();
+		for(let x = 0;x<lines.length;x++) {
+			spunArray[y][x]=lines[x].charAt(y);
+		}
+	}
+	lines = spunArray.map(function(line) {
+		return line.join("");
+	})
+	return _flipHorizontal(lines.join("\n"));
+}
+
+// todo: a lot (mainly enter/exit, & not breaking undo)
+function rotateLevel () {
+  let text = level2str(levels[cur_level_n])
+  let new_level = str2level(_rotate(text), levels[cur_level_n].enter, levels[cur_level_n].exit)
+  if (new_level) {
+    levels[cur_level_n] = new_level
+  }
+}
+function flipHorizontalLevel () {
+  let text = level2str(levels[cur_level_n])
+  let new_level = str2level(_flipHorizontal(text), levels[cur_level_n].enter, levels[cur_level_n].exit)
+  if (new_level) {
+    levels[cur_level_n] = new_level
+  }
+}
+function flipVerticalLevel () {
+  let text = level2str(levels[cur_level_n])
+  let new_level = str2level(_flipVertical(text), levels[cur_level_n].enter, levels[cur_level_n].exit)
+  if (new_level) {
+    levels[cur_level_n] = new_level
+  }
+}
+
 function resizeLevel (a, b, c, d) {
   // exportToText()
   let w = levels[cur_level_n].w
@@ -1719,35 +1807,39 @@ function resizeLevel (a, b, c, d) {
   // let text = document.getElementById('inText').value
   let rows = text.split('\n')
   if (a > 0) {
-    rows.unshift('.'.repeat(w))
+    rows.unshift('#'.repeat(w))
     h += 1
   } else if (a < 0) {
     rows.shift()
     h -= 1
   }
   if (b > 0) {
-    rows = rows.map(row => '.' + row)
+    rows = rows.map(row => '#' + row)
     w += 1
   } else if (b < 0) {
     rows = rows.map(row => row.slice(1))
     w -= 1
   }
   if (c > 0) {
-    rows.push('.'.repeat(w))
+    rows.push('#'.repeat(w))
     h += 1
   } else if (c < 0) {
     rows.pop()
     h -= 1
   }
   if (d > 0) {
-    rows = rows.map(row => row + '.')
+    rows = rows.map(row => row + '#')
     w += 1
   } else if (d < 0) {
     rows = rows.map(row => row.slice(0, -1))
     w -= 1
   }
   text = rows.join('\n')
-  levels[cur_level_n] = str2level(text, levels[cur_level_n].enter, levels[cur_level_n].exit)
+  let new_level = str2level(text, levels[cur_level_n].enter, levels[cur_level_n].exit)
+  if (new_level) {
+    levels[cur_level_n] = new_level
+  }
+
   // document.getElementById('inText').value = text
   // loadFromText()
 
