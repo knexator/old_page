@@ -7,7 +7,9 @@ pintar.clearColor = PintarJS.Color.fromHex('4e4e4e') // F7A36B B7B4E2 5e5e5e 4e4
 // pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
 
 let canvas = document.getElementById('canvas')
-// let ctx = canvas.getContext('webgl2')
+//
+// let menuCanvas = document.getElementById('levelSelectCanvas')
+// let ctx = canvas.getContext('2d')
 
 let globalT = 0.0
 let last_t = null
@@ -328,53 +330,16 @@ let player_texture = new PintarJS.Texture('imgs/zelda_new_13.png', () => {
     rotatingBlock_sprites.push(cur)
   }
 })*/
-let _4x10 = new PintarJS.Point(4, 11)
-let world_texture = new PintarJS.Texture('imgs/world_new.png', () => {
-  // wall_sprites = [];
-  geo_sprites = {}
-  let geoData = {
-    '#': [0, 0],
-    // ',': [1,0], //[3,10],
-    '.': [0, 9],
-    'A': [0, 6],
-    'B': [1, 6],
-    'C': [2, 6],
-    'D': [3, 6],
-    'E': [0, 3],
-    'F': [1, 3],
-    'G': [2, 3],
-    'H': [3, 3],
-    'e': [2, 5],
-    'f': [3, 5],
-    'g': [0, 5],
-    'h': [1, 5],
-    'I': [0, 4],
-    'J': [1, 4],
-    'K': [2, 4],
-    'L': [3, 4],
-    'M': [0, 7],
-    'N': [2, 7],
-    'm': [2, 8],
-    'P': [3, 0],
-    'X': [0, 10]
-  }
-  Object.entries(geoData).forEach(([k, v]) => {
-    let spr = new PintarJS.Sprite(world_texture)
-    spr.setSourceFromSpritesheet(new PintarJS.Point(v[0], v[1]), _4x10)
-    geo_sprites[k] = spr
-  })
-  geoGlobalSprite = new PintarJS.Sprite(world_texture)
-  // wall_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(0, 0), new PintarJS.Point(4, 10));
+
+let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   floor_sprite = new PintarJS.Sprite(world_texture)
-  // floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 9), new PintarJS.Point(4, 10));
-  floor_sprite.setSourceFromSpritesheet(new PintarJS.Point(0, 9), _4x10)
-  // crate_sprite = new PintarJS.Sprite(world_texture)
-  // crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
+  setSourceFromSheet(floor_sprite, 0, 0, 3, 2, 2, setSize=true)
+
   crate_sprites = []
   crate_hole_sprites = []
   for (let k = 0; k < 3; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
-    curSpr.setSourceFromSpritesheet(new PintarJS.Point(2, 9), _4x10)
+    setSourceFromSheet(curSpr, 2, 0, 3, 2, 2, setSize=true)
     curSpr.color = new PintarJS.Color.fromHex(COLORS.crates[k])
     crate_sprites.push(curSpr)
 
@@ -382,29 +347,24 @@ let world_texture = new PintarJS.Texture('imgs/world_new.png', () => {
     curSpr.brightness = 0.4
     crate_hole_sprites.push(curSpr)
   }
-  /* for (let k=0; k<3; k++) {
-    let curSpr = new PintarJS.Sprite(world_texture)
-    curSpr.setSourceFromSpritesheet(new PintarJS.Point(2, 9), new PintarJS.Point(4, 10));
-    curSpr.color = new PintarJS.Color.fromHex(COLORS.holeCrates[k]);
-    crate_hole_sprites.push(curSpr)
-  } */
+
   hole_sprite = new PintarJS.Sprite(world_texture)
-  hole_sprite.setSourceFromSpritesheet(new PintarJS.Point(1, 9), _4x10)
+  setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
 
   black_sprite = new PintarJS.Sprite(world_texture)
-  black_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 9), _4x10)
+  setSourceFromSheet(black_sprite, 0, 1, 3, 2, 2, setSize=true)
 
-  holeCover_sprite = new PintarJS.Sprite(world_texture)
-  holeCover_sprite.setSourceFromSpritesheet(new PintarJS.Point(1, 10), _4x10)
-
-  holeCoverBroken_sprite = new PintarJS.Sprite(world_texture)
-  holeCoverBroken_sprite.setSourceFromSpritesheet(new PintarJS.Point(2, 10), _4x10)
+  // holeCover_sprite = new PintarJS.Sprite(world_texture)
+  // setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
+  //
+  // holeCoverBroken_sprite = new PintarJS.Sprite(world_texture)
+  // setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
 
   paintBlob_sprite = new PintarJS.Sprite(world_texture)
-  paintBlob_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 10), _4x10)
+  setSourceFromSheet(paintBlob_sprite, 1, 1, 3, 2, 2, setSize=true)
 
   paintBlobBroken_sprite = new PintarJS.Sprite(world_texture)
-  paintBlobBroken_sprite.setSourceFromSpritesheet(new PintarJS.Point(3, 2), _4x10)
+  setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 2, 2, setSize=true)
 })
 let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // let _4x4 = new PintarJS.Point(4, 4)
@@ -649,7 +609,7 @@ function drawModularGeoSpr(level,i,j) {
   pintar.drawSprite(geoModularSprite)
 }
 
-function setSourceFromSheet(spr, i, j, ni, nj, margin, setSize=true) {
+function setSourceFromSheet (spr, i, j, ni, nj, margin, setSize=true) {
   let w = (spr.texture.width - ni * margin * 2) / ni;
   var h = (spr.texture.height - nj * margin * 2) / nj;
   var x = (w + 2 * margin) * i + margin;
@@ -2001,7 +1961,6 @@ function recalcTileSize (level) {
   OFFY = Math.floor((canvas.height - (TILE * level.h)) / 2)
   if (prev_tile !== TILE) {
     floor_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-    geoGlobalSprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     geoModularSprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
   }
 }
