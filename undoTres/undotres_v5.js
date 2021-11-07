@@ -11,6 +11,8 @@ let canvas = document.getElementById('canvas')
 // let menuCanvas = document.getElementById('levelSelectCanvas')
 // let ctx = canvas.getContext('2d')
 
+let menuDiv = document.getElementById('levelSelectMenuContainer')
+
 let globalT = 0.0
 let last_t = null
 
@@ -677,6 +679,29 @@ function drawLevel (level) {
     pintar.drawSprite(black_sprite)
   })
 
+  let any_overlap = false;
+  let overlapping_player = false;
+  let overlapping = new Array(sortedCrates.length).fill(false)
+  let [pi2, pj2] = level.player.history.at(-1)
+  for (let i = 0; i < sortedCrates.length; i++) {
+    if (overlapping[i]) continue;
+    let [i1,j1] = sortedCrates[i].history.at(-1)
+    if (i1 === pi2 && j1 === pj2) {
+      overlapping_player = true;
+      overlapping[i] = true;
+      any_overlap = true;
+      continue;
+    }
+    for (let j = i + 1; j < sortedCrates.length; j++) {
+      let [i2,j2] = sortedCrates[j].history.at(-1)
+      if (i1 === i2 && j1 === j2) {
+        overlapping[i] = true
+        overlapping[j] = true
+        any_overlap = true
+      }
+    }
+  }
+
   // only draw crates in holes
   sortedCrates.forEach(crate => {
     if (!crate.inHole.get()) return
@@ -690,22 +715,24 @@ function drawLevel (level) {
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
     drawSpr(crate_hole_sprites[inmune], ci, cj)
   })
-  sortedCrates.reverse()
-  pintar._renderer.setShader(wobblyShader)
-  sortedCrates.forEach(crate => {
-    if (!crate.inHole.get()) return
-    if (!crate.inHole.value.at(-2) && turn_time > 0) return
-    let state = crate.history.at(-1)
-    let prevState = crate.history.at(-2)
-    if (prevState === undefined) prevState = state
-    let inmune = crate.inmune_history.at(-1)
-    let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
-    let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
-    let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
-    drawSpr(crate_hole_sprites[inmune], ci, cj)
-  })
-  sortedCrates.reverse()
-  pintar._renderer.setShader(null)
+  if (any_overlap) {
+    pintar._renderer.setShader(wobblyShader)
+    for (var k = sortedCrates.length - 1; k>=0; k--) {
+      let crate = sortedCrates[k]
+      if (!overlapping[k]) continue;
+      if (!crate.inHole.get()) continue;
+      if (!crate.inHole.value.at(-2) && turn_time > 0) continue;
+      let state = crate.history.at(-1)
+      let prevState = crate.history.at(-2)
+      if (prevState === undefined) prevState = state
+      let inmune = crate.inmune_history.at(-1)
+      let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
+      let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
+      let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
+      drawSpr(crate_hole_sprites[inmune], ci, cj)
+    }
+    pintar._renderer.setShader(null)
+  }
 
   // draw holes
   level.holes.forEach(([i, j]) => {
@@ -837,55 +864,32 @@ function drawLevel (level) {
   pintar.drawSprite(player_sprite)
   // sortedCrates.reverse()
 
-  pintar._renderer.setShader(wobblyShader)
-  sortedCrates.forEach(crate => {
-    if (crate.inHole.get()) {
-      if (crate.inHole.value.at(-2) || turn_time == 0) {
-        return
+  if (any_overlap) {
+    pintar._renderer.setShader(wobblyShader)
+    for (var k = 0; k<sortedCrates.length; k++) {
+      let crate = sortedCrates[k]
+      if (crate.inHole.get()) {
+        if (crate.inHole.value.at(-2) || turn_time == 0) {
+          continue;
+        }
       }
+      let state = crate.history.at(-1)
+      let prevState = crate.history.at(-2)
+      if (prevState === undefined) prevState = state
+      let inmune = crate.inmune_history.at(-1)
+      let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
+      let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
+      let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
+      drawSpr(crate_sprites[inmune], ci, cj)
     }
-    let state = crate.history.at(-1)
-    let prevState = crate.history.at(-2)
-    if (prevState === undefined) prevState = state
-    let inmune = crate.inmune_history.at(-1)
-    let crate_forward = get_times_directions(crate.history.length - 2)[inmune] == 1
-    let ci = lerp(prevState[0], state[0], crate_forward ? forwardsT : backwardsT)
-    let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
-    drawSpr(crate_sprites[inmune], ci, cj)
-
-    /*let crate_sprite = raw_gearBox_sprites[inmune]
-    let spr_n = mod(real_times[inmune], 20)
-    crate_sprite.setSourceFromSpritesheet(new PintarJS.Point(spr_n, 0), new PintarJS.Point(20, 1))
-    crate_sprite.position = new PintarJS.Point(OFFX + ci * TILE, OFFY + cj * TILE)
-    crate_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
-    drawSpr(crate_sprite, ci, cj)*/
-  })
-
-  pintar._renderer.setShader(null)
+    pintar._renderer.setShader(null)
+  }
 
   for (let j = 0; j <= geo.length; j++) {
     for (let i = 0; i <= geo[0].length; i++) {
-      // drawGeoSpr(geo[j][i], i, j)
-      // if (j < geo.length && i < geo[0].length) {
-      //   if (geo[j][i] === '.') {
-      //     floor_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
-      //     // console.log("drawing floor")
-      //     pintar.drawSprite(floor_sprite)
-      //   }
-      // }
       drawModularGeoSpr(level, i, j)
-      /*let cur_spr = geo_sprites[geo[j][i]]
-      if (!cur_spr) continue
-      cur_spr.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
-      cur_spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-      pintar.drawSprite(cur_spr)*/
     }
   }
-
-  // if (!ALLOW_EDITOR) {
-  //   drawEntranceGradient(level)
-  //   drawExitGradient(level)
-  // }
 
   if (level.extraDrawCode) level.extraDrawCode()
 }
@@ -1005,8 +1009,11 @@ function saveDraft (str) {
 }
 
 let editorSidebar = document.getElementById("leftCol");
+let editorTopbar = document.getElementById("topArea");
 let canvasContainer = document.getElementById("canvasContainer");
 function enterEditor () {
+  editorSidebar.hidden = false
+  editorTopbar.hidden = false
   setExtraDisplay(-1)
   ENABLE_RESTART = true
   ENABLE_UNDO_2 = true
@@ -1016,6 +1023,8 @@ function enterEditor () {
 }
 
 function exitEditor () {
+  editorSidebar.hidden = true
+  editorTopbar.hidden = true
   setExtraDisplay(cur_level_n)
   canvasContainer.className = "closeEditor_canvasContainer_class"
 }
@@ -1170,13 +1179,14 @@ function drawScreen () {
   }
 
   if (in_menu) {
-    // drawMenuScreen()
     if (wasKeyPressed("Escape")) {
       in_menu = false
+      menuDiv.hidden = true
     }
   } else {
     if (wasKeyPressed("Escape")) {
       in_menu = true
+      menuDiv.hidden = false
     }
   }
   pintar.endFrame()
@@ -1828,6 +1838,27 @@ function nextLevel () {
 }
 
 /*transitionElement.style.animation="openUp 4s linear 0 infinite forwards both";*/
+
+function initTransitionToLevel (n) {
+  if (n >= 0 && n < levels.length - 1) {
+    // transitionElement.style.animation="flashUp .5s linear";
+    let di = levels[n].enter[0]
+    let dj = levels[n].enter[1]
+    if (di ===  1 && dj === 0) transitionElement.className = "flashRightClass"
+    if (di === -1 && dj === 0) transitionElement.className = "flashLeftClass"
+    if (di === 0 && dj ===  1) transitionElement.className = "flashDownClass"
+    if (di === 0 && dj === -1) transitionElement.className = "flashUpClass"
+    setTimeout(() => transitionElement.className = "", 500)
+    setTimeout(() => {
+      menuDiv.hidden = true;
+      in_menu = false;
+    }, 250)
+    level_transition_time = 1
+    transitionSound.play()
+    screen_transition_turn = true
+    next_level = n
+  }
+}
 
 function initTransitionToNextLevel () {
   if (cur_level_n < levels.length - 1) {
@@ -2571,15 +2602,6 @@ function draw (timestamp) {
   mouse.wheel = 0
   keyboard_prev = Object.assign({}, keyboard)
   if (!HALT) window.requestAnimationFrame(draw)
-}
-
-function drawMenuScreen () {
-  pintar._renderer.setShader(null)
-  pintar.drawRectangle(
-    new PintarJS.ColoredRectangle(
-      new PintarJS.Point(0, 0),
-      new PintarJS.Point(pintar.canvas.width / 2, pintar.canvas.height / 2),
-      new PintarJS.Color(.2, .2, .2), null, true))
 }
 
 canvas.addEventListener('mousemove', e => _mouseEvent(e))
