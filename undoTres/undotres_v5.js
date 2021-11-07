@@ -196,6 +196,7 @@ function PropertyHistory (initial_value, inmune, extra = 0) {
   this.inmune = inmune
   for (let k = 0; k < extra; k++) {
     this.value.push(initial_value)
+    this.inmune.push(inmune[0])
   }
 }
 
@@ -559,18 +560,19 @@ let MODULAR_GEO_DATA = {
   '.,.,': [2, 6],
   ',.,.': [3, 6],
 
-  '.,,,': [2, 3],
-  ',.,,': [2, 3],
-  ',,.,': [2, 3],
-  ',,,.': [2, 3],
+  // '.,,,': [2, 3],
+  // ',.,,': [2, 3],
+  // ',,.,': [2, 3],
+  // ',,,.': [2, 3],
 }
-function drawModularGeoSpr(level,i,j) {
+function drawModularGeoSpr (level,i,j) {
   let tl = getGeo(level,i-1,j-1)
   let tr = getGeo(level,i,j-1)
   let bl = getGeo(level,i-1,j)
   let br = getGeo(level,i,j)
   let res = tl + tr + bl + br
-  if (res === '....' || res === ',,,,' || res === '####') return
+  if (res === '....' || res.indexOf('.') === -1) return
+  // if (res === '....' || res === ',,,,' || res === '####') return
   // console.log(res)
   let [si, sj] = MODULAR_GEO_DATA[res] || [-1, -1]
   // if (i <= 0 || i >= level.w || j <= 0 || j >= level.h) {
@@ -584,22 +586,20 @@ function drawModularGeoSpr(level,i,j) {
   //     return
   //   }
   // }
+  if (i === 0 || i === level.w || j === 0 || j === level.h) {
+    setSourceFromSheet(geoModularSprite, 2, 3, 4, 7, 2)
+    geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
+    pintar.drawSprite(geoModularSprite)
+  }
   if (si === -1) return
-  let k = 0;
-  if (bl === ',') k++
-  if (br === ',') k++
-  if (tl === ',') k++
-  if (tr === ',') k++
-  if (k === 2) {
-    if (bl === ',' && br === ',') {
-      j -= .5
-    } else if (tr === ',' && tl === ',') {
-      j += .5
-    } else if (tr === ',' && br === ',') {
-      i -= .5
-    } else if (tl === ',' && bl === ',') {
-      i += .5
-    }
+  if (bl === ',' && br === ',') {
+    j -= .5
+  } else if (tr === ',' && tl === ',') {
+    j += .5
+  } else if (tr === ',' && br === ',') {
+    i -= .5
+  } else if (tl === ',' && bl === ',') {
+    i += .5
   }
   globalSI = si
   globalSJ = sj
@@ -890,6 +890,12 @@ function drawLevel (level) {
       drawModularGeoSpr(level, i, j)
     }
   }
+  // setSourceFromSheet(geoModularSprite, 2, 3, 4, 7, 2)
+  //
+  // for (let j = 0; j < geo.length; j++) {
+  //   geoModularSprite.position = new PintarJS.Point(OFFX + (-1.0) * TILE, OFFY + (j-.5) * TILE)
+  //   pintar.drawSprite(geoModularSprite)
+  // }
 
   if (level.extraDrawCode) level.extraDrawCode()
 }
@@ -2525,15 +2531,15 @@ function draw (timestamp) {
           cur_level.holes.push([mi, mj])
         } else if (wasKeyPressed('f')) { // paint blobs
           cur_level.geo[mj][mi] = '.'
-          cur_level.paintBlobs.push(new PropertyHistory(true, 0))
+          cur_level.paintBlobs.push(new PropertyHistory(true, 0, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('g')) {
           cur_level.geo[mj][mi] = '.'
-          cur_level.paintBlobs.push(new PropertyHistory(true, 1))
+          cur_level.paintBlobs.push(new PropertyHistory(true, 1, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('v')) {
           cur_level.geo[mj][mi] = '.'
-          cur_level.paintBlobs.push(new PropertyHistory(true, 2))
+          cur_level.paintBlobs.push(new PropertyHistory(true, 2, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         }
       }
