@@ -336,13 +336,14 @@ let player_texture = new PintarJS.Texture('imgs/zelda_new_13.png', () => {
 
 let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   floor_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(floor_sprite, 0, 0, 3, 2, 2, setSize=true)
+  setSourceFromSheet(floor_sprite, 0, 0, 3, 3, 2, setSize=true)
 
   crate_sprites = []
   crate_hole_sprites = []
+  let crate_spr_data = [[0, 2], [1, 2], [2, 2]]
   for (let k = 0; k < 3; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
-    setSourceFromSheet(curSpr, 2, 0, 3, 2, 2, setSize=true)
+    setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 3, 2, setSize=true)
     curSpr.color = new PintarJS.Color.fromHex(COLORS.crates[k])
     crate_sprites.push(curSpr)
 
@@ -352,10 +353,10 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   }
 
   hole_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
+  setSourceFromSheet(hole_sprite, 1, 0, 3, 3, 2, setSize=true)
 
   black_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(black_sprite, 0, 1, 3, 2, 2, setSize=true)
+  setSourceFromSheet(black_sprite, 0, 1, 3, 3, 2, setSize=true)
 
   // holeCover_sprite = new PintarJS.Sprite(world_texture)
   // setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
@@ -364,12 +365,12 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   // setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
 
   paintBlob_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(paintBlob_sprite, 1, 1, 3, 2, 2, setSize=true)
+  setSourceFromSheet(paintBlob_sprite, 1, 1, 3, 3, 2, setSize=true)
 
   paintBlobBroken_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 2, 2, setSize=true)
+  setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 3, 2, setSize=true)
 })
-let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
+/*let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // let _4x4 = new PintarJS.Point(4, 4)
   raw_gradient_sprites = []
 
@@ -396,7 +397,7 @@ let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // }
   // raw_player_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(2, 0), _4x4);
   // player_sprite = raw_player_sprites[0]
-})
+})*/
 
 let modular_texture = new PintarJS.Texture('imgs/wall_modular_margin.png', () => {
   // wall_sprites = [];
@@ -406,16 +407,19 @@ let modular_texture = new PintarJS.Texture('imgs/wall_modular_margin.png', () =>
 document.getElementById('zPicker')?.addEventListener('input', e => {
   crate_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
   crate_hole_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
+  COLORS.crates[0] = e.target.value
 })
 
 document.getElementById('xPicker')?.addEventListener('input', e => {
   crate_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
   crate_hole_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
+  COLORS.crates[1] = e.target.value
 })
 
 document.getElementById('cPicker')?.addEventListener('input', e => {
   crate_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
   crate_hole_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
+  COLORS.crates[2] = e.target.value
 })
 
 /*let texto_1_texture = new PintarJS.Texture('imgs/texts_1.png', () => {
@@ -1394,11 +1398,11 @@ let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1
 
 function Movable (i, j, inmune, extra = 0, superSolid = DEFAULT_FORBID_OVERLAP) {
   this.history = [[i, j]]
-  this.inmune_history = [inmune]
+  if (typeof inmune === 'number') inmune = [inmune]
+  this.inmune_history = inmune
   this.superSolid = superSolid
   for (let k = 0; k < extra; k++) {
     this.history.push([i, j])
-    this.inmune_history.push(inmune)
   }
   this.inHole = new PropertyHistory(false, this.inmune_history, extra)
   // this.inmune = inmune;
