@@ -777,7 +777,11 @@ function drawLevel (level) {
 
   // draw paint blobs
   level.paintBlobs.forEach(paintBlob => {
-    let spr = paintBlob.value.at(-1) ? paintBlob_sprite : paintBlobBroken_sprite
+    let curVal = paintBlob.value.at(-1);
+    let prevVal = paintBlob.value.at(-2);
+    if (prevVal === undefined) prevVal = curVal
+    let relevantVal = (turn_time > 0.5) ? prevVal : curVal
+    let spr = relevantVal ? paintBlob_sprite : paintBlobBroken_sprite
     let [hi, hj] = paintBlob.position
     spr.position = new PintarJS.Point(OFFX + hi * TILE, OFFY + hj * TILE)
     spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
@@ -2111,7 +2115,7 @@ function draw (timestamp) {
 
   // console.log(first_undo_press)
 
-  if (wasKeyPressed("editor")) {
+  if (wasKeyPressed("editor") && cur_level_n + 1 < levels.length) {
     toggleEditor()
   }
 
