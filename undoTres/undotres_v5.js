@@ -1943,6 +1943,8 @@ function updateMenuButtons () {
       levelSelectButtons[k].disabled = false
     }
   }
+  levelSelectButtons[cur_level_n].className += (solved_levels.indexOf(cur_level_n) === -1) ? " curLevelSelectButton" : " curLevelSelectWonButton"
+  levelSelectButtons[cur_level_n].disabled = false
 }
 
 function loadLevel (n) {
@@ -1984,6 +1986,7 @@ function loadLevel (n) {
     ENABLE_UNDO_3 = true
   }
   setExtraDisplay(ALLOW_EDITOR ? -1 : n)
+  updateMenuButtons()
 }
 
 function recalcTileSize (level) {
@@ -2626,7 +2629,7 @@ function draw (timestamp) {
   }
 
   // cheat
-  if (wasKeyPressed('m') && cur_level_n < levels.length - 1) {
+  /*if (wasKeyPressed('m') && cur_level_n < levels.length - 1) {
     // nextLevel()
     // cur_level = levels[cur_level_n]
     if (level_transition_time == 0) {
@@ -2639,7 +2642,7 @@ function draw (timestamp) {
     if (level_transition_time == 0) {
       initTransitionToPrevLevel()
     }
-  }
+  }*/
   /*if (wasKeyPressed('l')) {
     level_transition_time = 1
     transitionSound.play()
@@ -2728,21 +2731,24 @@ function keyMap (e) {
 }
 
 window.addEventListener('keydown', e => {
-  if (e.repeat) return
+  if (!e.repeat) {
+    if (e.key == 'p') {
+      solved_levels.push(cur_level_n)
+      updateMenuButtons()
+    }
 
-  if (e.key == 'p') {
-    console.log("p")
-    solved_levels.push(cur_level_n)
-    updateMenuButtons()
+    let k = keyMap(e)
+    if ('wasdzxcv'.indexOf(k) != -1) input_queue.push(k)
+    keyboard[k] = true
+    keyboard_last_pressed[k] = Date.now()
+    if (k == 'z' || k == 'x' || k == 'c' || k == 'v') first_undo_press = true
+    first_key_press = true
   }
 
-  let k = keyMap(e)
-  if ('wasdzxcv'.indexOf(k) != -1) input_queue.push(k)
-  keyboard[k] = true
-  keyboard_last_pressed[k] = Date.now()
-  if (k == 'z' || k == 'x' || k == 'c' || k == 'v') first_undo_press = true
-  first_key_press = true
-
+  if (e.key == 'ArrowLeft') e.preventDefault()
+  if (e.key == 'ArrowRight') e.preventDefault()
+  if (e.key == 'ArrowDown') e.preventDefault()
+  if (e.key == 'ArrowUp') e.preventDefault()
   //e.preventDefault()
   //return false
 })
