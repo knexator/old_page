@@ -12,6 +12,7 @@ let canvas = document.getElementById('canvas')
 // let ctx = canvas.getContext('2d')
 
 let menuDiv = document.getElementById('levelSelectMenuContainer')
+let levelSelectButtons = menuDiv?.querySelectorAll('button')
 
 let globalT = 0.0
 let last_t = null
@@ -266,9 +267,10 @@ let COLORS = {
   /* 'crate1': '#24d3f2', // 24d3f2
   'crate2': '#abff4f', // aaff54
   'crate3': '#ff3366' // ff245b */
-  'crate1': '#F8CB58',
-  'crate2': '#F8984E',
-  'crate3': '#F8643F',
+  'crate1': '#CFCFCF', // '#F8CB58' EBD7FE
+  'crate2': '#FF9500', // '#F8984E' 62FF42
+  'crate3': '#E74059', // '#F8643F' FF3838
+  'crate4': '#00FFFF', // '#F8643F' FF3838
   'machine1': '#F5B512',  // E9C46A D2BA7F E9A90A
   'machine2': '#F46F0A', // E89A5E D09D76 E26709
   'machine3': '#EC3609' // E76F51 CD7E6A D83208
@@ -281,7 +283,7 @@ COLORS.crates = [
   COLORS.crate1,
   COLORS.crate2,
   COLORS.crate3,
-  '#F8643F', '#F8643F', '#F8643F', '#F8643F', '#F8643F', '#F8643F', '#F8643F', '#F8643F'
+  COLORS.crate4, '#F8643F', '#F8643F', '#F8643F', '#F8643F', '#F8643F', '#F8643F', '#F8643F'
 ]
 
 COLORS.transition =  '383F69' // '#383F69' // 383F69 5e5e5e
@@ -340,8 +342,8 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
 
   crate_sprites = []
   crate_hole_sprites = []
-  let crate_spr_data = [[0, 2], [1, 2], [2, 2]]
-  for (let k = 0; k < 3; k++) {
+  let crate_spr_data = [[0, 2], [1, 2], [2, 2], [0, 2]]
+  for (let k = 0; k < 4; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
     setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 3, 2, setSize=true)
     curSpr.color = new PintarJS.Color.fromHex(COLORS.crates[k])
@@ -404,19 +406,28 @@ let modular_texture = new PintarJS.Texture('imgs/wall_modular_margin.png', () =>
   geoModularSprite = new PintarJS.Sprite(modular_texture)
 })
 
-document.getElementById('zPicker')?.addEventListener('input', e => {
+
+let zPicker = document.getElementById('zPicker')
+let xPicker = document.getElementById('xPicker')
+let cPicker = document.getElementById('cPicker')
+
+if (zPicker) zPicker.value = COLORS.crate1;
+if (xPicker) xPicker.value = COLORS.crate2;
+if (cPicker) cPicker.value = COLORS.crate3;
+
+zPicker?.addEventListener('input', e => {
   crate_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
   crate_hole_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
   COLORS.crates[0] = e.target.value
 })
 
-document.getElementById('xPicker')?.addEventListener('input', e => {
+xPicker?.addEventListener('input', e => {
   crate_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
   crate_hole_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
   COLORS.crates[1] = e.target.value
 })
 
-document.getElementById('cPicker')?.addEventListener('input', e => {
+cPicker?.addEventListener('input', e => {
   crate_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
   crate_hole_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
   COLORS.crates[2] = e.target.value
@@ -592,7 +603,16 @@ function drawModularGeoSpr (level,i,j) {
   // }
   if (i === 0 || i === level.w || j === 0 || j === level.h) {
     setSourceFromSheet(geoModularSprite, 2, 3, 4, 7, 2)
-    geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
+    let ti = i - .5
+    let tj = j - .5
+    if (i === 0 && j > 0 && j < level.h) ti = i - 1
+    if (i === level.w && j > 0 && j < level.h) ti = i
+    if (j === 0 && i > 0 && i < level.w) tj = j - 1
+    if (j === level.h && i > 0 && i < level.w) tj = j
+    // let ti = (i === 0) ? i - 1 : (i === level.w) ? i : i - .5;
+    // let tj = (j === 0) ? j - 1 : (j === level.h) ? j : j - .5;
+    geoModularSprite.position = new PintarJS.Point(OFFX + ti * TILE, OFFY + tj * TILE)
+    // geoModularSprite.position = new PintarJS.Point(OFFX + (i-.5) * TILE, OFFY + (j-.5) * TILE)
     pintar.drawSprite(geoModularSprite)
   }
   if (si === -1) return
@@ -1394,7 +1414,8 @@ levels[7].extraDrawCode = drawCtoRRText
 levels.at(-1).extraDrawCode = drawEndScreen
 
 let cur_level_n = 0
-let solved_levels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+let solved_levels = JSON.parse(localStorage.getItem("solved_levels") || '[]')
+updateMenuButtons()
 
 function Movable (i, j, inmune, extra = 0, superSolid = DEFAULT_FORBID_OVERLAP) {
   this.history = [[i, j]]
@@ -1904,6 +1925,22 @@ function initTransitionToPrevLevel () {
   }
 }
 
+function updateMenuButtons () {
+  if (!levelSelectButtons) return
+  let total_solved = solved_levels.length
+  let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18, 18, 18, 18, 18, 18];
+  let n_unlocked = unlock_n[total_solved]
+  for (let k = 0; k < levels.length - 1; k++) {
+    if (solved_levels.indexOf(k) === -1) {
+      levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
+      levelSelectButtons[k].disabled = n_unlocked <= k
+    } else {
+      levelSelectButtons[k].className = "solvedSelectButton"
+      levelSelectButtons[k].disabled = false
+    }
+  }
+}
+
 function loadLevel (n) {
   real_times = [0,0,0]
   won_cur_level = false
@@ -2013,7 +2050,7 @@ function doUndo (n) {
 function getKeyRetriggerTime (key) {
   // if ('123456789'.indexOf(key) != -1) return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
-  if (key == 'z' || key == 'x' || key == 'c') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
+  if (key == 'z' || key == 'x' || key == 'c' || key == 'v') return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // return first_key_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   if ('wasdnm'.indexOf(key) != -1) return KEY_RETRIGGER_TIME
   return Infinity
@@ -2133,8 +2170,8 @@ function draw (timestamp) {
     } else {
       let pressed_key = input_queue.shift()
       let cur_undo = 0
-      for (let i = 0; i < 3; i++) {
-        if (pressed_key == 'zxc'[i]) cur_undo = i + 1
+      for (let i = 0; i < 4; i++) {
+        if (pressed_key == 'zxcv'[i]) cur_undo = i + 1
       }
       let cur_di = 0
       let cur_dj = 0
@@ -2530,20 +2567,27 @@ function draw (timestamp) {
         } else if (wasKeyPressed('3')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.crates.push(new Movable(mi, mj, 2, extra = true_timeline_undos.length))
+        } else if (wasKeyPressed('4')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.crates.push(new Movable(mi, mj, 3, extra = true_timeline_undos.length))
         } else if (wasKeyPressed('e')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.holes.push([mi, mj])
-        } else if (wasKeyPressed('f')) { // paint blobs
+        } else if (wasKeyPressed('B1')) { // paint blobs
           cur_level.geo[mj][mi] = '.'
           cur_level.paintBlobs.push(new PropertyHistory(true, 0, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
-        } else if (wasKeyPressed('g')) {
+        } else if (wasKeyPressed('B2')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.paintBlobs.push(new PropertyHistory(true, 1, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
-        } else if (wasKeyPressed('v')) {
+        } else if (wasKeyPressed('B3')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.paintBlobs.push(new PropertyHistory(true, 2, extra = true_timeline_undos.length))
+          cur_level.paintBlobs.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('B4')) {
+          cur_level.geo[mj][mi] = '.'
+          cur_level.paintBlobs.push(new PropertyHistory(true, 3, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         }
       }
@@ -2552,7 +2596,11 @@ function draw (timestamp) {
 
   let is_won = isWon(cur_level)
   if (is_won) {
-    if (solved_levels.indexOf(cur_level_n) == -1) solved_levels.push(cur_level_n)
+    if (solved_levels.indexOf(cur_level_n) === -1) {
+      solved_levels.push(cur_level_n)
+      localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
+      updateMenuButtons()
+    }
 
     /* ctx.fillStyle = COLORS.floorWin // "#437737";
     ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -2588,13 +2636,13 @@ function draw (timestamp) {
       initTransitionToPrevLevel()
     }
   }
-  if (wasKeyPressed('l')) {
+  /*if (wasKeyPressed('l')) {
     level_transition_time = 1
     transitionSound.play()
     screen_transition_turn = true
     console.log("l")
     next_level = 10
-  }
+  }*/
 
   // drawLevel(cur_level)
   drawScreen()
@@ -2653,6 +2701,10 @@ let keyboard_prev = {}
 let keyboard_last_pressed = {}
 
 function keyMap (e) {
+  if (e.shiftKey && e.code === 'Digit1') return 'B1'
+  if (e.shiftKey && e.code === 'Digit2') return 'B2'
+  if (e.shiftKey && e.code === 'Digit3') return 'B3'
+  if (e.shiftKey && e.code === 'Digit4') return 'B4'
   // use key.code if key location is important
   if (e.key === "Escape") return 'Escape'
   if (e.code === 'Backquote') return 'editor'
@@ -2674,11 +2726,17 @@ function keyMap (e) {
 window.addEventListener('keydown', e => {
   if (e.repeat) return
 
+  if (e.key == 'p') {
+    console.log("p")
+    solved_levels.push(cur_level_n)
+    updateMenuButtons()
+  }
+
   let k = keyMap(e)
-  if ('wasdzxc'.indexOf(k) != -1) input_queue.push(k)
+  if ('wasdzxcv'.indexOf(k) != -1) input_queue.push(k)
   keyboard[k] = true
   keyboard_last_pressed[k] = Date.now()
-  if (k == 'z' || k == 'x' || k == 'c') first_undo_press = true
+  if (k == 'z' || k == 'x' || k == 'c' || k == 'v') first_undo_press = true
   first_key_press = true
 
   //e.preventDefault()
