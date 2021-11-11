@@ -1022,9 +1022,8 @@ function saveDraft (str) {
   let curDiv = document.createElement('div');
   /*<div class="draftText">
 
-  </div>*/
-  curDiv.innerHTML = `<div class="levelDraftContainer">
-    <textarea rows="18" cols="32"></textarea>
+  </div>*/ //rows="18" cols="32" rows="${levels[cur_level_n].h + 4}"
+  curDiv.innerHTML = `<div class="levelDraftContainer"><textarea rows="12"></textarea>
     <div class="levelDraftBar">
       <button type="button" name="deleteDraft" onclick="deleteDraft(this)">delete</button><button type="button" name="playDraft" onclick="playDraft(this)">play</button>
     </div>
@@ -1059,8 +1058,10 @@ function enterEditor () {
 }
 
 function exitEditor () {
+  //setTimeout(() => {
   editorSidebar.hidden = true
   editorTopbar.hidden = true
+  //}, 500)
   setExtraDisplay(cur_level_n)
   canvasContainer.className = "closeEditor_canvasContainer_class"
 }
@@ -1798,9 +1799,11 @@ function _rotate(str) {
 }
 
 // todo: a lot (mainly enter/exit, & not breaking undo)
-function rotateLevel () {
+function rotateLevel (ccw) {
   let text = level2str(levels[cur_level_n])
-  let new_level = str2level(_rotate(text), levels[cur_level_n].enter, levels[cur_level_n].exit)
+  let new_text = _rotate(text)
+  if (ccw) new_text = _rotate(_rotate(new_text))
+  let new_level = str2level(new_text, levels[cur_level_n].enter, levels[cur_level_n].exit)
   if (new_level) {
     levels[cur_level_n] = new_level
   }
@@ -1858,7 +1861,10 @@ function resizeLevel (a, b, c, d) {
   text = rows.join('\n')
   let new_level = str2level(text, levels[cur_level_n].enter, levels[cur_level_n].exit)
   if (new_level) {
-    levels[cur_level_n] = new_level
+    let [si, sj] = new_level.player.history[0]
+    if (si > 0 && sj > 0 && si + 1 < new_level.w && sj + 1 < new_level.h) {
+      levels[cur_level_n] = new_level
+    }
   }
 
   // document.getElementById('inText').value = text
@@ -2724,7 +2730,7 @@ function keyMap (e) {
   if (e.shiftKey && e.code === 'Digit3') return 'B3'
   if (e.shiftKey && e.code === 'Digit4') return 'B4'
   // use key.code if key location is important
-  if (e.key === "Escape") return 'Escape'  
+  if (e.key === "Escape") return 'Escape'
   if (e.code === 'Backquote') return 'editor'
   if (e.metaKey) return '.'
   // if (ALLOW_EDITOR) return e.key
