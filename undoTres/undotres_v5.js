@@ -190,6 +190,8 @@ let BACKGROUND_IS_WALL = true
 let ENABLE_RESTART = false
 let ENABLE_UNDO_2 = false
 let ENABLE_UNDO_3 = false
+let DRAW_TIMEBARS = false
+let ALLOW_CHEATS = false
 
 function PropertyHistory (initial_value, inmune, extra = 0) {
   this.value = [initial_value]
@@ -1212,6 +1214,18 @@ function drawScreen () {
     drawLevel(cur_level)
   }
 
+  if (DRAW_TIMEBARS) {
+    for (let k=0; k<3; k++) {
+      let time = get_timeline_length(true_timeline_undos.length, k)
+      pintar.drawRectangle(
+        new PintarJS.ColoredRectangle(
+          new PintarJS.Point(10, k * 10),
+          new PintarJS.Point(time * 10, 10),
+          PintarJS.Color.fromHex(COLORS.crates[k]), null, true))
+    }
+  }
+
+
   if (in_menu) {
     if (wasKeyPressed("Escape")) {
       in_menu = false
@@ -1935,7 +1949,7 @@ function updateMenuButtons () {
   let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18, 18, 18, 18, 18, 18];
   let n_unlocked = unlock_n[total_solved]
   for (let k = 0; k < levels.length - 1; k++) {
-    if (solved_levels.indexOf(k) === -1) {
+    if (!ALLOW_CHEATS && solved_levels.indexOf(k) === -1) {
       levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
       levelSelectButtons[k].disabled = n_unlocked <= k
     } else {
@@ -2629,27 +2643,20 @@ function draw (timestamp) {
   }
 
   // cheat
-  /*if (wasKeyPressed('m') && cur_level_n < levels.length - 1) {
+  if (ALLOW_CHEATS && wasKeyPressed('m') && cur_level_n < levels.length - 1) {
     // nextLevel()
     // cur_level = levels[cur_level_n]
     if (level_transition_time == 0) {
       initTransitionToNextLevel()
     }
   }
-  if (wasKeyPressed('n') && cur_level_n > 0) {
+  if (ALLOW_CHEATS && wasKeyPressed('n') && cur_level_n > 0) {
     // prevLevel()
     // cur_level = levels[cur_level_n]
     if (level_transition_time == 0) {
       initTransitionToPrevLevel()
     }
-  }*/
-  /*if (wasKeyPressed('l')) {
-    level_transition_time = 1
-    transitionSound.play()
-    screen_transition_turn = true
-    console.log("l")
-    next_level = 10
-  }*/
+  }
 
   // drawLevel(cur_level)
   drawScreen()
@@ -2734,6 +2741,10 @@ window.addEventListener('keydown', e => {
   if (!e.repeat) {
     if (e.key == 'p') {
       solved_levels.push(cur_level_n)
+      updateMenuButtons()
+    } else if (e.key == 'o') {
+      DRAW_TIMEBARS = !DRAW_TIMEBARS
+      ALLOW_CHEATS = !ALLOW_CHEATS
       updateMenuButtons()
     }
 
