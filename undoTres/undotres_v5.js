@@ -1070,6 +1070,8 @@ function toggleEditor () {
     exitEditor();
   } else {
     enterEditor();
+    ALLOW_CHEATS = true
+    updateMenuButtons()
   }
   ALLOW_EDITOR = !ALLOW_EDITOR
 }
@@ -1957,8 +1959,10 @@ function updateMenuButtons () {
       levelSelectButtons[k].disabled = false
     }
   }
-  levelSelectButtons[cur_level_n].className += (solved_levels.indexOf(cur_level_n) === -1) ? " curLevelSelectButton" : " curLevelSelectWonButton"
-  levelSelectButtons[cur_level_n].disabled = false
+  let curButton = levelSelectButtons[cur_level_n]
+  if (!curButton) return
+  curButton.className += (solved_levels.indexOf(cur_level_n) === -1) ? " curLevelSelectButton" : " curLevelSelectWonButton"
+  curButton.disabled = false
 }
 
 function loadLevel (n) {
@@ -2720,7 +2724,7 @@ function keyMap (e) {
   if (e.shiftKey && e.code === 'Digit3') return 'B3'
   if (e.shiftKey && e.code === 'Digit4') return 'B4'
   // use key.code if key location is important
-  if (e.key === "Escape") return 'Escape'
+  if (e.key === "Escape") return 'Escape'  
   if (e.code === 'Backquote') return 'editor'
   if (e.metaKey) return '.'
   // if (ALLOW_EDITOR) return e.key
@@ -2728,25 +2732,26 @@ function keyMap (e) {
   if (e.key == 'ArrowRight') return 'd'
   if (e.key == 'ArrowDown') return 's'
   if (e.key == 'ArrowUp') return 'w'
-  e.key = e.key.toLowerCase();
-  if (e.key == 'z') return 'z'
-  if (e.key == 'x') return ENABLE_UNDO_2 ? 'x' : '.'
-  if (e.key == 'c') return ENABLE_UNDO_3 ? 'c' : '.'
-  if (e.key == 'r') return ENABLE_RESTART ? 'r' : '.'
+  let key = e.key.toLowerCase();
+  if (key === 'p') return 'Escape'
+  if (key == 'z') return 'z'
+  if (key == 'x') return ENABLE_UNDO_2 ? 'x' : '.'
+  if (key == 'c') return ENABLE_UNDO_3 ? 'c' : '.'
+  if (key == 'r') return ENABLE_RESTART ? 'r' : '.'
   // return '.'
   return e.key.toLowerCase()
 }
 
 window.addEventListener('keydown', e => {
   if (!e.repeat) {
-    if (e.key == 'p') {
+    /*if (e.key == 'p') {
       solved_levels.push(cur_level_n)
       updateMenuButtons()
     } else if (e.key == 'o') {
       DRAW_TIMEBARS = !DRAW_TIMEBARS
       ALLOW_CHEATS = !ALLOW_CHEATS
       updateMenuButtons()
-    }
+    }*/
 
     let k = keyMap(e)
     if ('wasdzxcv'.indexOf(k) != -1) input_queue.push(k)
