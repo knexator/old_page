@@ -2,6 +2,26 @@
 
 // let canvasTxt = window.canvasTxt.default
 
+function at(n) {
+	// ToInteger() abstract op
+	n = Math.trunc(n) || 0;
+	// Allow negative indexing from the end
+	if (n < 0) n += this.length;
+	// OOB access is guaranteed to return undefined
+	if (n < 0 || n >= this.length) return undefined;
+	// Otherwise, this is just normal property access
+	return this[n];
+}
+
+const TypedArray = Reflect.getPrototypeOf(Int8Array);
+for (const C of [Array, String, TypedArray]) {
+    Object.defineProperty(C.prototype, "at",
+                          { value: at,
+                            writable: true,
+                            enumerable: false,
+                            configurable: true });
+}
+
 let pintar = new PintarJS()
 pintar.clearColor = PintarJS.Color.fromHex('4e4e4e') // F7A36B B7B4E2 5e5e5e 4e4e4e
 // pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
@@ -1082,6 +1102,7 @@ let text_0 = document.querySelectorAll('._0')
 let text_1 = document.querySelector('._1')
 let text_1a = document.querySelector('._1a')
 let text_3 = document.querySelector('._3')
+let text_5 = document.querySelector('._5')
 let text_6 = document.querySelector('._6')
 let text_7 = document.querySelector('._7')
 let text_end = document.querySelectorAll('._end')
@@ -1094,6 +1115,7 @@ function setExtraDisplay (n) {
   text_1a.hidden = (n !== 1) || !ENABLE_RESTART
   drawSecondText()
   text_3.hidden = n !== 3
+  text_5.hidden = n !== 5
   text_6.hidden = n !== 6
   text_7.hidden = n !== 7
   text_end.forEach(item => {
