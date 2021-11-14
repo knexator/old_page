@@ -190,6 +190,9 @@ let BACKGROUND_IS_WALL = true
 let ENABLE_RESTART = false
 let ENABLE_UNDO_2 = false
 let ENABLE_UNDO_3 = false
+let ENABLE_UNDO_4 = false
+let DRAW_TIMEBARS = false
+let ALLOW_CHEATS = false
 
 function PropertyHistory (initial_value, inmune, extra = 0) {
   this.value = [initial_value]
@@ -1011,7 +1014,7 @@ function deleteDraft (button) {
 }
 
 function playDraft (button) {
-  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.value, [1,0], [1,0])
+  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0])
   // levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.innerText, [1,0], [1,0])
   true_timeline_undos = []
 }
@@ -1020,9 +1023,8 @@ function saveDraft (str) {
   let curDiv = document.createElement('div');
   /*<div class="draftText">
 
-  </div>*/
-  curDiv.innerHTML = `<div class="levelDraftContainer">
-    <textarea rows="18" cols="32"></textarea>
+  </div>*/ //rows="18" cols="32" rows="${levels[cur_level_n].h + 4}"
+  curDiv.innerHTML = `<div class="levelDraftContainer"><textarea rows="12"></textarea>
     <div class="levelDraftBar">
       <button type="button" name="deleteDraft" onclick="deleteDraft(this)">delete</button><button type="button" name="playDraft" onclick="playDraft(this)">play</button>
     </div>
@@ -1057,8 +1059,10 @@ function enterEditor () {
 }
 
 function exitEditor () {
+  //setTimeout(() => {
   editorSidebar.hidden = true
   editorTopbar.hidden = true
+  //}, 500)
   setExtraDisplay(cur_level_n)
   canvasContainer.className = "closeEditor_canvasContainer_class"
 }
@@ -1068,6 +1072,8 @@ function toggleEditor () {
     exitEditor();
   } else {
     enterEditor();
+    ALLOW_CHEATS = true
+    updateMenuButtons()
   }
   ALLOW_EDITOR = !ALLOW_EDITOR
 }
@@ -1211,6 +1217,18 @@ function drawScreen () {
     let cur_level = levels[cur_level_n]
     drawLevel(cur_level)
   }
+
+  if (DRAW_TIMEBARS) {
+    for (let k=0; k<3; k++) {
+      let time = get_timeline_length(true_timeline_undos.length, k)
+      pintar.drawRectangle(
+        new PintarJS.ColoredRectangle(
+          new PintarJS.Point(10, k * 10),
+          new PintarJS.Point(time * 10, 10),
+          PintarJS.Color.fromHex(COLORS.crates[k]), null, true))
+    }
+  }
+
 
   if (in_menu) {
     if (wasKeyPressed("Escape")) {
@@ -1418,7 +1436,13 @@ levels[7].extraDrawCode = drawCtoRRText
 levels.at(-1).extraDrawCode = drawEndScreen
 
 let cur_level_n = 0
-let solved_levels = JSON.parse(localStorage.getItem("solved_levels") || '[]')
+let localStorageWorks = true
+let solved_levels = []
+try {
+  solved_levels = JSON.parse(localStorage.getItem("solved_levels") || '[]')
+} catch (err) {
+  localStorageWorks = false
+}
 updateMenuButtons()
 
 function Movable (i, j, inmune, extra = 0, superSolid = DEFAULT_FORBID_OVERLAP) {
@@ -1483,6 +1507,7 @@ function str2level (str, enter, exit) {
         geoChar = '.'
       } else if (chr >= '1' && chr <= '9') {
         crates.push(new Movable(i, j, chr - '1'))
+        if (chr - '1' > 2) ENABLE_UNDO_4 = true
         geoChar = '.'
       /* } else if (chr >= 'A' && chr <= 'I') {
         crates.push(new Movable(i, j, chr.charCodeAt(0) - 'A'.charCodeAt(0)))
@@ -1782,9 +1807,11 @@ function _rotate(str) {
 }
 
 // todo: a lot (mainly enter/exit, & not breaking undo)
-function rotateLevel () {
+function rotateLevel (ccw) {
   let text = level2str(levels[cur_level_n])
-  let new_level = str2level(_rotate(text), levels[cur_level_n].enter, levels[cur_level_n].exit)
+  let new_text = _rotate(text)
+  if (ccw) new_text = _rotate(_rotate(new_text))
+  let new_level = str2level(new_text, levels[cur_level_n].enter, levels[cur_level_n].exit)
   if (new_level) {
     levels[cur_level_n] = new_level
   }
@@ -1842,7 +1869,10 @@ function resizeLevel (a, b, c, d) {
   text = rows.join('\n')
   let new_level = str2level(text, levels[cur_level_n].enter, levels[cur_level_n].exit)
   if (new_level) {
-    levels[cur_level_n] = new_level
+    let [si, sj] = new_level.player.history[0]
+    if (si > 0 && sj > 0 && si + 1 < new_level.w && sj + 1 < new_level.h) {
+      levels[cur_level_n] = new_level
+    }
   }
 
   // document.getElementById('inText').value = text
@@ -1935,7 +1965,7 @@ function updateMenuButtons () {
   let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18, 18, 18, 18, 18, 18];
   let n_unlocked = unlock_n[total_solved]
   for (let k = 0; k < levels.length - 1; k++) {
-    if (solved_levels.indexOf(k) === -1) {
+    if (!ALLOW_CHEATS && solved_levels.indexOf(k) === -1) {
       levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
       levelSelectButtons[k].disabled = n_unlocked <= k
     } else {
@@ -1943,8 +1973,10 @@ function updateMenuButtons () {
       levelSelectButtons[k].disabled = false
     }
   }
-  levelSelectButtons[cur_level_n].className += (solved_levels.indexOf(cur_level_n) === -1) ? " curLevelSelectButton" : " curLevelSelectWonButton"
-  levelSelectButtons[cur_level_n].disabled = false
+  let curButton = levelSelectButtons[cur_level_n]
+  if (!curButton) return
+  curButton.className += (!ALLOW_CHEATS && (solved_levels.indexOf(cur_level_n) === -1)) ? " curLevelSelectButton" : " curLevelSelectWonButton"
+  curButton.disabled = false
 }
 
 function loadLevel (n) {
@@ -2577,6 +2609,7 @@ function draw (timestamp) {
         } else if (wasKeyPressed('4')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.crates.push(new Movable(mi, mj, 3, extra = true_timeline_undos.length))
+          ENABLE_UNDO_4 = true
         } else if (wasKeyPressed('e')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.holes.push([mi, mj])
@@ -2605,7 +2638,7 @@ function draw (timestamp) {
   if (is_won) {
     if (solved_levels.indexOf(cur_level_n) === -1) {
       solved_levels.push(cur_level_n)
-      localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
+      if (localStorageWorks) localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
       updateMenuButtons()
     }
 
@@ -2629,27 +2662,20 @@ function draw (timestamp) {
   }
 
   // cheat
-  /*if (wasKeyPressed('m') && cur_level_n < levels.length - 1) {
+  if (ALLOW_CHEATS && wasKeyPressed('m') && cur_level_n < levels.length - 1) {
     // nextLevel()
     // cur_level = levels[cur_level_n]
     if (level_transition_time == 0) {
       initTransitionToNextLevel()
     }
   }
-  if (wasKeyPressed('n') && cur_level_n > 0) {
+  if (ALLOW_CHEATS && wasKeyPressed('n') && cur_level_n > 0) {
     // prevLevel()
     // cur_level = levels[cur_level_n]
     if (level_transition_time == 0) {
       initTransitionToPrevLevel()
     }
-  }*/
-  /*if (wasKeyPressed('l')) {
-    level_transition_time = 1
-    transitionSound.play()
-    screen_transition_turn = true
-    console.log("l")
-    next_level = 10
-  }*/
+  }
 
   // drawLevel(cur_level)
   drawScreen()
@@ -2721,21 +2747,27 @@ function keyMap (e) {
   if (e.key == 'ArrowRight') return 'd'
   if (e.key == 'ArrowDown') return 's'
   if (e.key == 'ArrowUp') return 'w'
-  e.key = e.key.toLowerCase();
-  if (e.key == 'z') return 'z'
-  if (e.key == 'x') return ENABLE_UNDO_2 ? 'x' : '.'
-  if (e.key == 'c') return ENABLE_UNDO_3 ? 'c' : '.'
-  if (e.key == 'r') return ENABLE_RESTART ? 'r' : '.'
+  let key = e.key.toLowerCase();
+  if (key === 'p') return 'Escape'
+  if (key == 'z') return 'z'
+  if (key == 'x') return ENABLE_UNDO_2 ? 'x' : '.'
+  if (key == 'c') return ENABLE_UNDO_3 ? 'c' : '.'
+  if (key == 'v') return ENABLE_UNDO_4 ? 'v' : '.'
+  if (key == 'r') return ENABLE_RESTART ? 'r' : '.'
   // return '.'
   return e.key.toLowerCase()
 }
 
 window.addEventListener('keydown', e => {
   if (!e.repeat) {
-    if (e.key == 'p') {
+    /*if (e.key == 'p') {
       solved_levels.push(cur_level_n)
       updateMenuButtons()
-    }
+    } else if (e.key == 'o') {
+      DRAW_TIMEBARS = !DRAW_TIMEBARS
+      ALLOW_CHEATS = !ALLOW_CHEATS
+      updateMenuButtons()
+    }*/
 
     let k = keyMap(e)
     if ('wasdzxcv'.indexOf(k) != -1) input_queue.push(k)
