@@ -2781,6 +2781,7 @@ function keyMap (e) {
 }
 
 window.addEventListener('keydown', e => {
+	let k = keyMap(e)
   if (!e.repeat) {
     /*if (e.key == 'p') {
       solved_levels.push(cur_level_n)
@@ -2791,18 +2792,18 @@ window.addEventListener('keydown', e => {
       updateMenuButtons()
     }*/
 
-    let k = keyMap(e)
     if ('wasdzxcv'.indexOf(k) != -1) input_queue.push(k)
     keyboard[k] = true
     keyboard_last_pressed[k] = Date.now()
     if (k == 'z' || k == 'x' || k == 'c' || k == 'v') first_undo_press = true
     first_key_press = true
   }
-
-  if (e.key == 'ArrowLeft') e.preventDefault()
+	if ('wasdrzxcver1234'.indexOf(k) != -1) e.preventDefault()
+	if (['B1', 'B2', 'B3', 'B4', 'editor'].indexOf(k) != -1) e.preventDefault()
+  /*if (e.key == 'ArrowLeft') e.preventDefault()
   if (e.key == 'ArrowRight') e.preventDefault()
   if (e.key == 'ArrowDown') e.preventDefault()
-  if (e.key == 'ArrowUp') e.preventDefault()
+  if (e.key == 'ArrowUp') e.preventDefault()*/
   //e.preventDefault()
   //return false
 })
@@ -2814,8 +2815,10 @@ window.addEventListener('keyup', e => {
   first_undo_press = false
   first_key_press = false
 
-  e.preventDefault()
-  return false
+	if ('wasdrzxcver1234'.indexOf(k) != -1) e.preventDefault()
+	if (['B1', 'B2', 'B3', 'B4', 'editor'].indexOf(k) != -1) e.preventDefault()
+  // e.preventDefault()
+  // return false
 })
 
 function isKeyDown (k) {
