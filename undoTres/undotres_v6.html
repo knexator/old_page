@@ -1,4 +1,5 @@
 <head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+	<link rel="icon" href="favicon.ico">
 	<link rel="shortcut icon" href="#">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,15 +147,15 @@ canvas {
 	position: absolute;
 	font-size: 5.5em;
 	font-family: 'Knewave', cursive;
-	color: #4F69BA;
-	text-shadow: .04em .04em #383F69;
+	color: #4F69BA; /*#4F69BA; FF9500*/
+	text-shadow: .04em .04em #383F69; /* #383F69; AD6500 */
 }
 
 .usefulText {
 	position: absolute;
 	font-size: 1.2em;
 	font-family: 'Verdana';
-	color: #7988C0;
+	color: #7988C0; /* 5B74CC 3763D3 717171 #7988C0; 9D15EC  FF9500 AD6500 E74059  617ACC 6216CC 12CCC5 */
 }
 
 .squareButtonsContainer {
@@ -435,6 +436,15 @@ canvas {
   box-shadow:inset 0px 0px 0px 10px #79c07b;
 }
 
+.fadeInClass {
+  animation: fadein 2s;
+}
+
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
 </style></head>
 <body oncontextmenu="return false;">
 	<div id="container">
@@ -480,13 +490,14 @@ canvas {
 		</div>
 		<div id="canvasContainer">
 			<canvas id="canvas"></canvas>
-			<p hidden class="_0 titleText" style="left: 18%;top: -22.25%;">Tres</p>
-			<p hidden class="_0 titleText" style="left: 11.5%;top: 7.5%;">Undos</p>
+			<p hidden class="_0 titleText fadeInClass" style="left: 18%;top: -22.25%;">Tres</p>
+			<p hidden class="_0 titleText fadeInClass" style="left: 11.5%;top: 7.5%;">Undos</p>
 			<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 75%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">WASD / Arrow Keys to Move</div>
 			<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 90%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
 			<div hidden class="_1 usefulText" style="font-size: 1.8em; text-align: center; left: 65%;top: 20%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
 			<div hidden class="_1a usefulText" style="font-size: 1.8em; text-align: center; left: 65%;top: 30%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">R to Reset</div>
 			<p hidden class="_3 usefulText" style="font-size: 1.2em; left: 35%;top: 6%;">X to <i>really</i> undo</p>
+			<p hidden class="_5 usefulText" style="font-size: 1.2em; left: 5%;top: 76%;">P or Esc for level select</p>
 			<div hidden class="_6 usefulText" style="font-size: 1.2em; text-align: left; left: 47%;top: 20%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Recap:<br>Z to undo<br>X to <i>really</i> undo</div>
 			<div hidden class="_7 usefulText" style="font-size: 1.2em; text-align: left; left: 23%;top: 11%;">C to <i>really</i>, <i><b>really</b></i> undo</div>
 			<div hidden class="_end titleText" style="font-size: 6.0em; text-align: center; left: 0%;top: 0%; min-width: 100%; min-height: 100%;">Thanks for Playing!</div>

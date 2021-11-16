@@ -2,6 +2,26 @@
 
 // let canvasTxt = window.canvasTxt.default
 
+function at(n) {
+	// ToInteger() abstract op
+	n = Math.trunc(n) || 0;
+	// Allow negative indexing from the end
+	if (n < 0) n += this.length;
+	// OOB access is guaranteed to return undefined
+	if (n < 0 || n >= this.length) return undefined;
+	// Otherwise, this is just normal property access
+	return this[n];
+}
+
+const TypedArray = Reflect.getPrototypeOf(Int8Array);
+for (const C of [Array, String, TypedArray]) {
+    Object.defineProperty(C.prototype, "at",
+                          { value: at,
+                            writable: true,
+                            enumerable: false,
+                            configurable: true });
+}
+
 let pintar = new PintarJS()
 pintar.clearColor = PintarJS.Color.fromHex('4e4e4e') // F7A36B B7B4E2 5e5e5e 4e4e4e
 // pintar.clearColor = PintarJS.Color.fromHex('F7A36B');
@@ -190,6 +210,7 @@ let BACKGROUND_IS_WALL = true
 let ENABLE_RESTART = false
 let ENABLE_UNDO_2 = false
 let ENABLE_UNDO_3 = false
+let ENABLE_UNDO_4 = false
 let DRAW_TIMEBARS = false
 let ALLOW_CHEATS = false
 
@@ -272,7 +293,7 @@ let COLORS = {
   'crate1': '#CFCFCF', // '#F8CB58' EBD7FE
   'crate2': '#FF9500', // '#F8984E' 62FF42
   'crate3': '#E74059', // '#F8643F' FF3838
-  'crate4': '#00FFFF', // '#F8643F' FF3838
+  'crate4': '#9D15EC', // '#F8643F' FF3838
   'machine1': '#F5B512',  // E9C46A D2BA7F E9A90A
   'machine2': '#F46F0A', // E89A5E D09D76 E26709
   'machine3': '#EC3609' // E76F51 CD7E6A D83208
@@ -344,7 +365,7 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
 
   crate_sprites = []
   crate_hole_sprites = []
-  let crate_spr_data = [[0, 2], [1, 2], [2, 2], [0, 2]]
+  let crate_spr_data = [[0, 2], [1, 2], [2, 2], [2, 0]]
   for (let k = 0; k < 4; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
     setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 3, 2, setSize=true)
@@ -1013,7 +1034,7 @@ function deleteDraft (button) {
 }
 
 function playDraft (button) {
-  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.value, [1,0], [1,0])
+  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0])
   // levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.innerText, [1,0], [1,0])
   true_timeline_undos = []
 }
@@ -1081,6 +1102,7 @@ let text_0 = document.querySelectorAll('._0')
 let text_1 = document.querySelector('._1')
 let text_1a = document.querySelector('._1a')
 let text_3 = document.querySelector('._3')
+let text_5 = document.querySelector('._5')
 let text_6 = document.querySelector('._6')
 let text_7 = document.querySelector('._7')
 let text_end = document.querySelectorAll('._end')
@@ -1093,6 +1115,7 @@ function setExtraDisplay (n) {
   text_1a.hidden = (n !== 1) || !ENABLE_RESTART
   drawSecondText()
   text_3.hidden = n !== 3
+  text_5.hidden = n !== 5
   text_6.hidden = n !== 6
   text_7.hidden = n !== 7
   text_end.forEach(item => {
@@ -1435,7 +1458,13 @@ levels[7].extraDrawCode = drawCtoRRText
 levels.at(-1).extraDrawCode = drawEndScreen
 
 let cur_level_n = 0
-let solved_levels = JSON.parse(localStorage.getItem("solved_levels") || '[]')
+let localStorageWorks = true
+let solved_levels = []
+try {
+  solved_levels = JSON.parse(localStorage.getItem("solved_levels") || '[]')
+} catch (err) {
+  localStorageWorks = false
+}
 updateMenuButtons()
 
 function Movable (i, j, inmune, extra = 0, superSolid = DEFAULT_FORBID_OVERLAP) {
@@ -1500,6 +1529,7 @@ function str2level (str, enter, exit) {
         geoChar = '.'
       } else if (chr >= '1' && chr <= '9') {
         crates.push(new Movable(i, j, chr - '1'))
+        if (chr - '1' > 2) ENABLE_UNDO_4 = true
         geoChar = '.'
       /* } else if (chr >= 'A' && chr <= 'I') {
         crates.push(new Movable(i, j, chr.charCodeAt(0) - 'A'.charCodeAt(0)))
@@ -1967,7 +1997,7 @@ function updateMenuButtons () {
   }
   let curButton = levelSelectButtons[cur_level_n]
   if (!curButton) return
-  curButton.className += (solved_levels.indexOf(cur_level_n) === -1) ? " curLevelSelectButton" : " curLevelSelectWonButton"
+  curButton.className += (!ALLOW_CHEATS && (solved_levels.indexOf(cur_level_n) === -1)) ? " curLevelSelectButton" : " curLevelSelectWonButton"
   curButton.disabled = false
 }
 
@@ -2601,6 +2631,7 @@ function draw (timestamp) {
         } else if (wasKeyPressed('4')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.crates.push(new Movable(mi, mj, 3, extra = true_timeline_undos.length))
+          ENABLE_UNDO_4 = true
         } else if (wasKeyPressed('e')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.holes.push([mi, mj])
@@ -2629,7 +2660,7 @@ function draw (timestamp) {
   if (is_won) {
     if (solved_levels.indexOf(cur_level_n) === -1) {
       solved_levels.push(cur_level_n)
-      localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
+      if (localStorageWorks) localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
       updateMenuButtons()
     }
 
@@ -2729,6 +2760,7 @@ function keyMap (e) {
   if (e.shiftKey && e.code === 'Digit2') return 'B2'
   if (e.shiftKey && e.code === 'Digit3') return 'B3'
   if (e.shiftKey && e.code === 'Digit4') return 'B4'
+	if (e.ctrlKey || e.altKey || e.shiftKey) return '.'
   // use key.code if key location is important
   if (e.key === "Escape") return 'Escape'
   if (e.code === 'Backquote') return 'editor'
@@ -2743,12 +2775,14 @@ function keyMap (e) {
   if (key == 'z') return 'z'
   if (key == 'x') return ENABLE_UNDO_2 ? 'x' : '.'
   if (key == 'c') return ENABLE_UNDO_3 ? 'c' : '.'
+  if (key == 'v') return ENABLE_UNDO_4 ? 'v' : '.'
   if (key == 'r') return ENABLE_RESTART ? 'r' : '.'
   // return '.'
   return e.key.toLowerCase()
 }
 
 window.addEventListener('keydown', e => {
+	let k = keyMap(e)
   if (!e.repeat) {
     /*if (e.key == 'p') {
       solved_levels.push(cur_level_n)
@@ -2759,18 +2793,18 @@ window.addEventListener('keydown', e => {
       updateMenuButtons()
     }*/
 
-    let k = keyMap(e)
     if ('wasdzxcv'.indexOf(k) != -1) input_queue.push(k)
     keyboard[k] = true
     keyboard_last_pressed[k] = Date.now()
     if (k == 'z' || k == 'x' || k == 'c' || k == 'v') first_undo_press = true
     first_key_press = true
   }
-
-  if (e.key == 'ArrowLeft') e.preventDefault()
+	if ('wasdrzxcver1234'.indexOf(k) != -1) e.preventDefault()
+	if (['B1', 'B2', 'B3', 'B4', 'editor'].indexOf(k) != -1) e.preventDefault()
+  /*if (e.key == 'ArrowLeft') e.preventDefault()
   if (e.key == 'ArrowRight') e.preventDefault()
   if (e.key == 'ArrowDown') e.preventDefault()
-  if (e.key == 'ArrowUp') e.preventDefault()
+  if (e.key == 'ArrowUp') e.preventDefault()*/
   //e.preventDefault()
   //return false
 })
@@ -2782,8 +2816,10 @@ window.addEventListener('keyup', e => {
   first_undo_press = false
   first_key_press = false
 
-  e.preventDefault()
-  return false
+	if ('wasdrzxcver1234'.indexOf(k) != -1) e.preventDefault()
+	if (['B1', 'B2', 'B3', 'B4', 'editor'].indexOf(k) != -1) e.preventDefault()
+  // e.preventDefault()
+  // return false
 })
 
 function isKeyDown (k) {

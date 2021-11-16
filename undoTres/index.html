@@ -1,37 +1,543 @@
 <head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+	<link rel="icon" href="favicon.ico">
+	<link rel="shortcut icon" href="#">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Knewave&display=swap" rel="stylesheet">
 <style>
 body {
 	margin: 0;
   overscroll-behavior: contain;
+	background-color: #4e4e4e
 }
 
 html, body {
   font-size: 80%;
-  margin: 0;
+	margin: 0;
   padding: 0;
   width: 100%;
   height: 100%;
 }
 
-canvas {
-  position: absolute
+#container {
+    width: 100vw;
+    height: 56.25vw; /* height:width ratio = 9/16 = .5625  */
+    /* background: pink; */
+    max-height: 100vh;
+    max-width: 177.78vh; /* 16/9 = 1.778 */
+    margin: auto;
+    position: absolute;
+    top:0;bottom:0; /* vertical center */
+    left:0;right:0; /* horizontal center */
+		font-size: 22px;
 }
-</style><!--style>
-@import url('https://fonts.googleapis.com/css2?family=Salsa&display=swap');
-</style--><link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!--link href="https://fonts.googleapis.com/css2?family=Grandstander&display=swap" rel="stylesheet"-->
-<link href="https://fonts.googleapis.com/css2?family=Salsa&display=swap" rel="stylesheet"></head>
+
+#leftCol {
+	position: absolute;
+	width: 20%;
+	height: 100%;
+	left: 0;
+	top: 0;
+	background: #272727;
+	/* overflow-y: auto; */
+	overflow-y: scroll;
+}
+
+#topArea {
+	position: absolute;
+	width: 80%;
+	height: 20%;
+	right: 0;
+	top: 0;
+	background: #565ea1;  /* #4F69BA; #565ea1 7988C0 */
+	border-bottom: solid;
+	box-sizing: border-box;
+}
+
+#canvasContainer {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	right: 0;
+	bottom: 0;
+	background: 4e4e4e;
+	-webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+	cursor: default;
+}
+
+.openEditor_canvasContainer_class {
+	animation-name: openEditor_canvasContainer;
+  animation-duration: .5s;
+  animation-fill-mode: both;
+	animation-direction: normal;
+	animation-iteration-count: 1;
+	/* animation-timing-function: ease-in; */
+	/* animation-play-state: paused; */
+}
+
+.closeEditor_canvasContainer_class {
+	animation-name: closeEditor_canvasContainer;
+  animation-duration: .5s;
+  animation-fill-mode: both;
+	animation-direction: normal;
+	animation-iteration-count: 1;
+	/* animation-timing-function: ease-in; */
+	/* animation-play-state: paused; */
+}
+
+@keyframes openEditor_canvasContainer {
+  0%   {
+		height: 100%;
+		width:  100%;
+	}
+	100% {
+		height: 80%;
+		width:  80%;
+	}
+}
+@keyframes closeEditor_canvasContainer {
+  0%   {
+		height: 80%;
+		width:  80%;
+	}
+	100% {
+		height: 100%;
+		width:  100%;
+	}
+}
+
+.levelDraftContainer {
+	background-color: #4F69BA;
+	border: thick solid #4F69BA;
+	/* white-space: pre-line; */
+	font-family: 'Courier New', monospace;
+	overflow: hidden;
+	margin: 0;
+}
+
+.levelDraftContainer textarea {
+	/* color: red; */
+	margin: 0;
+	width: 100%;
+	height: auto;
+	white-space: nowrap;
+	resize: none;
+}
+
+.levelDraftBar {
+	/* background-color: cyan; */
+}
+
+.levelDraftBar button {
+	width: 50%;
+}
+
+canvas {
+  /* position: absolute */
+	width: 100%;
+  height: 100%;
+}
+
+.titleText {
+	position: absolute;
+	font-size: 5.5em;
+	font-family: 'Knewave', cursive;
+	color: #4F69BA; /*#4F69BA; FF9500*/
+	text-shadow: .04em .04em #383F69; /* #383F69; AD6500 */
+}
+
+.usefulText {
+	position: absolute;
+	font-size: 1.2em;
+	font-family: 'Verdana';
+	color: #7988C0; /* 5B74CC 3763D3 717171 #7988C0; 9D15EC  FF9500 AD6500 E74059  617ACC 6216CC 12CCC5 */
+}
+
+.squareButtonsContainer {
+	aspect-ratio: 1/1;
+	/* background: cyan; */
+	height: 100%;
+	display: inline-block;
+	box-sizing: border-box;
+	border: thick solid #7988c0;
+/*
+	margin: 0;
+  padding: 0; */
+}
+
+.buttonsContainer {
+	/* background: cyan; */
+	height: 100%;
+	display: inline-block;
+	box-sizing: border-box;
+	border: thick solid #7988c0;
+	float: left;
+/*
+	margin: 0;
+  padding: 0; */
+}
+
+.squareButton {
+	/* background: green; */
+
+	/* box-sizing: border-box; */
+	min-height: 33.33%;
+	max-height: 33.33%;
+	height: 33.33%;
+
+	min-width: 33.33%;
+	max-width: 33.33%;
+	width: 33.33%;
+
+	margin: 0;
+  padding: 0;
+
+	/* overflow: hidden; */
+
+	text-align: center;
+	vertical-align: middle;
+	font-size: 1em;
+	/* line-height: 33.33%; */
+}
+
+.squareButtonHalf {
+	font-size: 1em;
+	/* background: green; */
+
+	/* box-sizing: border-box; */
+	min-height: 50%;
+	max-height: 50%;
+	height: 50%;
+
+	min-width: 50%;
+	max-width: 50%;
+	width: 50%;
+
+	margin: 0;
+  padding: 0;
+
+	/* overflow: hidden; */
+
+	text-align: center;
+	vertical-align: middle;
+	/* line-height: 33.33%; */
+}
+
+#transition {
+	position: absolute;
+	width: 0%;
+	height: 0%;
+	top: 0%;
+	left: 0%;
+	background-color: #383F69;
+}
+
+.flashUpClass {
+	animation-name: flashUp;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+.flashDownClass {
+	animation-name: flashDown;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+.flashLeftClass {
+	animation-name: flashLeft;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+.flashRightClass {
+	animation-name: flashRight;
+  animation-duration: .5s;
+	animation-timing-function: linear;
+}
+
+@keyframes flashUp {
+  0%   {
+		top: 100%;
+		height: 0%;
+		width: 100%;
+	}
+  50% {
+		top: 0%;
+		height: 100%;
+		width: 100%;
+	}
+	100% {
+		top: 0%;
+		height: 0%;
+		width: 100%;
+	}
+}
+@keyframes flashDown {
+  0%   {
+		top: 0%;
+		height: 0%;
+		width: 100%;
+	}
+  50% {
+		top: 0%;
+		height: 100%;
+		width: 100%;
+	}
+	100% {
+		top: 100%;
+		height: 0%;
+		width: 100%;
+	}
+}
+@keyframes flashLeft {
+  0%   {
+		left: 100%;
+		width: 0%;
+		height: 100%;
+	}
+  50% {
+		left: 0%;
+		width: 100%;
+		height: 100%;
+	}
+	100% {
+		left: 0%;
+		width: 0%;
+		height: 100%;
+	}
+}
+@keyframes flashRight {
+  0%   {
+		left: 0%;
+		width: 0%;
+		height: 100%;
+	}
+  50% {
+		left: 0%;
+		width: 100%;
+		height: 100%;
+	}
+	100% {
+		left: 100%;
+		width: 0%;
+		height: 100%;
+	}
+}
+
+#levelSelectMenuContainer {
+	position: absolute;
+	background-color: rgba(1, 0, 0, 0.5);
+	width: 100%;
+	height: 100%;
+	min-width: 100%;
+	min-height: 100%;
+	max-width: 100%;
+	max-height: 100%;
+	left: 0;
+	top: 0;
+}
+
+#levelSelectMenuButtons {
+	width: fit-content;
+  /* To adjust the height as well */
+  height: fit-content;
+	/* display: inline-block; */
+	position: absolute;
+	margin: auto;
+	top:0;bottom:0; /* vertical center */
+	left:0;right:0; /* horizontal center */
+	background: #383F69;
+	border: 4px solid #383F69;
+}
+
+.levelSelectButton {
+	font-family: 'Verdana';
+	background-color: #4F69BA; /* 7988C0 4F69BA 565EA1 383F69 */
+  color: black;
+  border: 2px solid #565EA1; /* 7988C0 4F69BA 565EA1 */
+	height: 10%;
+	aspect-ratio: 1/1;
+  /* padding: 16px 32px; */
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 1.0em;
+  /* margin: 4px 2px; */
+  margin: 4px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.levelSelectButton:hover {
+  background-color: #7988C0; /* 7988C0 4F69BA */
+  color: white;
+}
+
+.solvedSelectButton {
+	font-family: 'Verdana';
+	background-color: #44ad53; /* 7988C0 4F69BA 565EA1 383F69 */
+  color: black;
+  border: 2px solid #565EA1; /* 7988C0 4F69BA 565EA1 */
+	height: 10%;
+	aspect-ratio: 1/1;
+  /* padding: 16px 32px; */
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 1.0em;
+  /* margin: 4px 2px; */
+  margin: 4px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.solvedSelectButton:hover {
+	background-color: #79c07b; /* 7988C0 4F69BA */
+  color: white;
+}
+
+.lockedSelectButton {
+	font-family: 'Verdana';
+	background-color: gray; /* 7988C0 4F69BA 565EA1 383F69 */
+  color: black;
+  border: 2px solid #565EA1; /* 7988C0 4F69BA 565EA1 */
+	height: 10%;
+	aspect-ratio: 1/1;
+  /* padding: 16px 32px; */
+  padding: 16px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 1.0em;
+  /* margin: 4px 2px; */
+  margin: 4px;
+  transition-duration: 0.4s;
+	cursor: not-allowed;
+  /* cursor: pointer; */
+}
+
+.lockedSelectButton:hover {
+}
+
+.curLevelSelectButton {
+	-webkit-box-shadow:inset 0px 0px 0px 10px #7988C0;
+  -moz-box-shadow:inset 0px 0px 0px 10px #7988C0;
+  box-shadow:inset 0px 0px 0px 10px #7988C0;
+}
+
+.curLevelSelectWonButton {
+	-webkit-box-shadow:inset 0px 0px 0px 10px #79c07b;
+  -moz-box-shadow:inset 0px 0px 0px 10px #79c07b;
+  box-shadow:inset 0px 0px 0px 10px #79c07b;
+}
+
+.fadeInClass {
+  animation: fadein 2s;
+}
+
+@keyframes fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+</style></head>
 <body oncontextmenu="return false;">
-<canvas id="canvas" style="position: absolute"></canvas>
-<script>
+	<div id="container">
+		<div hidden id="leftCol">
+		</div>
+		<div hidden id="topArea">
+			<!-- &#8592; -->
+			<span class="squareButtonsContainer" style="float: left;">
+							   <button type="button" name="button" class="squareButton" onclick="resizeLevel (1,1,0,0)">&#8598
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (1,0,0,0)">&#8593
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (1,0,0,1)">&#8599
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,1,0,0)">&#8592
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (1,1,1,1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,0,1)">&#8594
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,1,1,0)">&#8601
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,1,0)">&#8595
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,1,1)">&#8600</button>
+			</span><span class="squareButtonsContainer" style="float: left;">
+							   <button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,-1,0,0)">&#8600
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,0,0,0)">&#8595
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,0,0,-1)">&#8601
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,-1,0,0)">&#8594
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (-1,-1,-1,-1)">
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,0,-1)">&#8592
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,-1,-1,0)">&#8599
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,-1,0)">&#8593
+				</button><button type="button" name="button" class="squareButton" onclick="resizeLevel (0,0,-1,-1)">&#8598</button>
+			</span><span class="squareButtonsContainer" style="float: left;">
+							   <button type="button" name="button" class="squareButtonHalf" onclick="rotateLevel(true)">&#8630
+				</button><button type="button" name="button" class="squareButtonHalf" onclick="rotateLevel(false)">&#8631
+				</button><button type="button" name="button" class="squareButtonHalf" onclick="flipHorizontalLevel()">&#8596
+				</button><button type="button" name="button" class="squareButtonHalf" onclick="flipVerticalLevel()">&#8597</button>
+			</span><span class="buttonsContainer"><button type="button" onclick="saveDraft()" style="height: 100%;">Save Current</button>
+			</span><span style="min-width: 4%; float:left; min-height: 100%;"></span><p style="font-size: .75em;">Left click to add walls<br>Right click to delete walls/holes/etc.<br>
+				1/2/3 to add Statues<br>Shift + 1/2/3 to add Circles<br>E to add a hole</p>
+			<!--button type="button" name="saveDraft" onclick="saveDraft()">save cur draft</button>
+			<button type="button" name="saveDraft" onclick="rotateLevel()">rotate clockwise</button>
+			<button type="button" name="saveDraft" onclick="flipHorizontalLevel()">flip horizontal</button>
+			<button type="button" name="saveDraft" onclick="flipVerticalLevel()">flip vertical</button>
+			<input type="color" value="#F8CB58" id="zPicker">
+			<input type="color" value="#F8984E" id="xPicker">
+			<input type="color" value="#F8643F" id="cPicker"-->
+		</div>
+		<div id="canvasContainer">
+			<canvas id="canvas"></canvas>
+			<p hidden class="_0 titleText fadeInClass" style="left: 18%;top: -22.25%;">Tres</p>
+			<p hidden class="_0 titleText fadeInClass" style="left: 11.5%;top: 7.5%;">Undos</p>
+			<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 75%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">WASD / Arrow Keys to Move</div>
+			<div hidden class="_0 usefulText" style="text-align: center; left: 66%;top: 90%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
+			<div hidden class="_1 usefulText" style="font-size: 1.8em; text-align: center; left: 65%;top: 20%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Z to undo</div>
+			<div hidden class="_1a usefulText" style="font-size: 1.8em; text-align: center; left: 65%;top: 30%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">R to Reset</div>
+			<p hidden class="_3 usefulText" style="font-size: 1.2em; left: 35%;top: 6%;">X to <i>really</i> undo</p>
+			<p hidden class="_5 usefulText" style="font-size: 1.2em; left: 5%;top: 76%;">P or Esc for level select</p>
+			<div hidden class="_6 usefulText" style="font-size: 1.2em; text-align: left; left: 47%;top: 20%; width: 25%; height; 10%; min-width: 25%; min-height: 10%;">Recap:<br>Z to undo<br>X to <i>really</i> undo</div>
+			<div hidden class="_7 usefulText" style="font-size: 1.2em; text-align: left; left: 23%;top: 11%;">C to <i>really</i>, <i><b>really</b></i> undo</div>
+			<div hidden class="_end titleText" style="font-size: 6.0em; text-align: center; left: 0%;top: 0%; min-width: 100%; min-height: 100%;">Thanks for Playing!</div>
+			<a href="https://twitter.com/knexator" target="_blank" hidden class="_end titleText" style="left: 70%; top: 77%; font-size: 1.5em">- @knexator</a>
+			<div hidden id="levelSelectMenuContainer">
+				<div id="levelSelectMenuButtons">
+					<button
+					class="levelSelectButton" onclick="initTransitionToLevel(0)">1.1</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(1)">1.2</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(2)">1.3</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(3)">1.4</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(4)">1.5</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(5)">1.6</button><br><button
+					class="levelSelectButton" onclick="initTransitionToLevel(6)">2.1</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(7)">2.2</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(8)">2.3</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(9)">2.4</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(10)">2.5</button><button
+          class="levelSelectButton" onclick="initTransitionToLevel(11)">2.6</button><br><button
+					class="levelSelectButton" onclick="initTransitionToLevel(12)">3.1</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(13)">3.2</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(14)">3.3</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(15)">3.4</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(16)">3.5</button><!--button
+					class="levelSelectButton" onclick="initTransitionToLevel(17)">3.6</button-->
+				</div>
+			</div>
+			<div id="transition"></div>
+		</div>
+</div>
+
+<!--script>
 !function(t,e){"use strict";"function"!=typeof t.CustomEvent&&(t.CustomEvent=function(t,n){n=n||{bubbles:!1,cancelable:!1,detail:void 0};var a=e.createEvent("CustomEvent");return a.initCustomEvent(t,n.bubbles,n.cancelable,n.detail),a},t.CustomEvent.prototype=t.Event.prototype),e.addEventListener("touchstart",function(t){if("true"===t.target.getAttribute("data-swipe-ignore"))return;s=t.target,r=Date.now(),n=t.touches[0].clientX,a=t.touches[0].clientY,u=0,i=0},!1),e.addEventListener("touchmove",function(t){if(!n||!a)return;var e=t.touches[0].clientX,r=t.touches[0].clientY;u=n-e,i=a-r},!1),e.addEventListener("touchend",function(t){if(s!==t.target)return;var e=parseInt(l(s,"data-swipe-threshold","20"),10),o=parseInt(l(s,"data-swipe-timeout","500"),10),c=Date.now()-r,d="",p=t.changedTouches||t.touches||[];Math.abs(u)>Math.abs(i)?Math.abs(u)>e&&c<o&&(d=u>0?"swiped-left":"swiped-right"):Math.abs(i)>e&&c<o&&(d=i>0?"swiped-up":"swiped-down");if(""!==d){var b={dir:d.replace(/swiped-/,""),xStart:parseInt(n,10),xEnd:parseInt((p[0]||{}).clientX||-1,10),yStart:parseInt(a,10),yEnd:parseInt((p[0]||{}).clientY||-1,10)};s.dispatchEvent(new CustomEvent("swiped",{bubbles:!0,cancelable:!0,detail:b})),s.dispatchEvent(new CustomEvent(d,{bubbles:!0,cancelable:!0,detail:b}))}n=null,a=null,r=null},!1);var n=null,a=null,u=null,i=null,r=null,s=null;function l(t,n,a){for(;t&&t!==e.documentElement;){var u=t.getAttribute(n);if(u)return u;t=t.parentNode}return a}}(window,document);
-</script>
-<!--script src="//unpkg.com/canvas-txt"></script-->
-<!--script>!function(t,e){"object"==typeof exports&&"object"==typeof module?module.exports=e():"function"==typeof define&&define.amd?define("canvasTxt",[],e):"object"==typeof exports?exports.canvasTxt=e():t.canvasTxt=e()}("undefined"!=typeof self?self:this,(function(){return function(t){var e={};function n(r){if(e[r])return e[r].exports;var i=e[r]={i:r,l:!1,exports:{}};return t[r].call(i.exports,i,i.exports,n),i.l=!0,i.exports}return n.m=t,n.c=e,n.d=function(t,e,r){n.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:r})},n.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},n.t=function(t,e){if(1&e&&(t=n(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var i in t)n.d(r,i,function(e){return t[e]}.bind(null,i));return r},n.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return n.d(e,"a",e),e},n.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},n.p="",n(n.s=0)}([function(t,e,n){"use strict";function r(t,e){return function(t){if(Array.isArray(t))return t}(t)||function(t,e){if("undefined"!=typeof Symbol&&Symbol.iterator in Object(t)){var n=[],r=!0,i=!1,o=void 0;try{for(var a,u=t[Symbol.iterator]();!(r=(a=u.next()).done)&&(n.push(a.value),!e||n.length!==e);r=!0);}catch(t){i=!0,o=t}finally{try{r||null==u.return||u.return()}finally{if(i)throw o}}return n}}(t,e)||function(t,e){if(t){if("string"==typeof t)return i(t,e);var n=Object.prototype.toString.call(t).slice(8,-1);return"Object"===n&&t.constructor&&(n=t.constructor.name),"Map"===n||"Set"===n?Array.from(n):"Arguments"===n||/^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)?i(t,e):void 0}}(t,e)||function(){throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.")}()}function i(t,e){(null==e||e>t.length)&&(e=t.length);for(var n=0,r=Array(e);n<e;n++)r[n]=t[n];return r}n.r(e);var o={debug:!1,align:"center",vAlign:"middle",fontSize:14,fontWeight:"",fontStyle:"",fontVariant:"",font:"Arial",lineHeight:null,justify:!1,drawText:function(t,e,n,i,o,a){var u=this,f=r([n,i,o,a].map((function(t){return parseInt(t)})),4);if(n=f[0],i=f[1],o=f[2],a=f[3],!(0>=o||0>=a||0>=this.fontSize)){var s=n+o,l=i+a;this.textSize&&console.error("%cCanvas-Txt:","font-weight: bold;","textSize is depricated and has been renamed to fontSize");var c=this.fontStyle,h=this.fontVariant,d=this.fontWeight,p=this.fontSize,y=this.font,b="".concat(c," ").concat(h," ").concat(d," ").concat(p,"px ").concat(y);t.font=b;var g,v=i+a/2+parseInt(this.fontSize)/2;"right"===this.align?(g=s,t.textAlign="right"):"left"===this.align?(g=n,t.textAlign="left"):(g=n+o/2,t.textAlign="center");var m=[],x=e.split("\n"),S=this.justify?t.measureText(" ").width:0;x.forEach((function(e){var n=t.measureText(e).width;if(n<=o)m.push(e);else{var r,i,a,f=e,s=o;for(n=t.measureText(f).width;n>s;){for(r=0,i=0,a="";i<s;)r++,a=f.substr(0,r),i=t.measureText(f.substr(0,r)).width;r--,a=a.substr(0,r);var l=r;if(" "!=f.substr(r,1)){for(;" "!=f.substr(r,1)&&0!=r;)r--;0==r&&(r=l),a=f.substr(0,r)}a=u.justify?u.justifyLine(t,a,S," ",o):a,f=f.substr(r),n=t.measureText(f).width,m.push(a)}0<n&&m.push(f)}}));var T=this.lineHeight?this.lineHeight:this.getTextHeight(t,e,b),j=T*(m.length-1),A=i;return"top"===this.vAlign?v=i+this.fontSize:"bottom"===this.vAlign?(v=l-j,A=l):(A=i+a/2,v-=j/2),m.forEach((function(e){e=e.trim(),t.fillText(e,g,v),v+=T})),this.debug&&(t.lineWidth=3,t.strokeStyle="#00909e",t.strokeRect(n,i,o,a),t.lineWidth=2,t.strokeStyle="#f6d743",t.beginPath(),t.moveTo(g,i),t.lineTo(g,l),t.stroke(),t.strokeStyle="#ff6363",t.beginPath(),t.moveTo(n,A),t.lineTo(s,A),t.stroke()),{height:j+T}}},getTextHeight:function(t,e,n){var r=t.textBaseline,i=t.font;t.textBaseline="bottom",t.font=n;var o=t.measureText(e).actualBoundingBoxAscent;return t.textBaseline=r,t.font=i,o},justifyLine:function(t,e,n,r,i){var o=Math.floor,a=e.trim(),u=t.measureText(a).width,f=a.split(/\s+/).length-1,s=o((i-u)/n);if(0>=f||0>=s)return a;for(var l=o(s/f),c=s-f*l,h=[],d=0;d<l;d++)h.push(r);return h=h.join(""),a.replace(/\s+/g,(function(t){var e=0<c?h+r:h;return c--,t+e}))}};e.default=o}])}));</script-->
+</script-->
 <script src="pintar.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.15/lodash.min.js"></script>
 <script src="howler.core.min.js"></script>
-<script src="levels_holes_v4.js"></script>
-<script src="undotres_v3.js"></script>
-<!--script>loadLevel(1)</script-->
+<script src="levels_holes_v6.js"></script>
+<script src="undotres_v5.js"></script>
+<script>
+	// ALLOW_EDITOR = true
+</script>
+</body>
