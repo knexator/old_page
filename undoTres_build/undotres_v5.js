@@ -293,7 +293,7 @@ let COLORS = {
   'crate1': '#CFCFCF', // '#F8CB58' EBD7FE
   'crate2': '#FF9500', // '#F8984E' 62FF42
   'crate3': '#E74059', // '#F8643F' FF3838
-  'crate4': '#00FFFF', // '#F8643F' FF3838
+  'crate4': '#9D15EC', // '#F8643F' FF3838
   'machine1': '#F5B512',  // E9C46A D2BA7F E9A90A
   'machine2': '#F46F0A', // E89A5E D09D76 E26709
   'machine3': '#EC3609' // E76F51 CD7E6A D83208
@@ -365,7 +365,7 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
 
   crate_sprites = []
   crate_hole_sprites = []
-  let crate_spr_data = [[0, 2], [1, 2], [2, 2], [0, 2]]
+  let crate_spr_data = [[0, 2], [1, 2], [2, 2], [2, 0]]
   for (let k = 0; k < 4; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
     setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 3, 2, setSize=true)
@@ -2760,6 +2760,7 @@ function keyMap (e) {
   if (e.shiftKey && e.code === 'Digit2') return 'B2'
   if (e.shiftKey && e.code === 'Digit3') return 'B3'
   if (e.shiftKey && e.code === 'Digit4') return 'B4'
+	if (e.ctrlKey || e.altKey || e.shiftKey) return '.'
   // use key.code if key location is important
   if (e.key === "Escape") return 'Escape'
   if (e.code === 'Backquote') return 'editor'
