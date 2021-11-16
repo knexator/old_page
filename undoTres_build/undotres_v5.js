@@ -176,7 +176,7 @@ class WobblyShader extends PintarJS.DefaultShader
 
 let wobblyShader = new WobblyShader()
 
-let TILE = 40
+let TILE = null
 let OFFX = TILE
 let OFFY = TILE
 
@@ -368,7 +368,7 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   let crate_spr_data = [[0, 2], [1, 2], [2, 2], [2, 0]]
   for (let k = 0; k < 4; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
-    setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 3, 2, setSize=true)
+    setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 4, 2, setSize=true)
     curSpr.color = new PintarJS.Color.fromHex(COLORS.crates[k])
     crate_sprites.push(curSpr)
 
@@ -378,22 +378,22 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   }
 
   hole_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(hole_sprite, 1, 0, 3, 3, 2, setSize=true)
+  setSourceFromSheet(hole_sprite, 1, 0, 3, 4, 2, setSize=true)
 
   black_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(black_sprite, 0, 1, 3, 3, 2, setSize=true)
+  setSourceFromSheet(black_sprite, 0, 1, 3, 4, 2, setSize=true)
 
-  // holeCover_sprite = new PintarJS.Sprite(world_texture)
-  // setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
-  //
-  // holeCoverBroken_sprite = new PintarJS.Sprite(world_texture)
-  // setSourceFromSheet(hole_sprite, 1, 0, 3, 2, 2, setSize=true)
+  holeCover_sprite = new PintarJS.Sprite(world_texture)
+  setSourceFromSheet(holeCover_sprite, 0, 3, 3, 4, 2, setSize=true)
+
+  holeCoverBroken_sprite = new PintarJS.Sprite(world_texture)
+  setSourceFromSheet(holeCoverBroken_sprite, 1, 3, 3, 4, 2, setSize=true)
 
   paintBlob_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(paintBlob_sprite, 1, 1, 3, 3, 2, setSize=true)
+  setSourceFromSheet(paintBlob_sprite, 1, 1, 3, 4, 2, setSize=true)
 
   paintBlobBroken_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 3, 2, setSize=true)
+  setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 4, 2, setSize=true)
 })
 /*let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // let _4x4 = new PintarJS.Point(4, 4)
@@ -430,31 +430,31 @@ let modular_texture = new PintarJS.Texture('imgs/wall_modular_margin.png', () =>
 })
 
 
-let zPicker = document.getElementById('zPicker')
-let xPicker = document.getElementById('xPicker')
-let cPicker = document.getElementById('cPicker')
-
-if (zPicker) zPicker.value = COLORS.crate1;
-if (xPicker) xPicker.value = COLORS.crate2;
-if (cPicker) cPicker.value = COLORS.crate3;
-
-zPicker?.addEventListener('input', e => {
-  crate_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
-  crate_hole_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
-  COLORS.crates[0] = e.target.value
-})
-
-xPicker?.addEventListener('input', e => {
-  crate_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
-  crate_hole_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
-  COLORS.crates[1] = e.target.value
-})
-
-cPicker?.addEventListener('input', e => {
-  crate_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
-  crate_hole_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
-  COLORS.crates[2] = e.target.value
-})
+// let zPicker = document.getElementById('zPicker')
+// let xPicker = document.getElementById('xPicker')
+// let cPicker = document.getElementById('cPicker')
+//
+// if (zPicker) zPicker.value = COLORS.crate1;
+// if (xPicker) xPicker.value = COLORS.crate2;
+// if (cPicker) cPicker.value = COLORS.crate3;
+//
+// zPicker?.addEventListener('input', e => {
+//   crate_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
+//   crate_hole_sprites[0].color = new PintarJS.Color.fromHex(e.target.value);
+//   COLORS.crates[0] = e.target.value
+// })
+//
+// xPicker?.addEventListener('input', e => {
+//   crate_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
+//   crate_hole_sprites[1].color = new PintarJS.Color.fromHex(e.target.value);
+//   COLORS.crates[1] = e.target.value
+// })
+//
+// cPicker?.addEventListener('input', e => {
+//   crate_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
+//   crate_hole_sprites[2].color = new PintarJS.Color.fromHex(e.target.value);
+//   COLORS.crates[2] = e.target.value
+// })
 
 /*let texto_1_texture = new PintarJS.Texture('imgs/texts_1.png', () => {
   texto_1_sprite = new PintarJS.Sprite(texto_1_texture)
@@ -680,7 +680,7 @@ function getGeo(level,i,j) {
 
 function drawSpr (spr, i, j) {
   spr.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
-  spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+  // spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
   pintar.drawSprite(spr)
 }
 
@@ -722,7 +722,7 @@ function drawLevel (level) {
   // draw black pit of holes
   level.holes.forEach(([i, j]) => {
     black_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
-    black_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    // black_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     pintar.drawSprite(black_sprite)
   })
 
@@ -784,7 +784,7 @@ function drawLevel (level) {
   // draw holes
   level.holes.forEach(([i, j]) => {
     hole_sprite.position = new PintarJS.Point(OFFX + i * TILE, OFFY + j * TILE)
-    hole_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    // hole_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     pintar.drawSprite(hole_sprite)
   })
 
@@ -793,7 +793,7 @@ function drawLevel (level) {
     let spr = holeCover.value.at(-1) ? holeCover_sprite : holeCoverBroken_sprite
     let [hi, hj] = holeCover.position
     spr.position = new PintarJS.Point(OFFX + hi * TILE, OFFY + hj * TILE)
-    spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    // spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     spr.color = PintarJS.Color.fromHex(COLORS.crates[holeCover.inmune.at(-1)])
     pintar.drawSprite(spr)
   })
@@ -807,7 +807,7 @@ function drawLevel (level) {
     let spr = relevantVal ? paintBlob_sprite : paintBlobBroken_sprite
     let [hi, hj] = paintBlob.position
     spr.position = new PintarJS.Point(OFFX + hi * TILE, OFFY + hj * TILE)
-    spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    // spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     spr.color = PintarJS.Color.fromHex(COLORS.crates[paintBlob.inmune.at(-1)])
     // console.log("hola");
     pintar.drawSprite(spr)
@@ -859,7 +859,7 @@ function drawLevel (level) {
     crate_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)*/
 
     let crate_sprite = crate_sprites[inmune]
-    crate_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    // crate_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
 
     /*let crate_sprite = raw_animBlock_sprites[inmune]
     let spr_n = mod(get_timeline_length(crate.history.length - 1, inmune), 4)
@@ -911,7 +911,7 @@ function drawLevel (level) {
   }
   player_sprite = raw_player_sprites[player_spr_n]
   player_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
-  player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+  // player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
   pintar.drawSprite(player_sprite)
   // sortedCrates.reverse()
 
@@ -1034,9 +1034,11 @@ function deleteDraft (button) {
 }
 
 function playDraft (button) {
-  levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0])
-  // levels[cur_level_n] = str2level(button.parentElement.previousElementSibling.innerText, [1,0], [1,0])
-  true_timeline_undos = []
+	let new_level = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0])
+	if (new_level) {
+		levels[cur_level_n] = new_level
+	  true_timeline_undos = []
+	}
 }
 
 function saveDraft (str) {
@@ -1550,9 +1552,9 @@ function str2level (str, enter, exit) {
       } else if (chr == '_') {
         holes.push([i, j])
         geoChar = '.'
-      } else if ('zxcv'.indexOf(chr) != -1) {
+      } else if ('jkl;'.indexOf(chr) != -1) {
         holes.push([i, j])
-        holeCovers.push(new PropertyHistory(true, 'zxcv'.indexOf(chr)))
+        holeCovers.push(new PropertyHistory(true, 'jkl;'.indexOf(chr)))
         holeCovers.at(-1).position = [i, j]
         geoChar = '.'
       } else if ('uiop'.indexOf(chr) != -1) {
@@ -1771,6 +1773,10 @@ function level2str (level) {
   level.machines.forEach(([i, j, l]) => {
     res[j][i] = 'JKLMN'[l - 1]
   })
+	level.holeCovers.forEach(cover => {
+		let [hi, hj] = cover.position;
+		res[hj][hi] = 'jkl;'[cover.inmune.at(-1)]
+	})
 
   level.crates.forEach(crate => {
     let [ci, cj] = crate.history.at(-1)
@@ -2018,6 +2024,10 @@ function loadLevel (n) {
     paintBlob.value.splice(1)
     paintBlob.inmune.splice(1)
   })
+	cur_level.holeCovers.forEach(holeCover => {
+    holeCover.value.splice(1)
+    holeCover.inmune.splice(1)
+  })
   cur_level.player.history.splice(1)
   cur_level.player.inmune_history.splice(1)
   cur_level.player.inHole.value.splice(1)
@@ -2100,7 +2110,16 @@ function recalcTileSize (level) {
   OFFY = Math.floor((canvas.height - (TILE * level.h)) / 2)
   if (prev_tile !== TILE) {
     floor_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    black_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    hole_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    holeCover_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    holeCoverBroken_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    paintBlob_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    paintBlobBroken_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     geoModularSprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+		crate_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
+		crate_hole_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
+		raw_player_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
   }
 }
 
@@ -2604,6 +2623,10 @@ function draw (timestamp) {
             let [i, j] = blob.position
             return i != mi || j != mj
           })
+					cur_level.holeCovers = cur_level.holeCovers.filter(cover =>	{
+            let [i, j] = cover.position
+            return i != mi || j != mj
+          })
           cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
         }
       } else if (isButtonDown(1)) {
@@ -2618,6 +2641,10 @@ function draw (timestamp) {
           let [i, j] = blob.position
           return i != mi || j != mj
         })
+				cur_level.holeCovers = cur_level.holeCovers.filter(cover =>	{
+					let [i, j] = cover.position
+					return i != mi || j != mj
+				})
         cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
       } else if (mi > 0 && mi + 1 < cur_level.w && mj > 0 && mj + 1 < cur_level.h) {
         if (wasKeyPressed('1')) {
@@ -2652,6 +2679,26 @@ function draw (timestamp) {
           cur_level.geo[mj][mi] = '.'
           cur_level.paintBlobs.push(new PropertyHistory(true, 3, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('C1')) { // hole covers
+          cur_level.geo[mj][mi] = '.'
+					cur_level.holes.push([mi, mj])
+          cur_level.holeCovers.push(new PropertyHistory(true, 0, extra = true_timeline_undos.length))
+          cur_level.holeCovers.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('C2')) {
+          cur_level.geo[mj][mi] = '.'
+					cur_level.holes.push([mi, mj])
+          cur_level.holeCovers.push(new PropertyHistory(true, 1, extra = true_timeline_undos.length))
+          cur_level.holeCovers.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('C3')) {
+          cur_level.geo[mj][mi] = '.'
+					cur_level.holes.push([mi, mj])
+          cur_level.holeCovers.push(new PropertyHistory(true, 2, extra = true_timeline_undos.length))
+          cur_level.holeCovers.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('C4')) {
+          cur_level.geo[mj][mi] = '.'
+					cur_level.holes.push([mi, mj])
+          cur_level.holeCovers.push(new PropertyHistory(true, 3, extra = true_timeline_undos.length))
+          cur_level.holeCovers.at(-1).position = [mi, mj]
         }
       }
     }
@@ -2761,6 +2808,10 @@ function keyMap (e) {
   if (e.shiftKey && e.code === 'Digit2') return 'B2'
   if (e.shiftKey && e.code === 'Digit3') return 'B3'
   if (e.shiftKey && e.code === 'Digit4') return 'B4'
+	if (e.altKey && e.code === 'Digit1') return 'C1'
+  if (e.altKey && e.code === 'Digit2') return 'C2'
+  if (e.altKey && e.code === 'Digit3') return 'C3'
+  if (e.altKey && e.code === 'Digit4') return 'C4'
 	if (e.ctrlKey || e.altKey || e.shiftKey) return '.'
   // use key.code if key location is important
   if (e.key === "Escape") return 'Escape'
