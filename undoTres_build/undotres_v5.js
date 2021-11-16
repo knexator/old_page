@@ -1404,7 +1404,7 @@ function neutralTurn (level) {
     paintBlob.inmune.push(paintBlob.inmune.at(-1))
   });
 
-  fallFlying(level)
+  fallFlying(level, 0)
 }
 
 function isWon (level) {
@@ -2117,11 +2117,12 @@ function getKeyRetriggerTime (key) {
   return Infinity
 }
 
-function fallFlying (level) {
+function fallFlying (level, undo_level) {
   // drop crates over holes
   let flying_crates = level.crates.filter(crate => {
     let [ci, cj] = crate.history.at(-1)
-    return openHoleAt(level, ci, cj)
+		let inmunity = crate.inmune_history.at(-1)
+    return openHoleAt(level, ci, cj) && inmunity >= undo_level
     // return !crate.inHole.get() &&
   })
   // console.log('flying crates: ', flying_crates);
@@ -2349,7 +2350,7 @@ function draw (timestamp) {
               }
             })
 
-            fallFlying(cur_level)
+            fallFlying(cur_level, cur_undo)
 
             if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
               let boxes_moved = cur_level.crates.some(crate => {
