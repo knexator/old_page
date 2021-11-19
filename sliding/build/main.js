@@ -140,19 +140,22 @@
     }
     initOnce();
     function pushTopTile(i, j, di, dj) {
-        if (i < 0 || i > 3 || j < 0 || j > 3) return false;
+        if (i < 0 || i > 3 || j < 0 || j > 3)
+            return false;
+        if (i + di < 0 || i + di > 3 || j + dj < 0 || j + dj > 3)
+            return false;
         if (board_1[j][i] === 0)
             return false;
         if (board_1[j + dj][i + di] !== 0) {
-        // Don't allow pushing
-        //     return;
-          if (!pushTopTile(i+di, j+dj, di, dj)) {
-            return false
-          }
+            // Don't allow pushing
+            //     return;
+            if (!pushTopTile(i + di, j + dj, di, dj)) {
+                return false;
+            }
         }
         board_1[j + dj][i + di] = board_1[j][i];
         board_1[j][i] = 0;
-        return true
+        return true;
     }
     function drawRect(i, j, id) {
         if (!sprites)

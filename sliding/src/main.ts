@@ -10,9 +10,9 @@ let sprites: any[];
 let global_texture = new PintarJS.Texture("texture.png", () => {
   let _4x4 = new PintarJS.Point(4, 4)
   sprites = [];
-  for (let k=0; k<16; k++) {
+  for (let k = 0; k < 16; k++) {
     let cur = new PintarJS.Sprite(global_texture)
-    cur.setSourceFromSpritesheet(new PintarJS.Point(k%4, Math.floor(k/4)), _4x4);
+    cur.setSourceFromSpritesheet(new PintarJS.Point(k % 4, Math.floor(k / 4)), _4x4);
     sprites.push(cur)
   }
 });
@@ -81,24 +81,24 @@ function update(curTime: number) {
 
     } else {
       if (di > 0) {
-        pushTopTile(moving_i + 1, moving_j,     di, 0)
+        pushTopTile(moving_i + 1, moving_j, di, 0)
         pushTopTile(moving_i + 1, moving_j + 1, di, 0)
-        pushTopTile(moving_i, moving_j,     di, 0)
+        pushTopTile(moving_i, moving_j, di, 0)
         pushTopTile(moving_i, moving_j + 1, di, 0)
       } else if (di < 0) {
-        pushTopTile(moving_i, moving_j,     di, 0)
+        pushTopTile(moving_i, moving_j, di, 0)
         pushTopTile(moving_i, moving_j + 1, di, 0)
-        pushTopTile(moving_i + 1, moving_j,     di, 0)
+        pushTopTile(moving_i + 1, moving_j, di, 0)
         pushTopTile(moving_i + 1, moving_j + 1, di, 0)
       } else if (dj > 0) {
-        pushTopTile(moving_i, moving_j + 1,     0, dj)
+        pushTopTile(moving_i, moving_j + 1, 0, dj)
         pushTopTile(moving_i + 1, moving_j + 1, 0, dj)
-        pushTopTile(moving_i, moving_j,     0, dj)
+        pushTopTile(moving_i, moving_j, 0, dj)
         pushTopTile(moving_i + 1, moving_j, 0, dj)
       } else if (dj < 0) {
-        pushTopTile(moving_i, moving_j,     0, dj)
+        pushTopTile(moving_i, moving_j, 0, dj)
         pushTopTile(moving_i + 1, moving_j, 0, dj)
-        pushTopTile(moving_i, moving_j + 1,     0, dj)
+        pushTopTile(moving_i, moving_j + 1, 0, dj)
         pushTopTile(moving_i + 1, moving_j + 1, 0, dj)
       } else {
         console.log("terrible error")
@@ -142,11 +142,20 @@ function update(curTime: number) {
 initOnce()
 
 function pushTopTile(i, j, di, dj) {
-  if (board_1[j][i] === 0) return
-  // Don't allow pushing
-  if (board_1[j + dj][i + di] !== 0) return
-  board_1[j + dj][i + di] = board_1[j][i]
-  board_1[j][i] = 0
+  if (i < 0 || i > 3 || j < 0 || j > 3) return false;
+  if (i + di < 0 || i + di > 3 || j + dj < 0 || j + dj > 3) return false;
+  if (board_1[j][i] === 0)
+    return false;
+  if (board_1[j + dj][i + di] !== 0) {
+    // Don't allow pushing
+    //     return;
+    if (!pushTopTile(i + di, j + dj, di, dj)) {
+      return false
+    }
+  }
+  board_1[j + dj][i + di] = board_1[j][i];
+  board_1[j][i] = 0;
+  return true
 }
 
 function drawRect(i: number, j: number, id: number) {
@@ -157,7 +166,7 @@ function drawRect(i: number, j: number, id: number) {
 
   let spr = sprites[id]
   spr.position = new PintarJS.Point(OFF_X + i * TILE_SIZE, OFF_Y + j * TILE_SIZE)
-  spr.scale = new PintarJS.Point(TILE_SIZE/32, TILE_SIZE/32)
+  spr.scale = new PintarJS.Point(TILE_SIZE / 32, TILE_SIZE / 32)
   pintar.drawSprite(spr);
 
   /*let color = (id < 9) ? PintarJS.Color.red() : PintarJS.Color.green()
