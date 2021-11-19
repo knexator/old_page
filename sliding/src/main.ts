@@ -63,10 +63,14 @@ let board_1: number[][];
 let hole_i: number;
 let hole_j: number;*/
 let game_history: any[];
+let anim_t: number;
+let input_queue: any[];
 
 // Called when game is reset
 function init() {
   game_history = [startingState()]
+  anim_t = 0
+  input_queue = []
 }
 
 // Called every frame
@@ -74,48 +78,94 @@ function update(curTime: number) {
   engine_pre_update(curTime)
   // ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  let di = 0;
-  let dj = 0;
-  if (wasKeyPressed('d')) di += 1
-  if (wasKeyPressed('a')) di -= 1
-  if (wasKeyPressed('s')) dj += 1
-  if (wasKeyPressed('w')) dj -= 1
-
-  let new_state = applyInput(di, dj, game_history[game_history.length - 1])
-  if (new_state !== false) {
-    game_history.push(new_state)
-    // [hole_i, hole_j, board_0, board_1] = new_state
+  for (let n=0; n<6; n++) {
+    if (wasKeyPressed('wasdzr'[n])) input_queue.push('wasdzr'[n])
   }
 
-  if (wasKeyPressed('z') && game_history.length > 1) {
-    game_history.pop()
-  }
-  if (wasKeyPressed('r')) {
-    game_history.push(startingState())
-  }
+  if (anim_t > 0) {
+    anim_t -= delta_time * 0.02
+    if (anim_t < 0) anim_t = 0
+    let cur_state = game_history[game_history.length - 1]
+    let prev_state = game_history[game_history.length - 2]
 
-  let cur_state = game_history[game_history.length - 1]
+    // drawing
+    pintar.startFrame();
 
-  // drawing
-  pintar.startFrame();
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        let cur_tile = cur_state[2][j][i]
+        if (cur_tile === 0) continue
+        if (cur_tile === prev_state[2][j][i]) {
+          drawRect(i, j, cur_tile)
+        } else {
+          let [prev_i, prev_j] = find_tile(prev_state[2], cur_tile)
+          drawRect(lerp(i, prev_i, anim_t), lerp(j, prev_j, anim_t), cur_tile)
+        }
+      }
+    }
 
-  for (let j = 0; j < 3; j++) {
-    for (let i = 0; i < 3; i++) {
-      let cur = cur_state[2][j][i]
-      if (cur === 0) continue
-      drawRect(i, j, cur)
+    for (let j = 0; j < 4; j++) {
+      for (let i = 0; i < 4; i++) {
+        let cur_tile = cur_state[3][j][i]
+        if (cur_tile === 0) continue
+        if (cur_tile === prev_state[3][j][i]) {
+          drawRect(i - .5, j - .5, cur_tile)
+        } else {
+          let [prev_i, prev_j] = find_tile(prev_state[3], cur_tile)
+          drawRect(lerp(i, prev_i, anim_t) - .5, lerp(j, prev_j, anim_t) - .5, cur_tile)
+        }
+      }
+    }
+
+    pintar.endFrame();
+  } else {
+    let cur_state = game_history[game_history.length - 1]
+
+    // drawing
+    pintar.startFrame();
+
+    for (let j = 0; j < 3; j++) {
+      for (let i = 0; i < 3; i++) {
+        let cur = cur_state[2][j][i]
+        if (cur === 0) continue
+        drawRect(i, j, cur)
+      }
+    }
+
+    for (let j = 0; j < 4; j++) {
+      for (let i = 0; i < 4; i++) {
+        let cur = cur_state[3][j][i]
+        if (cur === 0) continue
+        drawRect(i - .5, j - .5, cur)
+      }
+    }
+
+    pintar.endFrame();
+
+    if (input_queue.length > 0) {
+      let cur_input = input_queue.shift()
+      let di = 0;
+      let dj = 0;
+      if (cur_input == 'd') di += 1
+      if (cur_input == 'a') di -= 1
+      if (cur_input == 's') dj += 1
+      if (cur_input == 'w') dj -= 1
+
+      let new_state = applyInput(di, dj, game_history[game_history.length - 1])
+      if (new_state !== false) {
+        game_history.push(new_state)
+        anim_t = 1
+        // [hole_i, hole_j, board_0, board_1] = new_state
+      }
+
+      if (cur_input == 'z' && game_history.length > 1) {
+        game_history.pop()
+      }
+      if (cur_input == 'r') {
+        game_history.push(startingState())
+      }
     }
   }
-
-  for (let j = 0; j < 4; j++) {
-    for (let i = 0; i < 4; i++) {
-      let cur = cur_state[3][j][i]
-      if (cur === 0) continue
-      drawRect(i - .5, j - .5, cur)
-    }
-  }
-
-  pintar.endFrame();
 
 
 
@@ -134,6 +184,15 @@ initOnce()
 //   if (new_stuff) stuff = new_stuff
 // }
 // solve(stuff)
+
+function find_tile(prev_state, cur_tile) {
+  for (let j=0; j<prev_state.length; j++) {
+    for (let i=0; i<prev_state[0].length; i++) {
+      if (prev_state[j][i] === cur_tile) return [i,j]
+    }
+  }
+  return [-1,-1]
+}
 
 function pushTopTile(board_1, i, j, di, dj) {
   if (i < 0 || i > 3 || j < 0 || j > 3) return false;
