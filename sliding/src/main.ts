@@ -17,25 +17,13 @@ let global_texture = new PintarJS.Texture("texture.png", () => {
   }
 });
 
-// Called when loading the page
-function initOnce() {
-  init();
-  window.requestAnimationFrame(update);
-}
-
-let board_0: number[][];
-let board_1: number[][];
-let hole_i: number;
-let hole_j: number;
-
-// Called when game is reset
-function init() {
+function startingState() {
   let next_id = 1;
 
-  hole_i = 2;
-  hole_j = 2;
+  let hole_i = 2;
+  let hole_j = 2;
 
-  board_0 = [];
+  let board_0 = [];
   for (let j = 0; j < 3; j++) {
     let row = []
     for (let i = 0; i < 3; i++) {
@@ -48,7 +36,7 @@ function init() {
     board_0.push(row)
   }
 
-  board_1 = [];
+  let board_1 = [];
   for (let j = 0; j < 4; j++) {
     let row = []
     for (let i = 0; i < 4; i++) {
@@ -60,6 +48,25 @@ function init() {
   board_1[1][2] = next_id++
   board_1[2][1] = next_id++
   board_1[2][2] = next_id++
+
+  return [hole_i, hole_j, board_0, board_1]
+}
+
+// Called when loading the page
+function initOnce() {
+  init();
+  window.requestAnimationFrame(update);
+}
+
+/*let board_0: number[][];
+let board_1: number[][];
+let hole_i: number;
+let hole_j: number;*/
+let game_history: any[];
+
+// Called when game is reset
+function init() {
+  game_history = [startingState()]
 }
 
 // Called every frame
@@ -74,50 +81,27 @@ function update(curTime: number) {
   if (wasKeyPressed('s')) dj += 1
   if (wasKeyPressed('w')) dj -= 1
 
-  if (di !== 0 || dj !== 0) {
-    let moving_i = hole_i - di
-    let moving_j = hole_j - dj
-    if (moving_i < 0 || moving_i > 2 || moving_j < 0 || moving_j > 2) {
-
-    } else {
-      if (di > 0) {
-        pushTopTile(moving_i + 1, moving_j, di, 0)
-        pushTopTile(moving_i + 1, moving_j + 1, di, 0)
-        pushTopTile(moving_i, moving_j, di, 0)
-        pushTopTile(moving_i, moving_j + 1, di, 0)
-      } else if (di < 0) {
-        pushTopTile(moving_i, moving_j, di, 0)
-        pushTopTile(moving_i, moving_j + 1, di, 0)
-        pushTopTile(moving_i + 1, moving_j, di, 0)
-        pushTopTile(moving_i + 1, moving_j + 1, di, 0)
-      } else if (dj > 0) {
-        pushTopTile(moving_i, moving_j + 1, 0, dj)
-        pushTopTile(moving_i + 1, moving_j + 1, 0, dj)
-        pushTopTile(moving_i, moving_j, 0, dj)
-        pushTopTile(moving_i + 1, moving_j, 0, dj)
-      } else if (dj < 0) {
-        pushTopTile(moving_i, moving_j, 0, dj)
-        pushTopTile(moving_i + 1, moving_j, 0, dj)
-        pushTopTile(moving_i, moving_j + 1, 0, dj)
-        pushTopTile(moving_i + 1, moving_j + 1, 0, dj)
-      } else {
-        console.log("terrible error")
-      }
-
-
-      board_0[hole_j][hole_i] = board_0[moving_j][moving_i]
-      board_0[moving_j][moving_i] = 0
-      hole_i = moving_i
-      hole_j = moving_j
-    }
+  let new_state = applyInput(di, dj, game_history[game_history.length - 1])
+  if (new_state !== false) {
+    game_history.push(new_state)
+    // [hole_i, hole_j, board_0, board_1] = new_state
   }
+
+  if (wasKeyPressed('z') && game_history.length > 1) {
+    game_history.pop()
+  }
+  if (wasKeyPressed('r')) {
+    game_history.push(startingState())
+  }
+
+  let cur_state = game_history[game_history.length - 1]
 
   // drawing
   pintar.startFrame();
 
   for (let j = 0; j < 3; j++) {
     for (let i = 0; i < 3; i++) {
-      let cur = board_0[j][i]
+      let cur = cur_state[2][j][i]
       if (cur === 0) continue
       drawRect(i, j, cur)
     }
@@ -125,7 +109,7 @@ function update(curTime: number) {
 
   for (let j = 0; j < 4; j++) {
     for (let i = 0; i < 4; i++) {
-      let cur = board_1[j][i]
+      let cur = cur_state[3][j][i]
       if (cur === 0) continue
       drawRect(i - .5, j - .5, cur)
     }
@@ -141,7 +125,17 @@ function update(curTime: number) {
 
 initOnce()
 
-function pushTopTile(i, j, di, dj) {
+// let stuff = startingState()
+// let dis = [1, 0, -1, 0];
+// let djs = [0, 1, 0, -1];
+// for (let n=0; n<50; n++) {
+//   let k = Math.floor(Math.random() * 4)
+//   let new_stuff = applyInput(dis[k], djs[k], stuff)
+//   if (new_stuff) stuff = new_stuff
+// }
+// solve(stuff)
+
+function pushTopTile(board_1, i, j, di, dj) {
   if (i < 0 || i > 3 || j < 0 || j > 3) return false;
   if (i + di < 0 || i + di > 3 || j + dj < 0 || j + dj > 3) return false;
   if (board_1[j][i] === 0)
@@ -149,13 +143,55 @@ function pushTopTile(i, j, di, dj) {
   if (board_1[j + dj][i + di] !== 0) {
     // Don't allow pushing
     //     return;
-    if (!pushTopTile(i + di, j + dj, di, dj)) {
+    if (!pushTopTile(board_1, i + di, j + dj, di, dj)) {
       return false
     }
   }
   board_1[j + dj][i + di] = board_1[j][i];
   board_1[j][i] = 0;
   return true
+}
+
+function applyInput(di, dj, [hole_i, hole_j, board_0, board_1]) {
+  if (di !== 0 || dj !== 0) {
+    let moving_i = hole_i - di
+    let moving_j = hole_j - dj
+    if (moving_i < 0 || moving_i > 2 || moving_j < 0 || moving_j > 2) {
+      return false
+    }
+    let new_board_0 = JSON.parse(JSON.stringify(board_0))
+    let new_board_1 = JSON.parse(JSON.stringify(board_1))
+    if (di > 0) {
+      pushTopTile(new_board_1, moving_i + 1, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, di, 0)
+      pushTopTile(new_board_1, moving_i, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i, moving_j + 1, di, 0)
+    } else if (di < 0) {
+      pushTopTile(new_board_1, moving_i, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i, moving_j + 1, di, 0)
+      pushTopTile(new_board_1, moving_i + 1, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, di, 0)
+    } else if (dj > 0) {
+      pushTopTile(new_board_1, moving_i, moving_j + 1, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, 0, dj)
+      pushTopTile(new_board_1, moving_i, moving_j, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j, 0, dj)
+    } else if (dj < 0) {
+      pushTopTile(new_board_1, moving_i, moving_j, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j, 0, dj)
+      pushTopTile(new_board_1, moving_i, moving_j + 1, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, 0, dj)
+    } else {
+      console.log("terrible error")
+    }
+    new_board_0[hole_j][hole_i] = new_board_0[moving_j][moving_i]
+    new_board_0[moving_j][moving_i] = 0
+    hole_i = moving_i
+    hole_j = moving_j
+    return [hole_i, hole_j, new_board_0, new_board_1]
+  } else {
+    return false
+  }
 }
 
 function drawRect(i: number, j: number, id: number) {
@@ -175,6 +211,31 @@ function drawRect(i: number, j: number, id: number) {
       new PintarJS.Point(i * TILE_SIZE + OFF_X, j * TILE_SIZE + OFF_Y),
       new PintarJS.Point(TILE_SIZE * 0.9, TILE_SIZE * 0.9),
       color, null, true));*/
+}
+
+function solve(state) {
+  let dis = [1, 0, -1, 0];
+  let djs = [0, 1, 0, -1];
+  let goal_state = JSON.stringify(startingState())
+  let visited_states = [JSON.stringify(state)]
+  let pending_states = [visited_states[0]]
+  while (pending_states.length > 0) {
+    let cur_state = JSON.parse(pending_states.shift()!)
+    for (let k=0; k<4; k++) {
+      let child_state = applyInput(dis[k], djs[k], cur_state)
+      if (child_state === false) continue
+      let child_state_str = JSON.stringify(child_state)
+      if (visited_states.indexOf(child_state_str) === -1) {
+        visited_states.push(child_state_str)
+        pending_states.push(child_state_str)
+        if (child_state_str === goal_state) {
+          console.log("DONE!")
+          return
+        }
+      }
+    }
+    if (visited_states.length % 1000 === 0) console.log("still alive")
+  }
 }
 
 function lerp(a: number, b: number, t: number): number {
