@@ -300,3 +300,10 @@ function solve(state) {
 function lerp(a: number, b: number, t: number): number {
   return a * (1 - t) + b * t
 }
+
+document.addEventListener('swiped', function (e) {
+  const dir2key = { 'left': 'a', 'right': 'd', 'up': 'w', 'down': 's' }
+  let key = dir2key[e.detail.dir]
+  input_queue.push(key)
+  // alert(e.detail.dir); // swipe direction
+})
