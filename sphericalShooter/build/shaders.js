@@ -9,13 +9,28 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.fs = exports.vs = void 0;
-    exports.vs = `attribute vec4 position;
+    exports.fs2 = exports.vs2 = exports.fs = exports.vs = void 0;
+    exports.vs = `\
+uniform mat4 u_projection;
+uniform mat4 u_viewInverse;
+
+attribute vec4 position;
+
+void main() {
+  gl_Position = u_projection * u_viewInverse * position;
+}`;
+    exports.fs = `\
+precision mediump float;
+
+void main() {
+  gl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0 );
+}`;
+    exports.vs2 = `attribute vec4 position;
 
 void main() {
   gl_Position = position;
 }`;
-    exports.fs = `precision mediump float;
+    exports.fs2 = `precision mediump float;
 
 uniform vec2 resolution;
 uniform float time;

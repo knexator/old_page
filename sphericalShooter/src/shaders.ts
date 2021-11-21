@@ -1,10 +1,27 @@
-export const vs = `attribute vec4 position;
+export const vs = `\
+uniform mat4 u_projection;
+uniform mat4 u_viewInverse;
+
+attribute vec4 position;
+
+void main() {
+  gl_Position = u_projection * u_viewInverse * position;
+}`;
+
+export const fs = `\
+precision mediump float;
+
+void main() {
+  gl_FragColor = vec4( 1.0, 0.0, 0.0, 1.0 );
+}`;
+
+export const vs2 = `attribute vec4 position;
 
 void main() {
   gl_Position = position;
 }`;
 
-export const fs = `precision mediump float;
+export const fs2 = `precision mediump float;
 
 uniform vec2 resolution;
 uniform float time;
