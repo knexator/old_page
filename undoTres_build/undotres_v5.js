@@ -2156,6 +2156,15 @@ function movesBackToEntrance (level, pi, pj, cur_di, cur_dj) {
   return pi == si && pj == sj && cur_di == -level.enter[0] && cur_dj == -level.enter[1]
 }
 
+function weightOnTile (level, tick, i, j) {
+	let [pi, pj] = level.player.history[tick]
+	if (pi === i && pj === j) return true;
+	return level.crates.some(crate => {
+		let [ci, cj] = crate.history[tick];
+		return ci === i && cj === j;
+	})
+}
+
 function draw (timestamp) {
   if (!last_t) last_t = timestamp
   globalT += timestamp - last_t
@@ -2353,8 +2362,20 @@ function draw (timestamp) {
                 holeCover.inmune[real_tick] = holeCover.inmune[holeCover_tick] // unchecked
                 holeCover.value[real_tick] = holeCover.value[holeCover_tick] // unchecked
               } else {
+								// original move for the hole
                 holeCover.inmune[real_tick] = holeCover.inmune[real_tick - 1] // unchecked
-                holeCover.value[real_tick] = holeCover.value[real_tick - 1]
+								if (holeCover.value[real_tick - 1]) {
+									// hole might break
+									let [hi, hj] = holeCover.position
+									if (weightOnTile(cur_level, real_tick-1, hi, hj) && !weightOnTile(cur_level, real_tick, hi, hj)) {
+										// hole broke!
+										holeCover.value[real_tick] = false
+									} else {
+										holeCover.value[real_tick] = true
+									}
+								} else { // hole is already broken
+									holeCover.value[real_tick] = false
+								}
               }
             })
 
