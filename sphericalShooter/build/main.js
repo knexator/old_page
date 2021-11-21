@@ -65,6 +65,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const projNear = (0, math_1.projMat)(z0, true);
     const projFar = (0, math_1.projMat)(z0, false);
     let viewInverse = (0, math_1.identity)();
+    let farviewInverse = (0, math_1.identity)();
     // Called when loading the page
     function initOnce() {
         init();
@@ -72,48 +73,47 @@ var __importStar = (this && this.__importStar) || function (mod) {
     }
     // Called when game is reset
     function init() {
-        console.log(projNear);
-        console.log(projFar);
     }
     // Called every frame
     function update(curTime) {
         (0, engine_1.engine_pre_update)(curTime);
         // rotate -z into w, a positive distance (go forward)
         if ((0, engine_1.isKeyDown)('w'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 2, 3), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 2, 3), viewInverse, viewInverse);
         // rotate z into w, a positive distance (go backward)
         if ((0, engine_1.isKeyDown)('s'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 2, 3), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 2, 3), viewInverse, viewInverse);
         // rotate x into w, a positive distance (go right)
         if ((0, engine_1.isKeyDown)('d'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 3), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 3), viewInverse, viewInverse);
         // rotate -x into w, a positive distance (go left)
         if ((0, engine_1.isKeyDown)('a'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 0, 3), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 0, 3), viewInverse, viewInverse);
         // rotate y into w, a positive distance (go up)
         if ((0, engine_1.isKeyDown)('e'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 1, 3), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 1, 3), viewInverse, viewInverse);
         // rotate -y into w, a positive distance (go up)
         if ((0, engine_1.isKeyDown)('q'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 1, 3), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 1, 3), viewInverse, viewInverse);
         // rotate y into -z, a positive distance (look up)
         if ((0, engine_1.isKeyDown)('i'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 1, 2), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 1, 2), viewInverse, viewInverse);
         // rotate y into z, a positive distance (look down)
         if ((0, engine_1.isKeyDown)('k'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 1, 2), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 1, 2), viewInverse, viewInverse);
         // rotate x into -z, a positive distance (look right)
         if ((0, engine_1.isKeyDown)('l'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 0, 2), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(-0.001 * engine_1.delta_time, 0, 2), viewInverse, viewInverse);
         // rotate x into z, a positive distance (look left)
         if ((0, engine_1.isKeyDown)('j'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 2), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 2), viewInverse, viewInverse);
         // rotate y into x, a positive distance (roll left)
         if ((0, engine_1.isKeyDown)('u'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 1, 0), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 1, 0), viewInverse, viewInverse);
         // rotate x into y, a positive distance (roll right)
         if ((0, engine_1.isKeyDown)('o'))
-            viewInverse = (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 1), viewInverse);
+            (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 1), viewInverse, viewInverse);
+        (0, math_1.multMatMat)((0, math_1.pureRot)(Math.PI, 2, 3), viewInverse, farviewInverse);
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         const uniforms = {
@@ -128,7 +128,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
         twgl.drawBufferInfo(gl, bufferInfo);
         twgl.setUniforms(programInfo, {
             u_projection: projFar,
-            u_viewInverse: (0, math_1.multMatMat)((0, math_1.pureRot)(Math.PI, 2, 3), viewInverse),
+            u_viewInverse: farviewInverse,
         });
         twgl.drawBufferInfo(gl, bufferInfo);
         (0, engine_1.engine_post_update)();

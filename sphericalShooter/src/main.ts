@@ -41,6 +41,7 @@ const projNear = projMat(z0, true)
 const projFar = projMat(z0, false)
 
 let viewInverse = identity();
+let farviewInverse = identity();
 
 // Called when loading the page
 function initOnce() {
@@ -50,8 +51,7 @@ function initOnce() {
 
 // Called when game is reset
 function init() {
-  console.log(projNear)
-  console.log(projFar)
+
 }
 
 // Called every frame
@@ -59,34 +59,36 @@ function update(curTime: number) {
   engine_pre_update(curTime)
 
   // rotate -z into w, a positive distance (go forward)
-  if (isKeyDown('w')) viewInverse = multMatMat(pureRot(-0.001 * delta_time, 2, 3), viewInverse)
+  if (isKeyDown('w')) multMatMat(pureRot(-0.001 * delta_time, 2, 3), viewInverse, viewInverse)
   // rotate z into w, a positive distance (go backward)
-  if (isKeyDown('s')) viewInverse = multMatMat(pureRot( 0.001 * delta_time, 2, 3), viewInverse)
+  if (isKeyDown('s')) multMatMat(pureRot( 0.001 * delta_time, 2, 3), viewInverse, viewInverse)
 
   // rotate x into w, a positive distance (go right)
-  if (isKeyDown('d')) viewInverse = multMatMat(pureRot( 0.001 * delta_time, 0, 3), viewInverse)
+  if (isKeyDown('d')) multMatMat(pureRot( 0.001 * delta_time, 0, 3), viewInverse, viewInverse)
   // rotate -x into w, a positive distance (go left)
-  if (isKeyDown('a')) viewInverse = multMatMat(pureRot(-0.001 * delta_time, 0, 3), viewInverse)
+  if (isKeyDown('a')) multMatMat(pureRot(-0.001 * delta_time, 0, 3), viewInverse, viewInverse)
 
   // rotate y into w, a positive distance (go up)
-  if (isKeyDown('e')) viewInverse = multMatMat(pureRot( 0.001 * delta_time, 1, 3), viewInverse)
+  if (isKeyDown('e')) multMatMat(pureRot( 0.001 * delta_time, 1, 3), viewInverse, viewInverse)
   // rotate -y into w, a positive distance (go up)
-  if (isKeyDown('q')) viewInverse = multMatMat(pureRot(-0.001 * delta_time, 1, 3), viewInverse)
+  if (isKeyDown('q')) multMatMat(pureRot(-0.001 * delta_time, 1, 3), viewInverse, viewInverse)
 
   // rotate y into -z, a positive distance (look up)
-  if (isKeyDown('i')) viewInverse = multMatMat(pureRot(-0.001 * delta_time, 1, 2), viewInverse)
+  if (isKeyDown('i')) multMatMat(pureRot(-0.001 * delta_time, 1, 2), viewInverse, viewInverse)
   // rotate y into z, a positive distance (look down)
-  if (isKeyDown('k')) viewInverse = multMatMat(pureRot( 0.001 * delta_time, 1, 2), viewInverse)
+  if (isKeyDown('k')) multMatMat(pureRot( 0.001 * delta_time, 1, 2), viewInverse, viewInverse)
 
   // rotate x into -z, a positive distance (look right)
-  if (isKeyDown('l')) viewInverse = multMatMat(pureRot(-0.001 * delta_time, 0, 2), viewInverse)
+  if (isKeyDown('l')) multMatMat(pureRot(-0.001 * delta_time, 0, 2), viewInverse, viewInverse)
   // rotate x into z, a positive distance (look left)
-  if (isKeyDown('j')) viewInverse = multMatMat(pureRot( 0.001 * delta_time, 0, 2), viewInverse)
+  if (isKeyDown('j')) multMatMat(pureRot( 0.001 * delta_time, 0, 2), viewInverse, viewInverse)
 
   // rotate y into x, a positive distance (roll left)
-  if (isKeyDown('u')) viewInverse = multMatMat(pureRot( 0.001 * delta_time, 1, 0), viewInverse)
+  if (isKeyDown('u')) multMatMat(pureRot( 0.001 * delta_time, 1, 0), viewInverse, viewInverse)
   // rotate x into y, a positive distance (roll right)
-  if (isKeyDown('o')) viewInverse = multMatMat(pureRot( 0.001 * delta_time, 0, 1), viewInverse)
+  if (isKeyDown('o')) multMatMat(pureRot( 0.001 * delta_time, 0, 1), viewInverse, viewInverse)
+
+  multMatMat(pureRot(Math.PI, 2, 3), viewInverse, farviewInverse)
 
   twgl.resizeCanvasToDisplaySize(gl.canvas);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -104,7 +106,7 @@ function update(curTime: number) {
   twgl.drawBufferInfo(gl, bufferInfo);
   twgl.setUniforms(programInfo, {
     u_projection: projFar,
-    u_viewInverse: multMatMat(pureRot(Math.PI, 2, 3), viewInverse),
+    u_viewInverse: farviewInverse,
   });
   twgl.drawBufferInfo(gl, bufferInfo);
 
