@@ -33,8 +33,20 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const twgl = __importStar(require("./twgl"));
     const shaders_1 = require("./shaders");
     const math_1 = require("./math");
-    const gl = document.querySelector('canvas').getContext("webgl");
-    const programInfo = twgl.createProgramInfo(gl, [shaders_1.vs, shaders_1.fs]);
+    const gl = document.querySelector('canvas').getContext("webgl2");
+    // Passing in attribute names binds attribute location by index
+    // In WebGL 2 we can also assign locations in GLSL (not sure which is better. This is global)
+    //
+    // We need to do this to make sure attirbute locations are consistent across
+    // programs of else we'd need one vertex array object per program+bufferInfo combination
+    const attributes = [
+        "a_position",
+        "a_color",
+        // "a_normal",
+        // "a_texcoord",
+    ];
+    const debugUnlitProgramInfo = twgl.createProgramInfo(gl, [shaders_1.vs, shaders_1.fs], attributes);
+    const programInfos = [debugUnlitProgramInfo];
     const arrays = {
         a_position: {
             numComponents: 4,
@@ -61,6 +73,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
         }
     };
     const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+    const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
     const z0 = 0.01;
     const projNear = (0, math_1.projMat)(z0, true);
     const projFar = (0, math_1.projMat)(z0, false);
@@ -116,17 +129,21 @@ var __importStar = (this && this.__importStar) || function (mod) {
         (0, math_1.multMatMat)((0, math_1.pureRot)(Math.PI, 2, 3), viewInverse, farviewInverse);
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-        const uniforms = {
+        const commonUniforms = {
             time: engine_1.game_time * 0.001,
             resolution: [gl.canvas.width, gl.canvas.height],
-            u_projection: projNear,
-            u_viewInverse: viewInverse,
         };
-        gl.useProgram(programInfo.program);
-        twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-        twgl.setUniforms(programInfo, uniforms);
+        gl.useProgram(debugUnlitProgramInfo.program);
+        twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
+        twgl.setUniforms(debugUnlitProgramInfo, commonUniforms);
+        // Draw near hemisphere
+        twgl.setUniforms(debugUnlitProgramInfo, {
+            u_projection: projFar,
+            u_viewInverse: viewInverse,
+        });
         twgl.drawBufferInfo(gl, bufferInfo);
-        twgl.setUniforms(programInfo, {
+        // Draw far hemisphere
+        twgl.setUniforms(debugUnlitProgramInfo, {
             u_projection: projFar,
             u_viewInverse: farviewInverse,
         });

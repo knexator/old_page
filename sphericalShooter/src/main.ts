@@ -5,9 +5,21 @@ import { vs, fs } from './shaders'
 import { Matrix4, Vec4, projMat, identity, multMatVec, pureRot, multMatMat } from './math';
 
 
-const gl = document.querySelector('canvas')!.getContext("webgl")!;
+const gl = document.querySelector('canvas')!.getContext("webgl2")!;
 
-const programInfo = twgl.createProgramInfo(gl, [vs, fs]);
+// Passing in attribute names binds attribute location by index
+// In WebGL 2 we can also assign locations in GLSL (not sure which is better. This is global)
+//
+// We need to do this to make sure attirbute locations are consistent across
+// programs of else we'd need one vertex array object per program+bufferInfo combination
+const attributes = [
+  "a_position",
+  "a_color",
+  // "a_normal",
+  // "a_texcoord",
+];
+const debugUnlitProgramInfo = twgl.createProgramInfo(gl, [vs, fs], attributes);
+const programInfos = [debugUnlitProgramInfo];
 
 const arrays = {
   a_position: {
@@ -35,6 +47,7 @@ const arrays = {
   }
 };
 const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
 
 const z0 = 0.01
 const projNear = projMat(z0, true)
@@ -93,18 +106,24 @@ function update(curTime: number) {
   twgl.resizeCanvasToDisplaySize(gl.canvas);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
-  const uniforms = {
+  const commonUniforms = {
     time: game_time * 0.001,
     resolution: [gl.canvas.width, gl.canvas.height],
-    u_projection: projNear,
-    u_viewInverse: viewInverse,
   };
 
-  gl.useProgram(programInfo.program);
-  twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
-  twgl.setUniforms(programInfo, uniforms);
+  gl.useProgram(debugUnlitProgramInfo.program);
+  twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
+
+  twgl.setUniforms(debugUnlitProgramInfo, commonUniforms);
+
+  // Draw near hemisphere
+  twgl.setUniforms(debugUnlitProgramInfo, {
+    u_projection: projFar,
+    u_viewInverse: viewInverse,
+  });
   twgl.drawBufferInfo(gl, bufferInfo);
-  twgl.setUniforms(programInfo, {
+  // Draw far hemisphere
+  twgl.setUniforms(debugUnlitProgramInfo, {
     u_projection: projFar,
     u_viewInverse: farviewInverse,
   });
