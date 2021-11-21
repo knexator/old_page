@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "./engine", "./../external/twgl-full", "./shaders", "./math"], factory);
+        define(["require", "exports", "./engine", "./../external/twgl-full", "./shaders", "./math", "./geometry"], factory);
     }
 })(function (require, exports) {
     "use strict";
@@ -33,7 +33,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const twgl = __importStar(require("./../external/twgl-full"));
     const shaders_1 = require("./shaders");
     const math_1 = require("./math");
+    const geometry_1 = require("./geometry");
+    twgl.setDefaults({ attribPrefix: "a_" });
     const gl = document.querySelector('canvas').getContext("webgl2");
+    gl.enable(gl.DEPTH_TEST);
     // Passing in attribute names binds attribute location by index
     // In WebGL 2 we can also assign locations in GLSL (not sure which is better. This is global)
     //
@@ -70,22 +73,24 @@ var __importStar = (this && this.__importStar) || function (mod) {
                 255, 255,
             ],
         },
-        a_color: {
-            numComponents: 3,
-            type: Uint8Array,
-            data: [
-                0, 0, 0,
-                255, 0, 0,
-                0, 255, 0,
-                // 0, 255, 0,
-                // 255, 0, 0,
-                255, 255, 0,
-            ],
-        },
+        /*a_color: {
+          numComponents: 3,
+          type: Uint8Array,
+          data: [
+             0, 0, 0,
+             255, 0, 0,
+             0, 255, 0,
+             // 0, 255, 0,
+             // 255, 0, 0,
+             255, 255, 0,
+          ],
+        },*/
         indices: [0, 1, 2, 2, 1, 3]
     };
+    // const bufferInfo = createCustomCubeBufferInfo(gl, .1);
     // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
-    const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+    // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+    const bufferInfo = (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.2, 64, 32);
     const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
     const z0 = 0.01;
     const projNear = (0, math_1.projMat)(z0, true);
@@ -99,6 +104,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     }
     // Called when game is reset
     function init() {
+        console.log(bufferInfo);
     }
     // Called every frame
     function update(curTime) {
@@ -142,6 +148,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
         (0, math_1.multMatMat)((0, math_1.pureRot)(Math.PI, 2, 3), viewInverse, farviewInverse);
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         const commonUniforms = {
             time: engine_1.game_time * 0.001,
             resolution: [gl.canvas.width, gl.canvas.height],
