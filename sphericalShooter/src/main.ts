@@ -1,9 +1,8 @@
 // ES6:
 import { engine_pre_update, engine_post_update, game_time, delta_time, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed, isKeyDown } from './engine';
-import * as twgl from './twgl';
+import * as twgl from './../external/twgl-full'
 import { vs, fs } from './shaders'
 import { Matrix4, Vec4, projMat, identity, multMatVec, pureRot, multMatMat } from './math';
-
 
 const gl = document.querySelector('canvas')!.getContext("webgl2")!;
 
@@ -14,9 +13,8 @@ const gl = document.querySelector('canvas')!.getContext("webgl2")!;
 // programs of else we'd need one vertex array object per program+bufferInfo combination
 const attributes = [
   "a_position",
-  "a_color",
-  // "a_normal",
-  // "a_texcoord",
+  "a_normal",
+  "a_texcoord",
 ];
 const debugUnlitProgramInfo = twgl.createProgramInfo(gl, [vs, fs], attributes);
 const programInfos = [debugUnlitProgramInfo];
@@ -28,9 +26,21 @@ const arrays = {
       -.1, -.1, -1, 0,
       .1, -.1, -1, 0,
       -.1, .1, -1, 0,
-      -.1, .1, -1, 0,
-      .1, -.1, -1, 0,
+      // -.1, .1, -1, 0,
+      // .1, -.1, -1, 0,
       .1, .1, -1, 0,
+    ],
+  },
+  a_texcoord: {
+    numComponents: 2,
+    type: Uint8Array,
+    data: [
+       0, 0,
+       255, 0,
+       0, 255,
+       // 0, 255,
+       // 255, 0,
+       255, 255,
     ],
   },
   a_color: {
@@ -40,12 +50,14 @@ const arrays = {
        0, 0, 0,
        255, 0, 0,
        0, 255, 0,
-       0, 255, 0,
-       255, 0, 0,
+       // 0, 255, 0,
+       // 255, 0, 0,
        255, 255, 0,
     ],
-  }
+  },
+  indices: [0, 1, 2, 2, 1, 3]
 };
+// const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
 const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
 const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
 

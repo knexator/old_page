@@ -23,14 +23,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "./engine", "./twgl", "./shaders", "./math"], factory);
+        define(["require", "exports", "./engine", "./../external/twgl-full", "./shaders", "./math"], factory);
     }
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     // ES6:
     const engine_1 = require("./engine");
-    const twgl = __importStar(require("./twgl"));
+    const twgl = __importStar(require("./../external/twgl-full"));
     const shaders_1 = require("./shaders");
     const math_1 = require("./math");
     const gl = document.querySelector('canvas').getContext("webgl2");
@@ -41,9 +41,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     // programs of else we'd need one vertex array object per program+bufferInfo combination
     const attributes = [
         "a_position",
-        "a_color",
-        // "a_normal",
-        // "a_texcoord",
+        "a_normal",
+        "a_texcoord",
     ];
     const debugUnlitProgramInfo = twgl.createProgramInfo(gl, [shaders_1.vs, shaders_1.fs], attributes);
     const programInfos = [debugUnlitProgramInfo];
@@ -54,9 +53,21 @@ var __importStar = (this && this.__importStar) || function (mod) {
                 -.1, -.1, -1, 0,
                 .1, -.1, -1, 0,
                 -.1, .1, -1, 0,
-                -.1, .1, -1, 0,
-                .1, -.1, -1, 0,
+                // -.1, .1, -1, 0,
+                // .1, -.1, -1, 0,
                 .1, .1, -1, 0,
+            ],
+        },
+        a_texcoord: {
+            numComponents: 2,
+            type: Uint8Array,
+            data: [
+                0, 0,
+                255, 0,
+                0, 255,
+                // 0, 255,
+                // 255, 0,
+                255, 255,
             ],
         },
         a_color: {
@@ -66,12 +77,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
                 0, 0, 0,
                 255, 0, 0,
                 0, 255, 0,
-                0, 255, 0,
-                255, 0, 0,
+                // 0, 255, 0,
+                // 255, 0, 0,
                 255, 255, 0,
             ],
-        }
+        },
+        indices: [0, 1, 2, 2, 1, 3]
     };
+    // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
     const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
     const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
     const z0 = 0.01;
