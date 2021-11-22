@@ -2339,7 +2339,7 @@ function fixPlayerOutsideBounds (level) {
 
 function playUndoSound(cur_undo) {
 	if (!last_t_undo_sound || last_t - last_t_undo_sound > 220) {
-		console.log(last_t - last_t_undo_sound)
+		// console.log(last_t - last_t_undo_sound)
 		if (undoSounds[cur_undo - 1]) undoSounds[cur_undo - 1].play()
 		last_t_undo_sound = last_t
 	}
