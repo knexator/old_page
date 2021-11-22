@@ -1845,21 +1845,92 @@ function rotateLevel (ccw) {
   }
 }
 function flipHorizontalLevel () {
-  let text = level2str(levels[cur_level_n])
-  let new_level = str2level(_flipHorizontal(text), levels[cur_level_n].enter, levels[cur_level_n].exit)
-  if (new_level) {
-    levels[cur_level_n] = new_level
-  }
+	let level = levels[cur_level_n]
+	let w = level.w
+	level.geo.forEach(row => row.reverse());
+
+	transformEverything(level, ([i, j]) => [w - i - 1, j])
+	level.player.inHole.value = level.player.inHole.value.map(k => {
+		let j = Math.floor(k / 4)
+		if (j !== 1 && j !== 3) return k
+		let i = k % 4
+		return (i + 2) % 4 + j * 4
+	})
 }
+
 function flipVerticalLevel () {
-  let text = level2str(levels[cur_level_n])
-  let new_level = str2level(_flipVertical(text), levels[cur_level_n].enter, levels[cur_level_n].exit)
-  if (new_level) {
-    levels[cur_level_n] = new_level
-  }
+	let level = levels[cur_level_n]
+	let h = level.h
+	level.geo.reverse();
+
+	transformEverything(level, ([i, j]) => [i, h - j - 1])
+	level.player.inHole.value = level.player.inHole.value.map(k => {
+		let j = Math.floor(k / 4)
+		if (j !== 0 && j !== 2) return k
+		let i = k % 4
+		return (i + 2) % 4 + j * 4
+	})
 }
 
 function resizeLevel (a, b, c, d) {
+	let level = levels[cur_level_n]
+	let w = level.w
+	let h = level.h
+	let [pi, pj] = level.player.history.at(-1)
+
+	if (a > 0) {
+		moveEverything(level, 0, 1)
+		level.geo.unshift(Array(w).fill('#'))
+		h += 1
+	} else if (a < 0 && pj > 1) {
+		for (let k=0; k<w; k++) {
+			deleteStuffAt(level, k, 0)
+		}
+		moveEverything(level, 0, -1)
+		level.geo.shift()
+		h -= 1
+	}
+
+	if (c > 0) {
+		level.geo.push(Array(w).fill('#'))
+		h += 1
+	} else if (c < 0 && pj < h - 2) {
+		for (let k=0; k<w; k++) {
+			deleteStuffAt(level, k, h - 1)
+		}
+		level.geo.pop()
+		h -= 1
+	}
+
+	if (b > 0) {
+		moveEverything(level, 1, 0)
+		level.geo.forEach(row => row.unshift('#'))
+		w += 1
+	} else if (b < 0 && pi > 1) {
+		for (let k=0; k<h; k++) {
+			deleteStuffAt(level, 0, k)
+		}
+		moveEverything(level, -1, 0)
+		level.geo.forEach(row => row.shift())
+		w -= 1
+	}
+
+	if (d > 0) {
+		level.geo.forEach(row => row.push('#'))
+		w += 1
+	} else if (d < 0 && pi < w - 2) {
+		level.geo.forEach(row => row.pop())
+		for (let k=0; k<h; k++) {
+			deleteStuffAt(level, w - 1, k)
+		}
+		w -= 1
+	}
+
+	level.h = h
+	level.w = w
+}
+
+function resizeLevelOld (a, b, c, d) {
   // exportToText()
   let w = levels[cur_level_n].w
   let h = levels[cur_level_n].h
@@ -1906,6 +1977,60 @@ function resizeLevel (a, b, c, d) {
   // document.getElementById('inText').value = text
   // loadFromText()
 
+}
+
+function deleteStuffAt (cur_level, mi, mj) {
+	cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
+	cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
+	cur_level.crates = cur_level.crates.filter(crate =>	{
+		let [i, j] = crate.history.at(-1)
+		return i != mi || j != mj
+	})
+	cur_level.paintBlobs = cur_level.paintBlobs.filter(blob =>	{
+		let [i, j] = blob.position
+		return i != mi || j != mj
+	})
+	cur_level.holeCovers = cur_level.holeCovers.filter(cover =>	{
+		let [i, j] = cover.position
+		return i != mi || j != mj
+	})
+	cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+}
+
+function deleteCustomStuffAt (cur_level, mi, mj, holes, crates, blobs, covers) {
+	if (holes) cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
+	cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
+	if (crates) cur_level.crates = cur_level.crates.filter(crate =>	{
+		let [i, j] = crate.history.at(-1)
+		return i != mi || j != mj
+	})
+	if (blobs) cur_level.paintBlobs = cur_level.paintBlobs.filter(blob =>	{
+		let [i, j] = blob.position
+		return i != mi || j != mj
+	})
+	if (covers) cur_level.holeCovers = cur_level.holeCovers.filter(cover =>	{
+		let [i, j] = cover.position
+		return i != mi || j != mj
+	})
+	cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+}
+
+function moveEverything(cur_level, di, dj) {
+	cur_level.holes = cur_level.holes.map(([i, j]) =>	[i + di, j + dj])
+	cur_level.targets = cur_level.targets.map(([i, j]) =>	[i + di, j + dj])
+	cur_level.crates.forEach(crate =>	{
+		crate.history = crate.history.map(([i, j]) => [i + di, j + dj])
+	})
+	cur_level.player.history = cur_level.player.history.map(([i, j]) => [i + di, j + dj])
+}
+
+function transformEverything(cur_level, f) {
+	cur_level.holes = cur_level.holes.map(f)
+	cur_level.targets = cur_level.targets.map(f)
+	cur_level.crates.forEach(crate =>	{
+		crate.history = crate.history.map(f)
+	})
+	cur_level.player.history = cur_level.player.history.map(f)
 }
 
 function resetLevel () {
@@ -2690,40 +2815,49 @@ function draw (timestamp) {
           ENABLE_UNDO_4 = true
         } else if (wasKeyPressed('e')) {
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
           cur_level.holes.push([mi, mj])
         } else if (wasKeyPressed('B1')) { // paint blobs
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
           cur_level.paintBlobs.push(new PropertyHistory(true, 0, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('B2')) {
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
           cur_level.paintBlobs.push(new PropertyHistory(true, 1, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('B3')) {
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
           cur_level.paintBlobs.push(new PropertyHistory(true, 2, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('B4')) {
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
           cur_level.paintBlobs.push(new PropertyHistory(true, 3, extra = true_timeline_undos.length))
           cur_level.paintBlobs.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('C1')) { // hole covers
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
 					cur_level.holes.push([mi, mj])
           cur_level.holeCovers.push(new PropertyHistory(true, 0, extra = true_timeline_undos.length))
           cur_level.holeCovers.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('C2')) {
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
 					cur_level.holes.push([mi, mj])
           cur_level.holeCovers.push(new PropertyHistory(true, 1, extra = true_timeline_undos.length))
           cur_level.holeCovers.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('C3')) {
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
 					cur_level.holes.push([mi, mj])
           cur_level.holeCovers.push(new PropertyHistory(true, 2, extra = true_timeline_undos.length))
           cur_level.holeCovers.at(-1).position = [mi, mj]
         } else if (wasKeyPressed('C4')) {
           cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
 					cur_level.holes.push([mi, mj])
           cur_level.holeCovers.push(new PropertyHistory(true, 3, extra = true_timeline_undos.length))
           cur_level.holeCovers.at(-1).position = [mi, mj]
