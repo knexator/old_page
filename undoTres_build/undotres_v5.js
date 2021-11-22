@@ -3070,6 +3070,11 @@ function keyMap (e) {
 }
 
 window.addEventListener('keydown', e => {
+	if (document.activeElement.tagName === 'TEXTAREA') {
+		if (e.key.startsWith('Arrow') || '1234pmn'.indexOf(e.key) !== -1) {
+			return
+		}
+	}
 	let k = keyMap(e)
   if (!e.repeat) {
     /*if (e.key == 'p') {
