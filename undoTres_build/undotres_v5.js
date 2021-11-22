@@ -1406,7 +1406,7 @@ function neutralTurn (level) {
     paintBlob.inmune.push(paintBlob.inmune.at(-1))
   });
 
-  fallFlying(level, 0)
+  // fallFlying(level, 0)
 }
 
 function isWon (level) {
@@ -2291,7 +2291,7 @@ function draw (timestamp) {
             // ignore this turn
             SKIP_TURN = true
           } else {
-            console.log('using a machine')
+            console.log('usingd a machine')
             using_machine_type = machine[2]
             cur_undo = machine_input_back ? using_machine_type : 9
           }
@@ -2403,6 +2403,7 @@ function draw (timestamp) {
           } else if (magic_stuff_input) {
             neutralTurn(cur_level)
             cur_level.player.inmune_history[real_tick] = 2 // magic!
+						fallFlying(cur_level, 0)
           } else if (starts_won && cur_di == cur_level.exit[0] && cur_dj == cur_level.exit[1]) {
             // player exited the level
             // nextLevel();
@@ -2415,6 +2416,7 @@ function draw (timestamp) {
             neutralTurn(cur_level);
             [pi, pj] = cur_level.player.history.at(-1)
             cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
+						fallFlying(cur_level, 0)
             // cur_level.player.history[real_tick] = [pi + cur_di*2, pj + cur_dj*2]
           } else { // player did an original move
             [pi, pj] = cur_level.player.history[real_tick - 1]
@@ -2462,6 +2464,7 @@ function draw (timestamp) {
                     if (player_inmune != pushing_inmune) {
                       neutralTurn(cur_level)
                       cur_level.player.inmune_history[real_tick] = pushing_inmune
+											fallFlying(cur_level, 0)
                     } else { // ignore this move
                       true_timeline_undos.pop()
                       turn_time = 0
@@ -2490,6 +2493,7 @@ function draw (timestamp) {
                     if (over_cover != -1) {
                       cur_level.holeCovers[over_cover].value[real_tick] = false
                     }
+										fallFlying(cur_level, 0)
                   } else {
                     let occupied_by_crate = cur_level.crates.findIndex(crate => {
                       [ci, cj] = crate.history[crate.history.length - 1]
@@ -2505,6 +2509,7 @@ function draw (timestamp) {
                           // but first, the neutral turn stuff
                           neutralTurn(cur_level)
                           cur_level.crates[occupied_by_crate].inmune_history[real_tick] = pushing_inmune
+													fallFlying(cur_level, 0)
                         } else { // ignore this move
                           true_timeline_undos.pop()
                           turn_time = 0
@@ -2541,6 +2546,7 @@ function draw (timestamp) {
     						          cur_level.crates[pushing_crate].inmune_history[real_tick] = inmunity
             					  })
                       }
+											fallFlying(cur_level, 0)
                       // console.log("over_paint: ", over_paint)
           					  // console.log(pushing_crates)
                     }
@@ -2556,6 +2562,7 @@ function draw (timestamp) {
                 if (over_cover != -1) {
                   cur_level.holeCovers[over_cover].value[real_tick] = false
                 }
+								fallFlying(cur_level, 0)
               }
             }
           }
