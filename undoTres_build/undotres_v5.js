@@ -1090,14 +1090,14 @@ function exitEditor () {
 }
 
 function toggleEditor () {
-  if (ALLOW_EDITOR) {
+	ALLOW_EDITOR = !ALLOW_EDITOR
+  if (!ALLOW_EDITOR) {
     exitEditor();
   } else {
     enterEditor();
     ALLOW_CHEATS = true
     updateMenuButtons()
   }
-  ALLOW_EDITOR = !ALLOW_EDITOR
 }
 
 let text_0 = document.querySelectorAll('._0')
@@ -1110,18 +1110,19 @@ let text_7 = document.querySelector('._7')
 let text_end = document.querySelectorAll('._end')
 function setExtraDisplay (n) {
   // if (ALLOW_EDITOR) return
+	let ultraHide = !levels[n]?.unmodified || ALLOW_EDITOR
   text_0.forEach(item => {
-    item.hidden = (n !== 0)
+    item.hidden = ultraHide || (n !== 0)
   });
-  text_1.hidden = n !== 1
-  text_1a.hidden = (n !== 1) || !ENABLE_RESTART
+  text_1.hidden = ultraHide || n !== 1
+  text_1a.hidden = ultraHide || (n !== 1) || !ENABLE_RESTART
   drawSecondText()
-  text_3.hidden = n !== 3
-  text_5.hidden = n !== 5
-  text_6.hidden = n !== 6
-  text_7.hidden = n !== 7
+  text_3.hidden = ultraHide || n !== 3
+  text_5.hidden = ultraHide || n !== 5
+  text_6.hidden = ultraHide || n !== 6
+  text_7.hidden = ultraHide || n !== 7
   text_end.forEach(item => {
-    item.hidden = (n !== levels.length - 1)
+    item.hidden = ultraHide || (n !== levels.length - 1)
   });
 }
 
@@ -1451,6 +1452,8 @@ function getCoveredGoals (level) {
 }
 
 levels = hole_levels_raw.map(([str, enter, exit]) => str2level(str, enter, exit))
+levels.forEach(level => level.unmodified = true);
+
 levels[0].extraDrawCode = drawIntroText
 levels[1].extraDrawCode = drawSecondText
 levels[3].extraDrawCode = drawXtoReallyText
@@ -1504,68 +1507,33 @@ function str2level (str, enter, exit) {
   for (let j = 0; j < h; j++) {
     let row = []
     for (let i = 0; i < w; i++) {
-      let chr = str[j][i] // .toUpperCase();
-      // row.push(chr == '#')
-      /* if (chr == '#') {
-        row.push(1)
-        continue
-      } else if (chr == ',') {
-        row.push(2)
-        continue
-      } else if ('┌────┐┌┘│├─╷│'.indexOf(chr) != -1) {
-        row.push(chr)
-      }
-      else {
-        row.push(0)
-      } */
-      let geoChar = chr
-
-      if (chr == '.' || chr == '#' || chr == ',') {
-
-      } else if (chr == 'O' || chr == '@') {
-        player = new Movable(i, j, DEFAULT_PLAYER_INMUNE_LEVEL)
-        if (chr == '@') targets.push([i, j])
-        geoChar = '.'
-      } else if (chr == '*') {
-        targets.push([i, j])
-        geoChar = '.'
-      } else if (chr >= '1' && chr <= '9') {
-        crates.push(new Movable(i, j, chr - '1'))
-        if (chr - '1' > 2) ENABLE_UNDO_4 = true
-        geoChar = '.'
-      /* } else if (chr >= 'A' && chr <= 'I') {
-        crates.push(new Movable(i, j, chr.charCodeAt(0) - 'A'.charCodeAt(0)))
-        targets.push([i, j])
-        geoChar = '.'
-      } else if (chr >= 'p' && chr <= 'z') {
-        buttons.push([i, j, chr])
-        geoChar = '.'
-      } else if (chr >= 'P' && chr <= 'Z') {
-        doors.push([i, j, chr])
-        geoChar = '.'
-      } else if (chr == '!') {
-        player_target = [i, j]
-        geoChar = '.'
-      } else if ('JKLMN'.indexOf(chr) != -1) {
-        machines.push([i, j, 'JKLMN'.indexOf(chr) + 1])
-        geoChar = '.' */
-      } else if (chr == '_') {
-        holes.push([i, j])
-        geoChar = '.'
-      } else if ('jkl;'.indexOf(chr) != -1) {
-        holes.push([i, j])
-        holeCovers.push(new PropertyHistory(true, 'jkl;'.indexOf(chr)))
-        holeCovers.at(-1).position = [i, j]
-        geoChar = '.'
-      } else if ('uiop'.indexOf(chr) != -1) {
-        paintBlobs.push(new PropertyHistory(true, 'uiop'.indexOf(chr)))
-        paintBlobs.at(-1).position = [i, j]
-        geoChar = '.'
-      } else {
-        throw new Error("unexpected char: " + geoChar)
-      }
-
-      row.push(geoChar)
+      let chr = str[j][i]
+			if (chr === '*') {
+				targets.push([i, j])
+        row.push('.')
+				continue;
+			}
+			let tileData = str2tile(chr);
+      let [_geo, _player, _crates, _paint, _cover, _hole] = tileData;
+			if (_player) {
+				player = new Movable(i, j, DEFAULT_PLAYER_INMUNE_LEVEL)
+			}
+			_crates.forEach(n => {
+				crates.push(new Movable(i, j, n))
+				if (n > 2) ENABLE_UNDO_4 = true
+			});
+			if (_hole) {
+				holes.push([i, j])
+			}
+			if (_cover > 0) {
+				holeCovers.push(new PropertyHistory(true, _cover - 1))
+				holeCovers.at(-1).position = [i, j]
+			}
+			if (_paint > 0) {
+				paintBlobs.push(new PropertyHistory(true, _paint - 1))
+				paintBlobs.at(-1).position = [i, j]
+			}
+      row.push(_geo)
     }
     geo.push(row)
   }
@@ -1576,7 +1544,7 @@ function str2level (str, enter, exit) {
   let level = { geo: geo, player: player, crates: crates, targets: targets,
     buttons: buttons, doors: doors, player_target: player_target,
     machines: machines, holes: holes, holeCovers: holeCovers, paintBlobs: paintBlobs,
-    w: w, h: h, enter: enter, exit: exit }
+    w: w, h: h, enter: enter, exit: exit, unmodified: false }
   /* neutralTurn(level);
   level.player.history[0][0] -= enter[0];
   level.player.history[0][1] -= enter[1]; */
@@ -1742,7 +1710,99 @@ function get_original_tick_2 (tick, inmune_history) {
   return get_original_tick(tick, inmune_history.at(-1))
 }
 
+function tile2str ([geo, player, crates, paint, cover, hole]) {
+	if (geo === '#') return '#'
+	if (player) return 'O'
+	if (crates.length > 0) {
+		if (crates.length > 1) throw new Error("can't save level: several statues on the same tile")
+		if (cover > 0) throw new Error("can't save level: statue and hole cover on the same tile")
+		if (paint > 0) throw new Error("can't save level: statue and circle on the same tile")
+		if (hole) throw new Error("can't save level: statue and hole on the same tile")
+		return '1234'[crates[0]]
+	} else {
+		// no crates
+		if (cover > 0) {
+			if (paint > 0) throw new Error("can't save level: hole cover and circle on the same tile")
+			return 'jkl;'[cover - 1]
+		} else {
+			if (paint > 0) {
+				return 'uiop'[paint - 1]
+			} else {
+				return hole ? '_' : '.'
+			}
+		}
+	}
+}
+
+function str2tile (char) {
+	switch (char) {
+		case '#':
+			return ['#', false, [], 0, 0, false]
+		case '.':
+			return ['.', false, [], 0, 0, false]
+		case 'O':
+			return ['.', true, [], 0, 0, false]
+		case '_':
+			return ['.', false, [], 0, 0, true]
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+			return ['.', false, ['1234'.indexOf(char)], 0, 0, false]
+		case 'j':
+		case 'k':
+		case 'l':
+		case ';':
+			return ['.', false, [], 0, 'jkl;'.indexOf(char) + 1, true]
+		case 'u':
+		case 'i':
+		case 'o':
+		case 'p':
+			return ['.', false, [], 'uiop'.indexOf(char) + 1, 0, false]
+		default:
+			throw new Error("Unexpected char: " + char)
+	}
+	// return [geo, player, crate, paint, cover, hole]
+}
+
 function level2str (level) {
+  let res = []
+  let [pi, pj] = level.player.history.at(-1)
+  for (let j = 0; j < level.h; j++) {
+    let row = []
+    for (let i = 0; i < level.w; i++) {
+			let cur = [level.geo[j][i], false, [], 0, 0, false]
+			row.push(cur)
+    }
+    res.push(row)
+  }
+
+	res[pj][pi][1] = true
+
+	level.holes.forEach(([hi, hj]) => {
+		res[hj][hi][5] = true
+	})
+
+	level.holeCovers.forEach(cover => {
+		let [hi, hj] = cover.position;
+		res[hj][hi][4] = cover.inmune.at(-1) + 1
+	})
+
+	level.paintBlobs.forEach(blob => {
+		let [hi, hj] = blob.position;
+		res[hj][hi][3] = blob.inmune.at(-1) + 1
+	})
+
+  level.crates.forEach(crate => {
+    let [ci, cj] = crate.history.at(-1)
+    let n = crate.inmune_history.at(-1)
+    res[cj][ci][2].push(n)
+  })
+
+  return res.map(x => x.map(tile2str).join('')).join('\n')
+}
+
+function level2strOld (level) {
   let res = []
   let [pi, pj] = level.player.history.at(-1)
   for (let j = 0; j < level.h; j++) {
@@ -1819,6 +1879,15 @@ function rotateLevel (ccw) {
 	level.geo = new_geo
 	level.h = w
 	level.w = h
+	if (ccw) {
+		level.player.inHole.value = level.player.inHole.value.map(k => {
+			return [4, 5, 6, 7, 2, 3, 0, 1, 12, 13, 14, 15, 10, 11, 8, 9][k]
+		})
+	} else {
+		level.player.inHole.value = level.player.inHole.value.map(k => {
+			return [6, 7, 4, 5, 0, 1, 2, 3, 14, 15, 12, 13, 8, 9, 10, 11][k]
+		})
+	}
 }
 function flipHorizontalLevel () {
 	let level = levels[cur_level_n]
@@ -1848,8 +1917,8 @@ function flipVerticalLevel () {
 	})
 }
 
-function resizeLevel (a, b, c, d) {
-	let level = levels[cur_level_n]
+function resizeLevel (a, b, c, d, level) {
+	level = level || levels[cur_level_n]
 	let w = level.w
 	let h = level.h
 	let [pi, pj] = level.player.history.at(-1)
@@ -2130,6 +2199,7 @@ function loadLevel (n) {
   cur_level.player.inmune_history.splice(1)
   cur_level.player.inHole.value.splice(1)
   cur_level.player.inHole.value[0] = dir2spr(cur_level.enter[0], cur_level.enter[1], false) + player_parity
+	fixPlayerOutsideBounds(cur_level)
   recalcTileSize()
   turn_time = 1
   /* let undoButtons = document.getElementById("footer").children;
@@ -2149,6 +2219,35 @@ function loadLevel (n) {
   }
   setExtraDisplay(ALLOW_EDITOR ? -1 : n)
   updateMenuButtons()
+}
+
+function fixPlayerOutsideBounds (level) {
+	let [pi, pj] = level.player.history.at(-1)
+	while (pi < 1) {
+		resizeLevel(0,1,0,0, level)
+		let temp = level.player.history.at(-1)
+		pi = temp[0]
+		pj = temp[1]
+	}
+	while (pi > level.w - 2) {
+		resizeLevel(0,0,0,1, level)
+		let temp = level.player.history.at(-1)
+		pi = temp[0]
+		pj = temp[1]
+	}
+	while (pj < 1) {
+		resizeLevel(1,0,0,0, level)
+		let temp = level.player.history.at(-1)
+		pi = temp[0]
+		pj = temp[1]
+	}
+	while (pj > level.h - 2) {
+		resizeLevel(0,0,1,0, level)
+		let temp = level.player.history.at(-1)
+		pi = temp[0]
+		pj = temp[1]
+	}
+	level.geo[pj][pi] = '.'
 }
 
 function recalcTileSize (level) {
@@ -2739,6 +2838,7 @@ function draw (timestamp) {
         let [pi, pj] = cur_level.player.history.at(-1)
         if (pi !== mi || pj !== mj) {
           cur_level.geo[mj][mi] = '#'
+					cur_level.unmodified = false
           cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
           cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
           cur_level.crates = cur_level.crates.filter(crate =>	{
@@ -2757,6 +2857,7 @@ function draw (timestamp) {
         }
       } else if (isButtonDown(1)) {
         cur_level.geo[mj][mi] = '.'
+				cur_level.unmodified = false
         cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
         cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
         cur_level.crates = cur_level.crates.filter(crate =>	{
