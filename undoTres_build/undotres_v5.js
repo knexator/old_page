@@ -1795,54 +1795,30 @@ function exportToText () {
   document.getElementById('inText').value = level2str(levels[cur_level_n])
 }
 
-function _reverseString(str) {
-    return str.split("").reverse().join("");
-}
-function _flipHorizontal(str) {
-	lines = str.split("\n");
-	lines = lines.map(function(line) {
-	  return _reverseString(line);
-	});
-	return lines.join("\n");
-}
-function _flipVertical(str) {
-	return str.split("\n").reverse().join("\n");
-}
-//TODO: rewrite function below
-//I'm sure there is a cleaner way and it doesn't handle trailing whitespace as well as it could
-function _rotate(str) {
-	lines = str.split("\n");
-	spunArray = new Array();
-	longest = 0;
-	lines.forEach(function(line) {
-		if(line.length>longest) {
-			longest = line.length;
-		}
-	})
-	lines = lines.map(function(line) {
-		return line.padEnd(longest);
-	})
-	for(let y = 0;y<longest;y++) {
-		spunArray[y] = new Array();
-		for(let x = 0;x<lines.length;x++) {
-			spunArray[y][x]=lines[x].charAt(y);
-		}
-	}
-	lines = spunArray.map(function(line) {
-		return line.join("");
-	})
-	return _flipHorizontal(lines.join("\n"));
-}
-
-// todo: a lot (mainly enter/exit, & not breaking undo)
 function rotateLevel (ccw) {
-  let text = level2str(levels[cur_level_n])
-  let new_text = _rotate(text)
-  if (ccw) new_text = _rotate(_rotate(new_text))
-  let new_level = str2level(new_text, levels[cur_level_n].enter, levels[cur_level_n].exit)
-  if (new_level) {
-    levels[cur_level_n] = new_level
-  }
+	let level = levels[cur_level_n]
+	let h = level.h
+	let w = level.w
+	let new_geo = [];
+	for (let j=0; j<w; j++) {
+		let new_row = [];
+		for (let i=0; i<h; i++) {
+			if (ccw) {
+				new_row.push(level.geo[i][w - 1 - j])
+			} else {
+				new_row.push(level.geo[h - 1 - i][j])
+			}
+		}
+		new_geo.push(new_row)
+	}
+	if (ccw) {
+		transformEverything(level, ([i, j]) => [j, w - 1 - i])
+	} else {
+		transformEverything(level, ([i, j]) => [h - 1 - j, i])
+	}
+	level.geo = new_geo
+	level.h = w
+	level.w = h
 }
 function flipHorizontalLevel () {
 	let level = levels[cur_level_n]
@@ -2015,18 +1991,15 @@ function deleteCustomStuffAt (cur_level, mi, mj, holes, crates, blobs, covers) {
 	cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
 }
 
-function moveEverything(cur_level, di, dj) {
-	cur_level.holes = cur_level.holes.map(([i, j]) =>	[i + di, j + dj])
-	cur_level.targets = cur_level.targets.map(([i, j]) =>	[i + di, j + dj])
-	cur_level.crates.forEach(crate =>	{
-		crate.history = crate.history.map(([i, j]) => [i + di, j + dj])
-	})
-	cur_level.player.history = cur_level.player.history.map(([i, j]) => [i + di, j + dj])
+function moveEverything (cur_level, di, dj) {
+	transformEverything(cur_level, ([i,j]) => [i+di,j+dj])
 }
 
-function transformEverything(cur_level, f) {
+function transformEverything (cur_level, f) {
 	cur_level.holes = cur_level.holes.map(f)
 	cur_level.targets = cur_level.targets.map(f)
+	cur_level.holeCovers.forEach(cover => cover.position = f(cover.position));
+	cur_level.paintBlobs.forEach(cover => cover.position = f(cover.position));
 	cur_level.crates.forEach(crate =>	{
 		crate.history = crate.history.map(f)
 	})
