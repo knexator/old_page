@@ -36,6 +36,7 @@ let levelSelectButtons = menuDiv?.querySelectorAll('button')
 
 let globalT = 0.0
 let last_t = null
+let last_t_undo_sound = null
 
 let true_timeline_undos = []
 
@@ -1561,6 +1562,7 @@ function str2level (str, enter, exit) {
   won_cur_level = false
   true_timeline_undos = []
   input_queue = []
+	fallFlying (level, 0, true)
   return level
 }
 
@@ -1717,8 +1719,11 @@ function tile2str ([geo, player, crates, paint, cover, hole]) {
 		if (crates.length > 1) throw new Error("can't save level: several statues on the same tile")
 		if (cover > 0) throw new Error("can't save level: statue and hole cover on the same tile")
 		if (paint > 0) throw new Error("can't save level: statue and circle on the same tile")
-		if (hole) throw new Error("can't save level: statue and hole on the same tile")
-		return '1234'[crates[0]]
+		if (hole) {
+			return 'ABCD'[crates[0]]
+		} else {
+			return '1234'[crates[0]]
+		}
 	} else {
 		// no crates
 		if (cover > 0) {
@@ -1749,6 +1754,11 @@ function str2tile (char) {
 		case '3':
 		case '4':
 			return ['.', false, ['1234'.indexOf(char)], 0, 0, false]
+		case 'A':
+		case 'B':
+		case 'C':
+		case 'D':
+			return ['.', false, ['ABCD'.indexOf(char)], 0, 0, true]
 		case 'j':
 		case 'k':
 		case 'l':
@@ -2250,6 +2260,15 @@ function fixPlayerOutsideBounds (level) {
 	level.geo[pj][pi] = '.'
 }
 
+function playUndoSound(cur_undo) {
+	if (!last_t_undo_sound || last_t - last_t_undo_sound > 220) {
+		console.log(last_t - last_t_undo_sound)
+		if (undoSounds[cur_undo - 1]) undoSounds[cur_undo - 1].play()
+		last_t_undo_sound = last_t
+	}
+}
+
+
 function recalcTileSize (level) {
   /* if (in_last_level) {
     let tile_w = Math.min(canvas.width / (12), 60)
@@ -2333,7 +2352,7 @@ function getKeyRetriggerTime (key) {
   return Infinity
 }
 
-function fallFlying (level, undo_level) {
+function fallFlying (level, undo_level, soundless=false) {
   // drop crates over holes
   let flying_crates = level.crates.filter(crate => {
     let [ci, cj] = crate.history.at(-1)
@@ -2345,7 +2364,7 @@ function fallFlying (level, undo_level) {
   flying_crates.forEach(crate => {
     crate.inHole.value[crate.inHole.value.length - 1] = true
   })
-  if (flying_crates.length > 0) holeSound.play()
+  if (flying_crates.length > 0 && !soundless) holeSound.play()
 }
 
 function movesBackToEntrance (level, pi, pj, cur_di, cur_dj) {
@@ -2524,7 +2543,7 @@ function draw (timestamp) {
         } else {
           // if (cur_level.player.history[player_tick] !== undefined) { // player is undoing
           if (cur_undo > 0) {
-            if (undoSounds[cur_undo - 1]) undoSounds[cur_undo - 1].play()
+						playUndoSound(cur_undo)
             if (cur_level.player.history[player_tick] !== undefined) { // player is being undoed
               [i, j] = cur_level.player.history[player_tick]
               cur_level.player.history[real_tick] = [i, j]
@@ -2763,7 +2782,8 @@ function draw (timestamp) {
               }
             }
           }
-        }
+					fixPlayerOutsideBounds(cur_level)
+				}
       }
 
       let covered_goals_late = getCoveredGoals(cur_level)
