@@ -212,6 +212,7 @@ let ENABLE_RESTART = false
 let ENABLE_UNDO_2 = false
 let ENABLE_UNDO_3 = false
 let ENABLE_UNDO_4 = false
+let HATS_ENABLED = false
 let DRAW_TIMEBARS = false
 let ALLOW_CHEATS = false
 
@@ -330,6 +331,16 @@ let player_texture = new PintarJS.Texture('imgs/zelda_new_13.png', () => {
   // raw_player_sprites[0].setSourceFromSpritesheet(new PintarJS.Point(2, 0), _4x4);
   player_sprite = raw_player_sprites[0]
 })
+
+let hats_texture = new PintarJS.Texture('imgs/onlyhats.png', () => {
+  let _4x4 = new PintarJS.Point(4, 4)
+  raw_hat_sprites = []
+  for (let k = 0; k < 16; k++) {
+    let cur = new PintarJS.Sprite(hats_texture)
+    cur.setSourceFromSpritesheet(new PintarJS.Point(k % 4, Math.floor(k / 4)), _4x4)
+    raw_hat_sprites.push(cur)
+  }
+})
 /*let gearBox_texture = new PintarJS.Texture('imgs/gearBox.png', () => {
   let _4x4 = new PintarJS.Point(20, 1)
   raw_gearBox_sprites = []
@@ -395,6 +406,9 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
 
   paintBlobBroken_sprite = new PintarJS.Sprite(world_texture)
   setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 4, 2, setSize=true)
+
+	floorHat_sprite = new PintarJS.Sprite(world_texture)
+  setSourceFromSheet(floorHat_sprite, 2, 3, 3, 4, 2, setSize=true)
 })
 /*let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // let _4x4 = new PintarJS.Point(4, 4)
@@ -814,6 +828,16 @@ function drawLevel (level) {
     pintar.drawSprite(spr)
   })
 
+	// draw floor hats
+  level.hats.forEach(hat => {
+		if (!hat.value.at(-1)) return
+    let [hi, hj] = hat.position
+		floorHat_sprite.position = new PintarJS.Point(OFFX + hi * TILE, OFFY + hj * TILE)
+    // spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    floorHat_sprite.color = PintarJS.Color.fromHex(COLORS.crates[hat.inmune.at(-1)])
+    pintar.drawSprite(floorHat_sprite)
+  })
+
   let playerState = level.player.history.at(-1)
   let prevPlayerState = level.player.history.at(-2)
   if (prevPlayerState === undefined) {
@@ -891,7 +915,8 @@ function drawLevel (level) {
     player_spr_n -= 8
   } */
   // if (!player_forward) {
-  if (true_timeline_undos.at(-1) > 0 && turn_time > 0.0) {
+	let player_inmune = level.player.inmune_history.at(-1)
+  if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0) {
     // let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
     // let opts = [1.0, 0.6, 0.2]
     // let opts = [0.0]
@@ -905,6 +930,7 @@ function drawLevel (level) {
       player_sprite.position = new PintarJS.Point(OFFX + opi * TILE, OFFY + opj * TILE)
       player_sprite.color = PintarJS.Color.fromHex(COLORS.crates[true_timeline_undos.at(-1) - 1])
       player_sprite.color.a = 0.4
+			// TODO: DRAW COOL HAT
       pintar.drawSprite(player_sprite)
       // }
     }
@@ -914,6 +940,12 @@ function drawLevel (level) {
   player_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
   // player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
   pintar.drawSprite(player_sprite)
+	if (HATS_ENABLED) {
+		hat_sprite = raw_hat_sprites[player_spr_n]
+		hat_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
+		hat_sprite.color = PintarJS.Color.fromHex(COLORS.crates[player_inmune])
+		pintar.drawSprite(hat_sprite)
+	}
   // sortedCrates.reverse()
 
   if (any_overlap) {
@@ -1408,6 +1440,11 @@ function neutralTurn (level) {
     paintBlob.inmune.push(paintBlob.inmune.at(-1))
   });
 
+	level.hats.forEach((hat, i) => {
+    hat.add()
+    hat.inmune.push(hat.inmune.at(-1))
+  });
+
   // fallFlying(level, 0)
 }
 
@@ -1505,6 +1542,7 @@ function str2level (str, enter, exit) {
   let holes = []
   let holeCovers = []
   let paintBlobs = []
+	let hats = []
   for (let j = 0; j < h; j++) {
     let row = []
     for (let i = 0; i < w; i++) {
@@ -1515,7 +1553,7 @@ function str2level (str, enter, exit) {
 				continue;
 			}
 			let tileData = str2tile(chr);
-      let [_geo, _player, _crates, _paint, _cover, _hole] = tileData;
+      let [_geo, _player, _crates, _paint, _cover, _hole, _hat] = tileData;
 			if (_player) {
 				player = new Movable(i, j, DEFAULT_PLAYER_INMUNE_LEVEL)
 			}
@@ -1529,10 +1567,17 @@ function str2level (str, enter, exit) {
 			if (_cover > 0) {
 				holeCovers.push(new PropertyHistory(true, _cover - 1))
 				holeCovers.at(-1).position = [i, j]
+				if (_cover > 2) ENABLE_UNDO_4 = true
 			}
 			if (_paint > 0) {
 				paintBlobs.push(new PropertyHistory(true, _paint - 1))
 				paintBlobs.at(-1).position = [i, j]
+				if (_paint > 2) ENABLE_UNDO_4 = true
+			}
+			if (_hat > 0) {
+				hats.push(new PropertyHistory(true, _hat - 1))
+				hats.at(-1).position = [i, j]
+				if (_hat > 2) ENABLE_UNDO_4 = true
 			}
       row.push(_geo)
     }
@@ -1544,7 +1589,7 @@ function str2level (str, enter, exit) {
   }*/
   let level = { geo: geo, player: player, crates: crates, targets: targets,
     buttons: buttons, doors: doors, player_target: player_target,
-    machines: machines, holes: holes, holeCovers: holeCovers, paintBlobs: paintBlobs,
+    machines: machines, holes: holes, holeCovers: holeCovers, paintBlobs: paintBlobs, hats: hats,
     w: w, h: h, enter: enter, exit: exit, unmodified: false }
   /* neutralTurn(level);
   level.player.history[0][0] -= enter[0];
@@ -1712,13 +1757,14 @@ function get_original_tick_2 (tick, inmune_history) {
   return get_original_tick(tick, inmune_history.at(-1))
 }
 
-function tile2str ([geo, player, crates, paint, cover, hole]) {
+function tile2str ([geo, player, crates, paint, cover, hole, hat]) {
 	if (geo === '#') return '#'
 	if (player) return 'O'
 	if (crates.length > 0) {
 		if (crates.length > 1) throw new Error("can't save level: several statues on the same tile")
 		if (cover > 0) throw new Error("can't save level: statue and hole cover on the same tile")
 		if (paint > 0) throw new Error("can't save level: statue and circle on the same tile")
+		if (hat > 0) throw new Error("can't save level: statue and hat on the same tile")
 		if (hole) {
 			return 'ABCD'[crates[0]]
 		} else {
@@ -1728,12 +1774,19 @@ function tile2str ([geo, player, crates, paint, cover, hole]) {
 		// no crates
 		if (cover > 0) {
 			if (paint > 0) throw new Error("can't save level: hole cover and circle on the same tile")
+			if (hat > 0) throw new Error("can't save level: hole cover and hat on the same tile")
 			return 'jkl;'[cover - 1]
 		} else {
 			if (paint > 0) {
+				if (hat > 0) throw new Error("can't save level: circle and hat on the same tile")
 				return 'uiop'[paint - 1]
 			} else {
-				return hole ? '_' : '.'
+				if (hat > 0) {
+					HATS_ENABLED = true
+					return 'abcd'[hat - 1]
+				} else {
+					return hole ? '_' : '.'
+				}
 			}
 		}
 	}
@@ -1742,37 +1795,43 @@ function tile2str ([geo, player, crates, paint, cover, hole]) {
 function str2tile (char) {
 	switch (char) {
 		case '#':
-			return ['#', false, [], 0, 0, false]
+			return ['#', false, [], 0, 0, false,0]
 		case '.':
-			return ['.', false, [], 0, 0, false]
+			return ['.', false, [], 0, 0, false,0]
 		case 'O':
-			return ['.', true, [], 0, 0, false]
+			return ['.', true, [], 0, 0, false, 0]
 		case '_':
-			return ['.', false, [], 0, 0, true]
+			return ['.', false, [], 0, 0, true, 0]
 		case '1':
 		case '2':
 		case '3':
 		case '4':
-			return ['.', false, ['1234'.indexOf(char)], 0, 0, false]
+			return ['.', false, ['1234'.indexOf(char)], 0, 0, false, 0]
 		case 'A':
 		case 'B':
 		case 'C':
 		case 'D':
-			return ['.', false, ['ABCD'.indexOf(char)], 0, 0, true]
+			return ['.', false, ['ABCD'.indexOf(char)], 0, 0, true, 0]
 		case 'j':
 		case 'k':
 		case 'l':
 		case ';':
-			return ['.', false, [], 0, 'jkl;'.indexOf(char) + 1, true]
+			return ['.', false, [], 0, 'jkl;'.indexOf(char) + 1, true, 0]
 		case 'u':
 		case 'i':
 		case 'o':
 		case 'p':
-			return ['.', false, [], 'uiop'.indexOf(char) + 1, 0, false]
+			return ['.', false, [], 'uiop'.indexOf(char) + 1, 0, false, 0]
+		case 'a':
+		case 'b':
+		case 'c':
+		case 'd':
+			HATS_ENABLED = true
+			return ['.', false, [], 0, 0, false, 'abcd'.indexOf(char) + 1]
 		default:
 			throw new Error("Unexpected char: " + char)
 	}
-	// return [geo, player, crate, paint, cover, hole]
+	// return [geo, player, crate, paint, cover, hole, hat]
 }
 
 function level2str (level) {
@@ -1781,7 +1840,7 @@ function level2str (level) {
   for (let j = 0; j < level.h; j++) {
     let row = []
     for (let i = 0; i < level.w; i++) {
-			let cur = [level.geo[j][i], false, [], 0, 0, false]
+			let cur = [level.geo[j][i], false, [], 0, 0, false, 0]
 			row.push(cur)
     }
     res.push(row)
@@ -1801,6 +1860,11 @@ function level2str (level) {
 	level.paintBlobs.forEach(blob => {
 		let [hi, hj] = blob.position;
 		res[hj][hi][3] = blob.inmune.at(-1) + 1
+	})
+
+	level.hats.forEach(hat => {
+		let [hi, hj] = hat.position;
+		res[hj][hi][6] = hat.inmune.at(-1) + 1
 	})
 
   level.crates.forEach(crate => {
@@ -2045,6 +2109,10 @@ function deleteStuffAt (cur_level, mi, mj) {
 		let [i, j] = blob.position
 		return i != mi || j != mj
 	})
+	cur_level.hats = cur_level.hats.filter(hat =>	{
+		let [i, j] = hat.position
+		return i != mi || j != mj
+	})
 	cur_level.holeCovers = cur_level.holeCovers.filter(cover =>	{
 		let [i, j] = cover.position
 		return i != mi || j != mj
@@ -2068,6 +2136,10 @@ function deleteCustomStuffAt (cur_level, mi, mj, holes, crates, blobs, covers) {
 		return i != mi || j != mj
 	})
 	cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+	cur_level.hats = cur_level.hats.filter(hat =>	{
+		let [i, j] = hat.position
+		return i != mi || j != mj
+	})
 }
 
 function moveEverything (cur_level, di, dj) {
@@ -2079,6 +2151,7 @@ function transformEverything (cur_level, f) {
 	cur_level.targets = cur_level.targets.map(f)
 	cur_level.holeCovers.forEach(cover => cover.position = f(cover.position));
 	cur_level.paintBlobs.forEach(cover => cover.position = f(cover.position));
+	cur_level.hats.forEach(cover => cover.position = f(cover.position));
 	cur_level.crates.forEach(crate =>	{
 		crate.history = crate.history.map(f)
 	})
@@ -2204,6 +2277,10 @@ function loadLevel (n) {
 	cur_level.holeCovers.forEach(holeCover => {
     holeCover.value.splice(1)
     holeCover.inmune.splice(1)
+  })
+	cur_level.hats.forEach(hat => {
+    hat.value.splice(1)
+    hat.inmune.splice(1)
   })
   cur_level.player.history.splice(1)
   cur_level.player.inmune_history.splice(1)
@@ -2332,10 +2409,12 @@ function recalcTileSize (level) {
     holeCoverBroken_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     paintBlob_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     paintBlobBroken_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+		floorHat_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     geoModularSprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
 		crate_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
 		crate_hole_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
 		raw_player_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
+		raw_hat_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
   }
 }
 
@@ -2606,6 +2685,17 @@ function draw (timestamp) {
               }
             })
 
+						cur_level.hats.forEach(hat => {
+              let hat_tick = get_original_tick_2(real_tick, hat.inmune)
+              if (hat.value[hat_tick] !== undefined) {
+                hat.inmune[real_tick] = hat.inmune[hat_tick] // unchecked
+                hat.value[real_tick] = hat.value[hat_tick] // unchecked
+              } else {
+                hat.inmune[real_tick] = hat.inmune[real_tick - 1] // unchecked
+                hat.value[real_tick] = hat.value[real_tick - 1]
+              }
+            })
+
             fallFlying(cur_level, cur_undo)
 
             if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
@@ -2614,7 +2704,7 @@ function draw (timestamp) {
                 let [ci2, cj2] = crate.history.at(-2)
                 return ci1 != ci2 || cj1 != cj2
               })
-              if (!boxes_moved) input_queue.push(cur_undo.toString())
+              if (!boxes_moved) input_queue.push('zxcv'[cur_undo-1])
             }
           } else if (magic_stuff_input) {
             neutralTurn(cur_level)
@@ -2775,6 +2865,16 @@ function draw (timestamp) {
                 // let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
                 cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, false) + player_parity
 
+								let over_hat = cur_level.hats.findIndex(hat => {
+	                let [hi, hj] = hat.position;
+	                return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
+	              })
+
+								if (over_hat != -1) {
+									cur_level.hats[over_hat].value[real_tick] = false
+									cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
+								}
+
                 if (over_cover != -1) {
                   cur_level.holeCovers[over_cover].value[real_tick] = false
                 }
@@ -2859,7 +2959,8 @@ function draw (timestamp) {
         if (pi !== mi || pj !== mj) {
           cur_level.geo[mj][mi] = '#'
 					cur_level.unmodified = false
-          cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
+					deleteStuffAt(cur_level, mi, mj)
+          /*cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
           cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
           cur_level.crates = cur_level.crates.filter(crate =>	{
             let [i, j] = crate.history.at(-1)
@@ -2873,12 +2974,13 @@ function draw (timestamp) {
             let [i, j] = cover.position
             return i != mi || j != mj
           })
-          cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+          cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)*/
         }
       } else if (isButtonDown(1)) {
         cur_level.geo[mj][mi] = '.'
 				cur_level.unmodified = false
-        cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
+				deleteStuffAt(cur_level, mi, mj)
+        /*cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
         cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
         cur_level.crates = cur_level.crates.filter(crate =>	{
           let [i, j] = crate.history.at(-1)
@@ -2892,7 +2994,7 @@ function draw (timestamp) {
 					let [i, j] = cover.position
 					return i != mi || j != mj
 				})
-        cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+        cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)*/
       } else if (mi > 0 && mi + 1 < cur_level.w && mj > 0 && mj + 1 < cur_level.h) {
         if (wasKeyPressed('1')) {
           cur_level.geo[mj][mi] = '.'
@@ -2955,6 +3057,30 @@ function draw (timestamp) {
 					cur_level.holes.push([mi, mj])
           cur_level.holeCovers.push(new PropertyHistory(true, 3, extra = true_timeline_undos.length))
           cur_level.holeCovers.at(-1).position = [mi, mj]
+        } else if (wasKeyPressed('D1')) { // hats
+          cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
+          cur_level.hats.push(new PropertyHistory(true, 0, extra = true_timeline_undos.length))
+          cur_level.hats.at(-1).position = [mi, mj]
+					HATS_ENABLED = true
+        } else if (wasKeyPressed('D2')) {
+          cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
+          cur_level.hats.push(new PropertyHistory(true, 1, extra = true_timeline_undos.length))
+          cur_level.hats.at(-1).position = [mi, mj]
+					HATS_ENABLED = true
+        } else if (wasKeyPressed('D3')) {
+          cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
+          cur_level.hats.push(new PropertyHistory(true, 2, extra = true_timeline_undos.length))
+          cur_level.hats.at(-1).position = [mi, mj]
+					HATS_ENABLED = true
+        } else if (wasKeyPressed('D4')) {
+          cur_level.geo[mj][mi] = '.'
+					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
+          cur_level.hats.push(new PropertyHistory(true, 3, extra = true_timeline_undos.length))
+          cur_level.hats.at(-1).position = [mi, mj]
+					HATS_ENABLED = true
         }
       }
     }
@@ -3060,6 +3186,10 @@ let keyboard_prev = {}
 let keyboard_last_pressed = {}
 
 function keyMap (e) {
+	if (e.shiftKey && e.altKey && e.code === 'Digit1') return 'D1'
+  if (e.shiftKey && e.altKey && e.code === 'Digit2') return 'D2'
+  if (e.shiftKey && e.altKey && e.code === 'Digit3') return 'D3'
+  if (e.shiftKey && e.altKey && e.code === 'Digit4') return 'D4'
   if (e.shiftKey && e.code === 'Digit1') return 'B1'
   if (e.shiftKey && e.code === 'Digit2') return 'B2'
   if (e.shiftKey && e.code === 'Digit3') return 'B3'
@@ -3091,7 +3221,7 @@ function keyMap (e) {
 
 window.addEventListener('keydown', e => {
 	if (document.activeElement.tagName === 'TEXTAREA') {
-		if (e.key.startsWith('Arrow') || '1234pmn'.indexOf(e.key) !== -1) {
+		if (e.key.startsWith('Arrow') || '1234pmnuiopjkl;abcdABCD'.indexOf(e.key) !== -1) {
 			return
 		}
 	}
