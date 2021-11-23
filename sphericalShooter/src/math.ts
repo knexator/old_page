@@ -40,10 +40,10 @@ export function pureRot(dist: number, axis_from: number, axis_to: number, dst?: 
 export function projMat(z0: number, near: boolean, dst?: Matrix4): Matrix4 {
   dst = identity(dst)
   /*[
-    1, 0, 0, 0, // first row
-    0, 1, 0, 0, // second row
-    0, 0, near ? 0.5 : -.5, -z0/2,
-    0, 0, -1, 0
+    1, 0, 0, 0,                     // zero row
+    0, 1, 0, 0,                     // one row
+    0, 0, near ? 0.5 : -.5, -z0/2,  // two row
+    0, 0, -1, 0                     // three row
   ]*/
   setMat(dst, 2, 2, near ? 0.5 : -.5)
   setMat(dst, 2, 3, -z0/2)

@@ -117,21 +117,25 @@ function createGreatTubeVertices(radius: number, thickness: number, radialSubdiv
   for (var slice = 0; slice < bodyParts; ++slice) {
     var v = slice / bodySubdivisions;
     var sliceAngle = v * Math.PI * 2;
-    var sliceSin = Math.sin(sliceAngle);
-    var ringRadius = radius + sliceSin * thickness;
-    var ny = Math.cos(sliceAngle);
-    var y = ny * thickness;
+    // var sliceSin = Math.sin(sliceAngle);
+    // var ringRadius = radius + sliceSin * thickness;
+    // var ny = Math.cos(sliceAngle);
+    // var y = ny * thickness;
 
     for (var ring = 0; ring < radialParts; ++ring) {
       var u = ring / radialSubdivisions;
       var ringAngle = startAngle + u * range;
-      var xSin = Math.sin(ringAngle);
-      var zCos = Math.cos(ringAngle);
-      var x = xSin * ringRadius;
-      var z = zCos * ringRadius;
-      var nx = xSin * sliceSin;
-      var nz = zCos * sliceSin;
-      positions.push(x, y, z, 1);
+      // var xSin = Math.sin(ringAngle);
+      // var zCos = Math.cos(ringAngle);
+      // var x = xSin * ringRadius;
+      // var z = zCos * ringRadius;
+      // var nx = xSin * sliceSin;
+      // var nz = zCos * sliceSin;
+      let x = Math.cos(ringAngle) * radius
+      let y = Math.sin(ringAngle) * radius
+      let z = Math.cos(sliceAngle) * thickness
+      let w = Math.sin(sliceAngle) * thickness
+      positions.push(x, y, z, w);
       // normals.push(nx, ny, nz);
       texcoords.push(u, 1 - v);
     }

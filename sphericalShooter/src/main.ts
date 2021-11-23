@@ -24,7 +24,7 @@ const debugUnlitProgramInfo = twgl.createProgramInfo(gl, [vs, fs], attributes);
 const programInfos = [debugUnlitProgramInfo];
 
 const arrays = {
-  a_position: {
+  position: {
     numComponents: 4,
     data: [
       -.1, -.1, -1, 0,
@@ -35,7 +35,7 @@ const arrays = {
       .1, .1, -1, 0,
     ],
   },
-  a_texcoord: {
+  texcoord: {
     numComponents: 2,
     type: Uint8Array,
     data: [
@@ -64,10 +64,10 @@ const arrays = {
 // const bufferInfo = createCustomCubeBufferInfo(gl, .1);
 // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
 // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
-const bufferInfo = createGreatTubeVerticesBufferInfo(gl, 1.0, 0.2, 64, 32)
+const bufferInfo = createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 64, 32)
 const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
 
-const z0 = 0.01
+const z0 = 0.1
 const projNear = projMat(z0, true)
 const projFar = projMat(z0, false)
 
@@ -137,7 +137,7 @@ function update(curTime: number) {
 
   // Draw near hemisphere
   twgl.setUniforms(debugUnlitProgramInfo, {
-    u_projection: projFar,
+    u_projection: projNear,
     u_viewInverse: viewInverse,
   });
   twgl.drawBufferInfo(gl, bufferInfo);
