@@ -2422,6 +2422,25 @@ function doUndo (n) {
   input_queue.push(n.toString())
 }
 
+function movableChangedLastTurn(movable) {
+	let [ci1, cj1] = movable.history.at(-1)
+	let [ci2, cj2] = movable.history.at(-2)
+	if (movable.inmune_history.at(-1) != movable.inmune_history.at(-2)) return true
+	if (movable.inHole.value.at(-1) != movable.inHole.value.at(-2)) return true
+	return ci1 != ci2 || cj1 != cj2
+}
+
+function thingyChangedStateLastTurn(thingy) {
+	return thingy.value.at(-1) != thingy.value.at(-2)
+}
+
+function anyChangesLastTurn(level) {
+	return movableChangedLastTurn(level.player) || level.crates.some(movableChangedLastTurn)
+		|| level.holeCovers.some(thingyChangedStateLastTurn)
+		|| level.paintBlobs.some(thingyChangedStateLastTurn)
+		|| level.hats.some(thingyChangedStateLastTurn)
+}
+
 function getKeyRetriggerTime (key) {
   // if ('123456789'.indexOf(key) != -1) return first_undo_press ? KEY_RETRIGGER_TIME * 1.2 : KEY_RETRIGGER_TIME / 2
   // if ('wasd'.indexOf(key) != -1) return TURN_SPEED * 1000;
@@ -2622,6 +2641,7 @@ function draw (timestamp) {
         } else {
           // if (cur_level.player.history[player_tick] !== undefined) { // player is undoing
           if (cur_undo > 0) {
+						let player_resisted = false
 						playUndoSound(cur_undo)
             if (cur_level.player.history[player_tick] !== undefined) { // player is being undoed
               [i, j] = cur_level.player.history[player_tick]
@@ -2630,6 +2650,7 @@ function draw (timestamp) {
               cur_level.player.inHole.value[real_tick] = cur_level.player.inHole.value[player_tick]
               player_parity = 1 - player_parity
             } else { // player is inmune to this undo level
+							player_resisted = true;
               [i, j] = cur_level.player.history[real_tick - 1]
               cur_level.player.history[real_tick] = [i, j]
               cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1]
@@ -2698,14 +2719,13 @@ function draw (timestamp) {
 
             fallFlying(cur_level, cur_undo)
 
-            if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
-              let boxes_moved = cur_level.crates.some(crate => {
-                let [ci1, cj1] = crate.history.at(-1)
-                let [ci2, cj2] = crate.history.at(-2)
-                return ci1 != ci2 || cj1 != cj2
-              })
-              if (!boxes_moved) input_queue.push('zxcv'[cur_undo-1])
-            }
+            // if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
+						// if (player_resisted) {
+            if (!anyChangesLastTurn(cur_level)) {
+							input_queue.push('zxcv'[cur_undo-1])
+							turn_time = 0.0
+						}
+            // }
           } else if (magic_stuff_input) {
             neutralTurn(cur_level)
             cur_level.player.inmune_history[real_tick] = 2 // magic!
@@ -2796,6 +2816,16 @@ function draw (timestamp) {
           						cur_level.crates[pushing_crate].inHole.value[real_tick] = true
           					})
 
+										let over_hat = cur_level.hats.findIndex(hat => {
+			                let [hi, hj] = hat.position;
+			                return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
+			              })
+
+										if (over_hat != -1) {
+											cur_level.hats[over_hat].value[real_tick] = false
+											cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
+										}
+
                     if (over_cover != -1) {
                       cur_level.holeCovers[over_cover].value[real_tick] = false
                     }
@@ -2836,6 +2866,16 @@ function draw (timestamp) {
           					  pushing_crates.forEach(pushing_crate => {
   						          cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j]
           					  })
+
+											let over_hat = cur_level.hats.findIndex(hat => {
+				                let [hi, hj] = hat.position;
+				                return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
+				              })
+
+											if (over_hat != -1) {
+												cur_level.hats[over_hat].value[real_tick] = false
+												cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
+											}
 
                       if (over_cover != -1) {
                         cur_level.holeCovers[over_cover].value[real_tick] = false
