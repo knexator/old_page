@@ -2308,6 +2308,26 @@ function loadLevel (n) {
   updateMenuButtons()
 }
 
+function maybeBreakHoleCovers (level, real_tick) {
+	level.holeCovers.forEach(holeCover => {
+		if (holeCover.value[real_tick - 1]) {
+			console.log("might break!")
+			// hole might break
+			let [hi, hj] = holeCover.position
+			if (weightOnTile(level, real_tick-1, hi, hj) && !weightOnTile(level, real_tick, hi, hj)) {
+				// hole broke!
+				console.log("broke!")
+				holeCover.value[real_tick] = false
+			} else {
+				console.log("didn't break!")
+				holeCover.value[real_tick] = true
+			}
+		} else { // hole is already broken
+			holeCover.value[real_tick] = false
+		}
+	})
+}
+
 function fixPlayerOutsideBounds (level) {
 	let [pi, pj] = level.player.history.at(-1)
 	while (pi < 1) {
@@ -2759,11 +2779,6 @@ function draw (timestamp) {
               turn_time = 0
               SKIPPED_TURN = true
             } else {
-              let over_cover = cur_level.holeCovers.findIndex(holeCover => {
-                let [hi, hj] = holeCover.position;
-                return holeCover.get() && hi == pi && hj == pj
-              })
-
               /* let pushing_crate = cur_level.crates.findIndex(crate => {
                 [ci, cj] = crate.history[crate.history.length - 1];
                 return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
@@ -2826,9 +2841,7 @@ function draw (timestamp) {
 											cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
 										}
 
-                    if (over_cover != -1) {
-                      cur_level.holeCovers[over_cover].value[real_tick] = false
-                    }
+										maybeBreakHoleCovers(cur_level, real_tick)
 										fallFlying(cur_level, 0)
                   } else {
                     let occupied_by_crate = cur_level.crates.findIndex(crate => {
@@ -2877,9 +2890,7 @@ function draw (timestamp) {
 												cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
 											}
 
-                      if (over_cover != -1) {
-                        cur_level.holeCovers[over_cover].value[real_tick] = false
-                      }
+                      maybeBreakHoleCovers(cur_level, real_tick)
 
                       let over_paint = cur_level.paintBlobs.findIndex(paintBlob => {
                         let [hi, hj] = paintBlob.position;
@@ -2915,9 +2926,7 @@ function draw (timestamp) {
 									cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
 								}
 
-                if (over_cover != -1) {
-                  cur_level.holeCovers[over_cover].value[real_tick] = false
-                }
+                maybeBreakHoleCovers(cur_level, real_tick)
 								fallFlying(cur_level, 0)
               }
             }
