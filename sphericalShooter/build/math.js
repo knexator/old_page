@@ -14,7 +14,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.multMatVec = exports.multMatMat = exports.inverse = exports.transpose = exports.identity = exports.copyMat = exports.projMat = exports.pureRot = void 0;
+    exports.multMatVec = exports.multMatMat = exports.inverse = exports.transpose = exports.identity = exports.copyMat = exports.negateMat = exports.projMat = exports.pureRot = void 0;
     function getMat(mat, row, col) {
         return mat[row + col * 4];
     }
@@ -53,10 +53,39 @@
         setMat(dst, 2, 3, -z0 / 2);
         setMat(dst, 3, 2, -1);
         setMat(dst, 3, 3, 0);
+        if (!near)
+            negateMat(dst, dst);
         return dst;
     }
     exports.projMat = projMat;
     // from https://github.com/greggman/twgl.js/blob/master/src/m4.js
+    /**
+     * Negates a matrix.
+     * @param {Matrix4} m The matrix.
+     * @param {Matrix4} [dst] matrix to hold result. If not passed a new one is created.
+     * @return {Matrix4} -m.
+     */
+    function negateMat(m, dst) {
+        dst = dst || new Float32Array(16);
+        dst[0] = -m[0];
+        dst[1] = -m[1];
+        dst[2] = -m[2];
+        dst[3] = -m[3];
+        dst[4] = -m[4];
+        dst[5] = -m[5];
+        dst[6] = -m[6];
+        dst[7] = -m[7];
+        dst[8] = -m[8];
+        dst[9] = -m[9];
+        dst[10] = -m[10];
+        dst[11] = -m[11];
+        dst[12] = -m[12];
+        dst[13] = -m[13];
+        dst[14] = -m[14];
+        dst[15] = -m[15];
+        return dst;
+    }
+    exports.negateMat = negateMat;
     /**
      * Copies a matrix.
      * @param {Matrix4} m The matrix.

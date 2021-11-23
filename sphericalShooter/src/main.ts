@@ -2,7 +2,7 @@
 import { engine_pre_update, engine_post_update, game_time, delta_time, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed, isKeyDown } from './engine';
 import * as twgl from './../external/twgl-full'
 import { vs, fs } from './shaders'
-import { Matrix4, Vec4, projMat, identity, multMatVec, pureRot, multMatMat } from './math';
+import { Matrix4, Vec4, projMat, identity, negateMat, multMatVec, pureRot, multMatMat } from './math';
 import { createCustomCubeBufferInfo, createGreatTubeVerticesBufferInfo } from './geometry';
 
 twgl.setDefaults({attribPrefix: "a_"});
@@ -107,8 +107,8 @@ const arrays2 = {
 // const bufferInfo = createCustomCubeBufferInfo(gl, .1);
 // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
 // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
-const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
-// const bufferInfo = createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 4, 4)
+// const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
+const bufferInfo = createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 32, 16)
 const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
 
 const z0 = 0.1
@@ -116,7 +116,6 @@ const projNear = projMat(z0, true)
 const projFar = projMat(z0, false)
 
 let viewInverse = identity();
-let farviewInverse = identity();
 
 // Called when loading the page
 function initOnce() {
@@ -163,8 +162,6 @@ function update(curTime: number) {
   // rotate x into y, a positive distance (roll right)
   if (isKeyDown('o')) multMatMat(pureRot( 0.001 * delta_time, 0, 1), viewInverse, viewInverse)
 
-  multMatMat(pureRot(Math.PI, 2, 3), viewInverse, farviewInverse)
-
   twgl.resizeCanvasToDisplaySize(gl.canvas);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -172,6 +169,7 @@ function update(curTime: number) {
   const commonUniforms = {
     time: game_time * 0.001,
     resolution: [gl.canvas.width, gl.canvas.height],
+    u_viewInverse: viewInverse,
   };
 
   gl.useProgram(debugUnlitProgramInfo.program);
@@ -182,13 +180,11 @@ function update(curTime: number) {
   // Draw near hemisphere
   twgl.setUniforms(debugUnlitProgramInfo, {
     u_projection: projNear,
-    u_viewInverse: viewInverse,
   });
   twgl.drawBufferInfo(gl, bufferInfo);
   // Draw far hemisphere
   twgl.setUniforms(debugUnlitProgramInfo, {
     u_projection: projFar,
-    u_viewInverse: farviewInverse,
   });
   twgl.drawBufferInfo(gl, bufferInfo);
 

@@ -135,7 +135,7 @@ function createGreatTubeVertices(radius: number, thickness: number, radialSubdiv
       let y = Math.sin(ringAngle) * radius
       let z = Math.cos(sliceAngle) * thickness
       let w = Math.sin(sliceAngle) * thickness
-      positions.push(x, y, z, w);
+      positions.push(x, z, y, w);
       // normals.push(nx, ny, nz);
       texcoords.push(u, 1 - v);
     }

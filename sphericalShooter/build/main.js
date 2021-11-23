@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "./engine", "./../external/twgl-full", "./shaders", "./math"], factory);
+        define(["require", "exports", "./engine", "./../external/twgl-full", "./shaders", "./math", "./geometry"], factory);
     }
 })(function (require, exports) {
     "use strict";
@@ -33,6 +33,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const twgl = __importStar(require("./../external/twgl-full"));
     const shaders_1 = require("./shaders");
     const math_1 = require("./math");
+    const geometry_1 = require("./geometry");
     twgl.setDefaults({ attribPrefix: "a_" });
     const gl = document.querySelector('canvas').getContext("webgl2");
     gl.enable(gl.DEPTH_TEST);
@@ -132,14 +133,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
     // const bufferInfo = createCustomCubeBufferInfo(gl, .1);
     // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
     // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
-    const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
-    // const bufferInfo = createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 4, 4)
+    // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
+    const bufferInfo = (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.02, 32, 16);
     const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
     const z0 = 0.1;
     const projNear = (0, math_1.projMat)(z0, true);
     const projFar = (0, math_1.projMat)(z0, false);
     let viewInverse = (0, math_1.identity)();
-    let farviewInverse = (0, math_1.identity)();
     // Called when loading the page
     function initOnce() {
         init();
@@ -188,13 +188,13 @@ var __importStar = (this && this.__importStar) || function (mod) {
         // rotate x into y, a positive distance (roll right)
         if ((0, engine_1.isKeyDown)('o'))
             (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 1), viewInverse, viewInverse);
-        (0, math_1.multMatMat)((0, math_1.pureRot)(Math.PI, 2, 3), viewInverse, farviewInverse);
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         const commonUniforms = {
             time: engine_1.game_time * 0.001,
             resolution: [gl.canvas.width, gl.canvas.height],
+            u_viewInverse: viewInverse,
         };
         gl.useProgram(debugUnlitProgramInfo.program);
         twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
@@ -202,13 +202,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
         // Draw near hemisphere
         twgl.setUniforms(debugUnlitProgramInfo, {
             u_projection: projNear,
-            u_viewInverse: viewInverse,
         });
         twgl.drawBufferInfo(gl, bufferInfo);
         // Draw far hemisphere
         twgl.setUniforms(debugUnlitProgramInfo, {
             u_projection: projFar,
-            u_viewInverse: farviewInverse,
         });
         twgl.drawBufferInfo(gl, bufferInfo);
         (0, engine_1.engine_post_update)();
