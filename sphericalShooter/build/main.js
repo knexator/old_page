@@ -23,7 +23,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "./engine", "./../external/twgl-full", "./shaders", "./math", "./geometry"], factory);
+        define(["require", "exports", "./engine", "./../external/twgl-full", "./shaders", "./math"], factory);
     }
 })(function (require, exports) {
     "use strict";
@@ -33,7 +33,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const twgl = __importStar(require("./../external/twgl-full"));
     const shaders_1 = require("./shaders");
     const math_1 = require("./math");
-    const geometry_1 = require("./geometry");
     twgl.setDefaults({ attribPrefix: "a_" });
     const gl = document.querySelector('canvas').getContext("webgl2");
     gl.enable(gl.DEPTH_TEST);
@@ -87,10 +86,54 @@ var __importStar = (this && this.__importStar) || function (mod) {
         },*/
         indices: [0, 1, 2, 2, 1, 3]
     };
+    const arrays2 = {
+        position: {
+            numComponents: 4,
+            data: [
+                0, -.1, -1, 0,
+                0, .1, -1, 0,
+                .5, -.1, -.5, 0,
+                .5, .1, -.5, 0,
+                1, -.1, 0, 0,
+                1, .1, 0, 0,
+                .5, -.1, .5, 0,
+                .5, .1, .5, 0,
+                0, -.1, 1, 0,
+                0, .1, 1, 0,
+                -.5, -.1, .5, 0,
+                -.5, .1, .5, 0,
+                -1, -.1, 0, 0,
+                -1, .1, 0, 0,
+                -.5, -.1, -.5, 0,
+                -.5, .1, -.5, 0,
+            ],
+        },
+        /*texcoord: {
+          numComponents: 2,
+          type: Uint8Array,
+          data: [
+             0, 0,
+             255, 0,
+             0, 255,
+             255, 255,
+          ],
+        },*/
+        indices: [
+            0, 1, 2, 1, 2, 3,
+            2, 3, 4, 3, 4, 5,
+            4, 5, 6, 5, 6, 7,
+            6, 7, 8, 7, 8, 9,
+            8, 9, 10, 9, 10, 11,
+            10, 11, 12, 11, 12, 13,
+            12, 13, 14, 13, 14, 15,
+            14, 15, 0, 15, 0, 1,
+        ]
+    };
     // const bufferInfo = createCustomCubeBufferInfo(gl, .1);
     // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
     // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
-    const bufferInfo = (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.02, 64, 32);
+    const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
+    // const bufferInfo = createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 4, 4)
     const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
     const z0 = 0.1;
     const projNear = (0, math_1.projMat)(z0, true);
