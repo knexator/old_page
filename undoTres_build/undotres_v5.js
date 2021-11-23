@@ -2882,7 +2882,7 @@ function draw (timestamp) {
               }
             }
           }
-					fixPlayerOutsideBounds(cur_level)
+					if (!won_cur_level) fixPlayerOutsideBounds(cur_level)
 				}
       }
 
