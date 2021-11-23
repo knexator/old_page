@@ -136,6 +136,31 @@ var __importStar = (this && this.__importStar) || function (mod) {
     // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
     const bufferInfo = (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.02, 32, 16);
     const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
+    const shapes = {
+        greatCircle: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.02, 32, 16)),
+    };
+    let myStaticObjects = [
+        {
+            vertexArrayInfo: shapes.greatCircle,
+            transform: (0, math_1.identity)(),
+        },
+        {
+            vertexArrayInfo: shapes.greatCircle,
+            transform: (0, math_1.pureRot)(Math.PI / 2, 0, 1),
+        },
+        {
+            vertexArrayInfo: shapes.greatCircle,
+            transform: (0, math_1.pureRot)(Math.PI / 2, 0, 3),
+        },
+        {
+            vertexArrayInfo: shapes.greatCircle,
+            transform: (0, math_1.pureRot)(Math.PI / 2, 1, 2),
+        },
+        /*{
+          vertexArrayInfo: shapes.greatCircle,
+          transform: pureRot(Math.PI / 2, 2, 3),
+        },*/
+    ];
     const z0 = 0.1;
     const projNear = (0, math_1.projMat)(z0, true);
     const projFar = (0, math_1.projMat)(z0, false);
@@ -196,6 +221,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
             resolution: [gl.canvas.width, gl.canvas.height],
             u_viewInverse: viewInverse,
         };
+        /*myStaticObjects.forEach(obj => {
+          pureRot(game_time * 0.001, 1, 2, obj.transform)
+        })*/
         gl.useProgram(debugUnlitProgramInfo.program);
         twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
         twgl.setUniforms(debugUnlitProgramInfo, commonUniforms);
@@ -203,12 +231,22 @@ var __importStar = (this && this.__importStar) || function (mod) {
         twgl.setUniforms(debugUnlitProgramInfo, {
             u_projection: projNear,
         });
-        twgl.drawBufferInfo(gl, bufferInfo);
+        myStaticObjects.forEach(obj => {
+            twgl.setUniforms(debugUnlitProgramInfo, {
+                u_transform: obj.transform,
+            });
+            twgl.drawBufferInfo(gl, obj.vertexArrayInfo);
+        });
         // Draw far hemisphere
         twgl.setUniforms(debugUnlitProgramInfo, {
             u_projection: projFar,
         });
-        twgl.drawBufferInfo(gl, bufferInfo);
+        myStaticObjects.forEach(obj => {
+            twgl.setUniforms(debugUnlitProgramInfo, {
+                u_transform: obj.transform,
+            });
+            twgl.drawBufferInfo(gl, obj.vertexArrayInfo);
+        });
         (0, engine_1.engine_post_update)();
         window.requestAnimationFrame(update);
     }
