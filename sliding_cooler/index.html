@@ -1,0 +1,320 @@
+<head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<style>
+body {
+  background: #60117f;
+}
+
+#main {
+  position: relative;
+  <!-- width: 100vh; -->
+  <!-- height: 100vh; -->
+  <!-- margin: 0; -->
+  //margin: auto;
+  //width: 218px;
+  //height: 218px;
+  //top:0;bottom:0; /* vertical center */
+  //left:0;right:0; /* horizontal center */
+}
+
+#main>img {
+  max-width:100%;
+  max-height:100%;
+}
+
+#tiles img {
+  position: absolute;  
+}
+
+#squares img {
+  cursor: pointer;  
+}
+
+#circles img {
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<div id="main">
+  <img src="background.svg">
+  <div id="tiles">
+    <div id="squares">
+      <img src="tile1.svg" onclick="figureOutMove(0)" draggable="false">
+      <img src="tile2.svg" onclick="figureOutMove(1)" draggable="false">
+      <img src="tile3.svg" onclick="figureOutMove(2)" draggable="false">
+      <img src="tile4.svg" onclick="figureOutMove(3)" draggable="false">
+      <img src="tile5.svg" onclick="figureOutMove(4)" draggable="false">
+      <img src="tile6.svg" onclick="figureOutMove(5)" draggable="false">
+      <img src="tile7.svg" onclick="figureOutMove(6)" draggable="false">
+      <img src="tile8.svg" onclick="figureOutMove(7)" draggable="false">
+    </div>
+    <div id="circles">
+      <img src="tileA.svg" draggable="false">
+      <img src="tileB.svg" draggable="false">
+      <img src="tileC.svg" draggable="false">
+      <!--img src="tileD.svg" draggable="false"-->
+    </div>
+  </div>
+</div>
+<script>
+!function(t,e){"use strict";"function"!=typeof t.CustomEvent&&(t.CustomEvent=function(t,n){n=n||{bubbles:!1,cancelable:!1,detail:void 0};var a=e.createEvent("CustomEvent");return a.initCustomEvent(t,n.bubbles,n.cancelable,n.detail),a},t.CustomEvent.prototype=t.Event.prototype),e.addEventListener("touchstart",function(t){if("true"===t.target.getAttribute("data-swipe-ignore"))return;s=t.target,r=Date.now(),n=t.touches[0].clientX,a=t.touches[0].clientY,u=0,i=0},!1),e.addEventListener("touchmove",function(t){if(!n||!a)return;var e=t.touches[0].clientX,r=t.touches[0].clientY;u=n-e,i=a-r},!1),e.addEventListener("touchend",function(t){if(s!==t.target)return;var e=parseInt(l(s,"data-swipe-threshold","20"),10),o=parseInt(l(s,"data-swipe-timeout","500"),10),c=Date.now()-r,d="",p=t.changedTouches||t.touches||[];Math.abs(u)>Math.abs(i)?Math.abs(u)>e&&c<o&&(d=u>0?"swiped-left":"swiped-right"):Math.abs(i)>e&&c<o&&(d=i>0?"swiped-up":"swiped-down");if(""!==d){var b={dir:d.replace(/swiped-/,""),xStart:parseInt(n,10),xEnd:parseInt((p[0]||{}).clientX||-1,10),yStart:parseInt(a,10),yEnd:parseInt((p[0]||{}).clientY||-1,10)};s.dispatchEvent(new CustomEvent("swiped",{bubbles:!0,cancelable:!0,detail:b})),s.dispatchEvent(new CustomEvent(d,{bubbles:!0,cancelable:!0,detail:b}))}n=null,a=null,r=null},!1);var n=null,a=null,u=null,i=null,r=null,s=null;function l(t,n,a){for(;t&&t!==e.documentElement;){var u=t.getAttribute(n);if(u)return u;t=t.parentNode}return a}}(window,document);
+</script>
+<script>
+window.addEventListener('load', e => {
+  container_element = document.querySelector("#main>img");
+  squares_elements = document.querySelectorAll("#squares>img");
+  circles_elements = document.querySelectorAll("#circles>img");
+  
+  container_bounding_rect = container_element.getBoundingClientRect();
+  squares_bounding_rect = squares_elements[0].getBoundingClientRect();
+  circles_bounding_rect = circles_elements[0].getBoundingClientRect();
+
+  squares_margin = 1.05
+  circles_margin = 1.05
+  
+  game_history = [startingState()]
+  input_queue = []
+  
+  for (let k=0; k<squares_elements.length; k++) {
+    let i = k % 3;
+    let j = Math.floor(k / 3);
+    let [x, y] = ij2xy(i, j, true);
+    squares_elements[k].style.left = `${x}px`;
+    squares_elements[k].style.top = `${y}px`;
+  }
+  
+  for (let k=0; k<circles_elements.length; k++) {
+    let i = k % 2 + 1;
+    let j = Math.floor(k / 2) + 1;
+    let [x, y] = ij2xy(i, j, false);
+    circles_elements[k].style.left = `${x}px`;
+    circles_elements[k].style.top = `${y}px`;
+  }
+  
+  
+  // window.requestAnimationFrame(draw)
+})
+
+function ij2xy(i, j, square) {
+  if (square) {
+    let x = container_bounding_rect.width / 2 + squares_bounding_rect.width * squares_margin * (i - 1.5) + squares_bounding_rect.width * (squares_margin - 1) / 2
+    let y = container_bounding_rect.height / 2 + squares_bounding_rect.height * squares_margin * (j - 1.5) + squares_bounding_rect.height * (squares_margin - 1) / 2
+    return [x, y]
+  } else {
+    let x = container_bounding_rect.width / 2 + circles_bounding_rect.width * circles_margin * (i - 2) + circles_bounding_rect.width * (circles_margin - 1) / 2
+    let y = container_bounding_rect.height / 2 + circles_bounding_rect.height * circles_margin * (j - 2) + circles_bounding_rect.height * (circles_margin - 1) / 2
+    return [x, y]
+  }
+}
+
+window.addEventListener('keydown', e => {
+  let cur_state = game_history[game_history.length - 1];
+  // let cur_input = input_queue.shift()
+  let cur_input = e.key;
+  let di = 0;
+  let dj = 0;
+  if (cur_input == 'd') di += 1
+  if (cur_input == 'a') di -= 1
+  if (cur_input == 's') dj += 1
+  if (cur_input == 'w') dj -= 1
+  
+  let new_state = applyInput(di, dj, game_history[game_history.length - 1])
+  if (new_state !== false) {
+    game_history.push(new_state)
+  }
+  
+  if (cur_input == 'z' && game_history.length > 1) {
+    moveAll(game_history[game_history.length - 1], game_history[game_history.length - 2])
+    game_history.pop()    
+  }
+  if (cur_input == 'r') {
+    game_history.push(startingState())
+    moveAll(game_history[game_history.length - 2], game_history[game_history.length - 1])
+  }
+});
+
+function moveAll(starting_state, ending_state) {
+  for (let k=0; k<squares_elements.length; k++) {
+    let [i1, j1] = find_tile(starting_state[2], k + 1)
+    let [i2, j2] = find_tile(ending_state[2], k + 1)
+    moveElement(squares_elements[k], i1, j1, i2, j2, true)
+  }
+  for (let k=0; k<circles_elements.length; k++) {
+    let [i1, j1] = find_tile(starting_state[3], k + 9)
+    let [i2, j2] = find_tile(ending_state[3], k + 9)
+    moveElement(circles_elements[k], i1, j1, i2, j2, false)
+  }
+  //moveElement(squares_elements[board_0[moving_j][moving_i] - 1], moving_i, moving_j, hole_i, hole_j, true)
+}
+
+
+function startingState() {
+  let next_id = 1;
+
+  let hole_i = 2;
+  let hole_j = 2;
+
+  let board_0 = [];
+  for (let j = 0; j < 3; j++) {
+    let row = []
+    for (let i = 0; i < 3; i++) {
+      if (i == hole_i && j == hole_j) {
+        row.push(0)
+      } else {
+        row.push(next_id++)
+      }
+    }
+    board_0.push(row)
+  }
+
+  let board_1 = [];
+  for (let j = 0; j < 4; j++) {
+    let row = []
+    for (let i = 0; i < 4; i++) {
+      row.push(0)
+    }
+    board_1.push(row)
+  }
+  board_1[1][1] = next_id++
+  board_1[1][2] = next_id++
+  board_1[2][1] = next_id++
+  // board_1[2][2] = next_id++
+
+  return [hole_i, hole_j, board_0, board_1]
+}
+
+function pushTopTile(board_1, i, j, di, dj) {
+  if (i < 0 || i > 3 || j < 0 || j > 3) return false;
+  if (i + di < 0 || i + di > 3 || j + dj < 0 || j + dj > 3) return false;
+  if (board_1[j][i] === 0)
+    return false;
+  if (board_1[j + dj][i + di] !== 0) {
+    // Don't allow pushing
+    //     return;
+    if (!pushTopTile(board_1, i + di, j + dj, di, dj)) {
+      return false
+    }
+  }
+  console.log(board_1[j][i]);
+  moveElement(circles_elements[board_1[j][i] - 9], i, j, i+di, j+dj);
+  board_1[j + dj][i + di] = board_1[j][i];
+  board_1[j][i] = 0;  
+  return true
+}
+
+function applyInput(di, dj, [hole_i, hole_j, board_0, board_1]) {
+  if (di !== 0 || dj !== 0) {
+    let moving_i = hole_i - di
+    let moving_j = hole_j - dj
+    if (moving_i < 0 || moving_i > 2 || moving_j < 0 || moving_j > 2) {
+      return false
+    }
+    let new_board_0 = JSON.parse(JSON.stringify(board_0))
+    let new_board_1 = JSON.parse(JSON.stringify(board_1))
+    if (di > 0) {
+      pushTopTile(new_board_1, moving_i + 1, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, di, 0)
+      pushTopTile(new_board_1, moving_i, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i, moving_j + 1, di, 0)
+    } else if (di < 0) {
+      pushTopTile(new_board_1, moving_i, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i, moving_j + 1, di, 0)
+      pushTopTile(new_board_1, moving_i + 1, moving_j, di, 0)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, di, 0)
+    } else if (dj > 0) {
+      pushTopTile(new_board_1, moving_i, moving_j + 1, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, 0, dj)
+      pushTopTile(new_board_1, moving_i, moving_j, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j, 0, dj)
+    } else if (dj < 0) {
+      pushTopTile(new_board_1, moving_i, moving_j, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j, 0, dj)
+      pushTopTile(new_board_1, moving_i, moving_j + 1, 0, dj)
+      pushTopTile(new_board_1, moving_i + 1, moving_j + 1, 0, dj)
+    } else {
+      console.log("terrible error")
+    }
+    moveElement(squares_elements[board_0[moving_j][moving_i] - 1], moving_i, moving_j, hole_i, hole_j, true)
+    new_board_0[hole_j][hole_i] = new_board_0[moving_j][moving_i]
+    new_board_0[moving_j][moving_i] = 0
+    hole_i = moving_i
+    hole_j = moving_j
+    return [hole_i, hole_j, new_board_0, new_board_1]
+  } else {
+    return false
+  }
+}
+
+// document.getElementById("myBtn").style.left = "100px";
+
+function moveElement(element, i1, j1, i2, j2, square) {
+  let [x1, y1] = ij2xy(i1, j1, square);
+  let [x2, y2] = ij2xy(i2, j2, square);
+  element.animate([
+    // keyframes
+    { left: `${x1}px`, top: `${y1}px` },
+    { left: `${x2}px`, top: `${y2}px` }
+  ], {
+    // timing options
+    duration: 100,
+    fill: 'both',
+    easing: 'ease',
+    // iterations: Infinity
+  });
+}
+
+function figureOutMove(k) {
+  let [hole_i, hole_j, board_0, board_1] = game_history[game_history.length - 1];
+  let [i, j] = find_tile(board_0, k + 1);
+  if (i === -1) throw new Error("should never happen")
+  let di = hole_i - i;
+  let dj = hole_j - j;
+  if (Math.abs(di) + Math.abs(dj) === 1) {
+    let new_state = applyInput(di, dj, game_history[game_history.length - 1])
+    if (new_state !== false) {
+      game_history.push(new_state)
+    }
+  }
+}
+
+function find_tile(board, tile) {
+  for (let j=0; j<board.length; j++) {
+    for (let i=0; i<board[0].length; i++) {
+      if (board[j][i] === tile) return [i,j]
+    }
+  }
+  return [-1,-1]
+}
+
+function moveWildly(stuff) {
+  stuff.animate([
+    // keyframes
+    { transform: 'translateY(0px)' },
+    { transform: 'translateY(100%)' }
+  ], {
+    // timing options
+    duration: 1000,
+    fill: 'both',
+    easing: 'ease',
+    // iterations: Infinity
+  });
+}
+
+document.addEventListener('swiped', function (e) {
+  const dir2key = { 'left': 'a', 'right': 'd', 'up': 'w', 'down': 's' }
+  let cur_input = dir2key[e.detail.dir];
+  let cur_state = game_history[game_history.length - 1];
+  let di = 0;
+  let dj = 0;
+  if (cur_input == 'd') di += 1
+  if (cur_input == 'a') di -= 1
+  if (cur_input == 's') dj += 1
+  if (cur_input == 'w') dj -= 1
+  
+  let new_state = applyInput(di, dj, game_history[game_history.length - 1])
+  if (new_state !== false) {
+    game_history.push(new_state)
+  }
+})
+</script>
+</body>
