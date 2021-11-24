@@ -116,27 +116,33 @@ const shapes = {
     createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 32, 16)),
 }
 
+let temp = pureRot(Math.PI / 2, 1, 2);//xz
+multMatMat(temp, pureRot(Math.PI / 2, 0, 3), temp)//zw
 let myStaticObjects = [
   {
     vertexArrayInfo: shapes.greatCircle,
-    transform: identity(),
+    transform: identity(),  // xy
   },
   {
     vertexArrayInfo: shapes.greatCircle,
-    transform: pureRot(Math.PI / 2, 0, 1),
+    transform: pureRot(Math.PI / 2, 1, 2), // xz
   },
   {
     vertexArrayInfo: shapes.greatCircle,
-    transform: pureRot(Math.PI / 2, 0, 3),
+    transform: pureRot(Math.PI / 2, 0, 2), // yz
   },
   {
     vertexArrayInfo: shapes.greatCircle,
-    transform: pureRot(Math.PI / 2, 1, 2),
+    transform: pureRot(Math.PI / 2, 1, 3),  //xw
   },
-  /*{
+  {
     vertexArrayInfo: shapes.greatCircle,
-    transform: pureRot(Math.PI / 2, 2, 3),
-  },*/
+    transform: pureRot(Math.PI / 2, 0, 3),  // yw
+  },
+  {
+    vertexArrayInfo: shapes.greatCircle,
+    transform: temp,  // zw
+  },
 ]
 
 const z0 = 0.1

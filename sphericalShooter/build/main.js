@@ -139,27 +139,33 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const shapes = {
         greatCircle: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.02, 32, 16)),
     };
+    let temp = (0, math_1.pureRot)(Math.PI / 2, 1, 2); //xz
+    (0, math_1.multMatMat)(temp, (0, math_1.pureRot)(Math.PI / 2, 0, 3), temp); //zw
     let myStaticObjects = [
         {
             vertexArrayInfo: shapes.greatCircle,
-            transform: (0, math_1.identity)(),
+            transform: (0, math_1.identity)(), // xy
         },
         {
             vertexArrayInfo: shapes.greatCircle,
-            transform: (0, math_1.pureRot)(Math.PI / 2, 0, 1),
+            transform: (0, math_1.pureRot)(Math.PI / 2, 1, 2), // xz
         },
         {
             vertexArrayInfo: shapes.greatCircle,
-            transform: (0, math_1.pureRot)(Math.PI / 2, 0, 3),
+            transform: (0, math_1.pureRot)(Math.PI / 2, 0, 2), // yz
         },
         {
             vertexArrayInfo: shapes.greatCircle,
-            transform: (0, math_1.pureRot)(Math.PI / 2, 1, 2),
+            transform: (0, math_1.pureRot)(Math.PI / 2, 1, 3), //xw
         },
-        /*{
-          vertexArrayInfo: shapes.greatCircle,
-          transform: pureRot(Math.PI / 2, 2, 3),
-        },*/
+        {
+            vertexArrayInfo: shapes.greatCircle,
+            transform: (0, math_1.pureRot)(Math.PI / 2, 0, 3), // yw
+        },
+        {
+            vertexArrayInfo: shapes.greatCircle,
+            transform: temp, // zw
+        },
     ];
     const z0 = 0.1;
     const projNear = (0, math_1.projMat)(z0, true);
