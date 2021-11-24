@@ -3,10 +3,14 @@
 body {
   background: #60117f;
   overscroll-behavior: contain;
+  user-select: none;
 }
 
 #main {
   position: relative;
+  <!-- width: 50%; -->
+  <!-- height: 50%; -->
+  <!-- top: 20%; -->
   <!-- width: 100vh; -->
   <!-- height: 100vh; -->
   <!-- margin: 0; -->
@@ -145,6 +149,10 @@ window.addEventListener('keydown', e => {
   let cur_state = game_history[game_history.length - 1];
   // let cur_input = input_queue.shift()
   let cur_input = e.key;
+  if (e.key == 'ArrowLeft') cur_input = 'a'
+  if (e.key == 'ArrowRight') cur_input = 'd'
+  if (e.key == 'ArrowDown') cur_input = 's'
+  if (e.key == 'ArrowUp') cur_input = 'w'
   let di = 0;
   let dj = 0;
   if (cur_input == 'd') di += 1
