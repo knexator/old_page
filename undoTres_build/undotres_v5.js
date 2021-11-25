@@ -2478,7 +2478,7 @@ function doUndo (n) {
   input_queue.push(n.toString())
 }
 
-function movableChangedLastTurn(movable) {
+function movableChangedLastTurn (movable) {
 	let [ci1, cj1] = movable.history.at(-1)
 	let [ci2, cj2] = movable.history.at(-2)
 	if (movable.inmune_history.at(-1) != movable.inmune_history.at(-2)) return true
@@ -2486,11 +2486,11 @@ function movableChangedLastTurn(movable) {
 	return ci1 != ci2 || cj1 != cj2
 }
 
-function thingyChangedStateLastTurn(thingy) {
+function thingyChangedStateLastTurn (thingy) {
 	return thingy.value.at(-1) != thingy.value.at(-2)
 }
 
-function anyChangesLastTurn(level) {
+function anyChangesLastTurn (level) {
 	return movableChangedLastTurn(level.player) || level.crates.some(movableChangedLastTurn)
 		|| level.holeCovers.some(thingyChangedStateLastTurn)
 		|| level.paintBlobs.some(thingyChangedStateLastTurn)
@@ -2587,7 +2587,6 @@ function draw (timestamp) {
   let cur_level = levels[cur_level_n]
   recalcTileSize(cur_level)
 
-  let starts_won = isWon(cur_level)
   // console.log(turn_time);
   if (turn_time > 0) {
     turn_time -= TURN_SPEED
@@ -2637,415 +2636,8 @@ function draw (timestamp) {
     // if (cur_undo == 0 && cur_di == 0 && cur_dj == 0 && !magic_stuff_input && !machine_input) {
       // nothing happened
     } else {
-      let pressed_key = input_queue.shift()
-      let cur_undo = 0
-      for (let i = 0; i < 4; i++) {
-        if (pressed_key == 'zxcv'[i]) cur_undo = i + 1
-      }
-      let cur_di = 0
-      let cur_dj = 0
-      if (pressed_key == ('a')) cur_di -= 1
-      if (pressed_key == ('d')) cur_di += 1
-      if (pressed_key == ('w')) cur_dj -= 1
-      if (pressed_key == ('s')) cur_dj += 1
-
-      /*let magic_stuff_input = pressed_key == 'e' && ALLOW_MAGIC_INPUT
-      let machine_input_back = pressed_key == 'z' && ALLOW_MACHINES
-      let machine_input_front = pressed_key == 'x' && ALLOW_MACHINES
-      let machine_input = machine_input_back || machine_input_front*/
-      let machine_input = false
-      let magic_stuff_input = false
-
-      let SKIP_TURN = false
-      let SKIPPED_TURN = false
-
-      let covered_goals = getCoveredGoals(cur_level)
-
-      if (machine_input) {
-        console.log('machine input')
-        if (using_machine_type === null) {
-          [pi, pj] = cur_level.player.history.at(-1)
-          let machine = machineAt(cur_level, pi, pj)
-          if (machine === undefined || machine_input_front) {
-            // ignore this turn
-            SKIP_TURN = true
-          } else {
-            console.log('usingd a machine')
-            using_machine_type = machine[2]
-            cur_undo = machine_input_back ? using_machine_type : 9
-          }
-        } else {
-          cur_undo = machine_input_back ? using_machine_type : 9
-        }
-      } else {
-        using_machine_type = null
-      }
-
-      true_timeline_undos.push(cur_undo)
-      turn_time = 1
-
-      let real_tick = true_timeline_undos.length
-
-      let stuff = get_timeline_length(real_tick, 0)
-      // console.log("stuff is ", stuff)
-      if (stuff < 1 || SKIP_TURN) {
-        true_timeline_undos.pop() // undo this turn
-        turn_time = 0
-        SKIPPED_TURN = true
-      } else {
-        // console.log("doing a turn");
-        // travels = generate_travels(true_timeline_undos);
-
-        player_tick = get_original_tick_2(real_tick, cur_level.player.inmune_history) // player isn't inmune to any undo level
-        // console.log(player_tick);
-        if (player_tick < 0) {
-          console.log('NEVER HAPPENS')
-          true_timeline_undos.pop() // undo this turn
-          turn_time = 0
-          SKIPPED_TURN = true
-        } else {
-          // if (cur_level.player.history[player_tick] !== undefined) { // player is undoing
-          if (cur_undo > 0) {
-						let player_resisted = false
-						playUndoSound(cur_undo)
-            if (cur_level.player.history[player_tick] !== undefined) { // player is being undoed
-              [i, j] = cur_level.player.history[player_tick]
-              cur_level.player.history[real_tick] = [i, j]
-              cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[player_tick]
-              cur_level.player.inHole.value[real_tick] = cur_level.player.inHole.value[player_tick]
-              player_parity = 1 - player_parity
-            } else { // player is inmune to this undo level
-							player_resisted = true;
-              [i, j] = cur_level.player.history[real_tick - 1]
-              cur_level.player.history[real_tick] = [i, j]
-              cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1]
-              cur_level.player.inHole.value[real_tick] = cur_level.player.inHole.value[real_tick - 1]
-              player_parity = 1 - player_parity
-            }
-            cur_level.crates.forEach(crate => {
-              let crate_tick = get_original_tick_2(real_tick, crate.inmune_history)
-              if (crate.history[crate_tick] !== undefined) {
-                [i, j] = crate.history[crate_tick]
-                crate.history[real_tick] = [i, j]
-                crate.inmune_history[real_tick] = crate.inmune_history[crate_tick] // unchecked
-                crate.inHole.value[real_tick] = crate.inHole.value[crate_tick] // unchecked
-              } else {
-                [i, j] = crate.history[real_tick - 1]
-                crate.history[real_tick] = [i, j]
-                crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1] // unchecked
-                crate.inHole.value[real_tick] = crate.inHole.value[real_tick - 1]
-              }
-            })
-
-            cur_level.holeCovers.forEach(holeCover => {
-              let holeCover_tick = get_original_tick_2(real_tick, holeCover.inmune)
-              if (holeCover.value[holeCover_tick] !== undefined) {
-                holeCover.inmune[real_tick] = holeCover.inmune[holeCover_tick] // unchecked
-                holeCover.value[real_tick] = holeCover.value[holeCover_tick] // unchecked
-              } else {
-								// original move for the hole
-                holeCover.inmune[real_tick] = holeCover.inmune[real_tick - 1] // unchecked
-								if (holeCover.value[real_tick - 1]) {
-									// hole might break
-									let [hi, hj] = holeCover.position
-									if (weightOnTile(cur_level, real_tick-1, hi, hj) && !weightOnTile(cur_level, real_tick, hi, hj)) {
-										// hole broke!
-										holeCover.value[real_tick] = false
-									} else {
-										holeCover.value[real_tick] = true
-									}
-								} else { // hole is already broken
-									holeCover.value[real_tick] = false
-								}
-              }
-            })
-
-            cur_level.paintBlobs.forEach(paintBlob => {
-              let paintBlob_tick = get_original_tick_2(real_tick, paintBlob.inmune)
-              if (paintBlob.value[paintBlob_tick] !== undefined) {
-                paintBlob.inmune[real_tick] = paintBlob.inmune[paintBlob_tick] // unchecked
-                paintBlob.value[real_tick] = paintBlob.value[paintBlob_tick] // unchecked
-              } else {
-                paintBlob.inmune[real_tick] = paintBlob.inmune[real_tick - 1] // unchecked
-                paintBlob.value[real_tick] = paintBlob.value[real_tick - 1]
-              }
-            })
-
-						cur_level.hats.forEach(hat => {
-              let hat_tick = get_original_tick_2(real_tick, hat.inmune)
-              if (hat.value[hat_tick] !== undefined) {
-                hat.inmune[real_tick] = hat.inmune[hat_tick] // unchecked
-                hat.value[real_tick] = hat.value[hat_tick] // unchecked
-              } else {
-                hat.inmune[real_tick] = hat.inmune[real_tick - 1] // unchecked
-                hat.value[real_tick] = hat.value[real_tick - 1]
-              }
-            })
-
-            fallFlying(cur_level, cur_undo)
-
-            // if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
-						// if (player_resisted) {
-            if (!anyChangesLastTurn(cur_level)) {
-							input_queue.push('zxcv'[cur_undo-1])
-							turn_time = 0.0
-						}
-            // }
-          } else if (cur_level.player.inHole.value.at(-1) < 0) {
-						wallSound.play()
-						true_timeline_undos.pop()
-						turn_time = 0
-						SKIPPED_TURN = true
-					}	else if (magic_stuff_input) {
-            neutralTurn(cur_level)
-            cur_level.player.inmune_history[real_tick] = 2 // magic!
-						fallFlying(cur_level, 0)
-          } else if (starts_won && cur_di == cur_level.exit[0] && cur_dj == cur_level.exit[1]) {
-            // player exited the level
-            // nextLevel();
-            initTransitionToNextLevel()
-            won_cur_level = true
-            /* transitionSound.play();
-            screen_transition_turn = true
-            level_transition_time = 1 */
-            turn_time = 1
-            neutralTurn(cur_level);
-            [pi, pj] = cur_level.player.history.at(-1)
-            cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
-						fallFlying(cur_level, 0)
-            // cur_level.player.history[real_tick] = [pi + cur_di*2, pj + cur_dj*2]
-          } else { // player did an original move
-            [pi, pj] = cur_level.player.history[real_tick - 1]
-            let bad_move = (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
-              (pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
-              (cur_level.geo[pj + cur_dj][pi + cur_di] != '.') ||
-              closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) ||
-              openHoleAt(cur_level, pi + cur_di, pj + cur_dj)// ||
-              // movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
-            // console.log(bad_move);
-            if (bad_move) { // ignore this move
-              wallSound.play()
-              true_timeline_undos.pop()
-              turn_time = 0
-              SKIPPED_TURN = true
-            } else {
-              /* let pushing_crate = cur_level.crates.findIndex(crate => {
-                [ci, cj] = crate.history[crate.history.length - 1];
-                return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
-              }); */
-      			  let pushing_crates = cur_level.crates.reduce((acc, crate, index) => {
-          [ci, cj] = crate.history[crate.history.length - 1]
-          if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
-                        				return acc
-        }, [])
-			  // console.log(pushing_crates);
-              if (pushing_crates.length > 0) { // trying to push a crate
-                let next_space_i = pi + cur_di * 2
-                let next_space_j = pj + cur_dj * 2
-                let occupied_by_wall = (cur_level.geo[next_space_j][next_space_i] != '.') || closedDoorAt(cur_level, next_space_i, next_space_j)
-                if (!ALLOW_CRATE_ON_TOP_OF_MACHINE) {
-                  occupied_by_wall = occupied_by_wall || machineAt(cur_level, next_space_i, next_space_j)
-                }
-                if (occupied_by_wall) { // ignore this move
-                  if (ALLOW_CHANGE_PLAYER) {
-                    // Change inmunity of player!!
-					          // arbitrary choice when pushing several crates, oops.
-                    let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1]
-                    let player_inmune = cur_level.player.inmune_history[real_tick - 1]
-                    if (player_inmune != pushing_inmune) {
-                      neutralTurn(cur_level)
-                      cur_level.player.inmune_history[real_tick] = pushing_inmune
-											fallFlying(cur_level, 0)
-                    } else { // ignore this move
-                      true_timeline_undos.pop()
-                      turn_time = 0
-                      SKIPPED_TURN = true
-                    }
-                  } else {
-                    wallSound.play()
-                    true_timeline_undos.pop()
-                    turn_time = 0
-                    SKIPPED_TURN = true
-                  }
-                } else {
-                  let occupied_by_hole = openHoleAt(cur_level, next_space_i, next_space_j)
-
-                  if (occupied_by_hole) {
-                    holeSound.play()
-                    neutralTurn(cur_level)
-                    cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
-                    // let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
-                    cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + player_parity
-                    pushing_crates.forEach(pushing_crate => {
-          						cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j]
-          						cur_level.crates[pushing_crate].inHole.value[real_tick] = true
-          					})
-
-										let over_hat = cur_level.hats.findIndex(hat => {
-			                let [hi, hj] = hat.position;
-			                return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
-			              })
-
-										if (over_hat != -1) {
-											cur_level.hats[over_hat].value[real_tick] = false
-											cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
-										}
-
-										maybeBreakHoleCovers(cur_level, real_tick)
-										fallFlying(cur_level, 0)
-                  } else {
-                    let occupied_by_crate = cur_level.crates.findIndex(crate => {
-                      [ci, cj] = crate.history[crate.history.length - 1]
-                      return ci == next_space_i && cj == next_space_j && !crate.inHole.get()
-                    })
-                    if (occupied_by_crate != -1) {
-                      if (ALLOW_CHANGE_CRATES) {
-                        // Change inmunity of pushed crate!!
-                        // arbitrary choice when pushing several crates, oops.
-                        let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1]
-                        let pushed_inmune = cur_level.crates[occupied_by_crate].inmune_history[real_tick - 1]
-                        if (pushing_inmune != pushed_inmune) {
-                          // but first, the neutral turn stuff
-                          neutralTurn(cur_level)
-                          cur_level.crates[occupied_by_crate].inmune_history[real_tick] = pushing_inmune
-													fallFlying(cur_level, 0)
-                        } else { // ignore this move
-                          true_timeline_undos.pop()
-                          turn_time = 0
-                          SKIPPED_TURN = true
-                        }
-                      } else {
-                        wallSound.play()
-                        true_timeline_undos.pop() // ignore this move
-                        turn_time = 0
-                        SKIPPED_TURN = true
-                      }
-                    } else {
-                      pushSound.play()
-                      neutralTurn(cur_level)
-                      cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
-                      // let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
-                      cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + player_parity
-          					  pushing_crates.forEach(pushing_crate => {
-  						          cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j]
-          					  })
-
-											let over_hat = cur_level.hats.findIndex(hat => {
-				                let [hi, hj] = hat.position;
-				                return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
-				              })
-
-											if (over_hat != -1) {
-												cur_level.hats[over_hat].value[real_tick] = false
-												cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
-											}
-
-                      maybeBreakHoleCovers(cur_level, real_tick)
-
-                      let over_paint = cur_level.paintBlobs.findIndex(paintBlob => {
-                        let [hi, hj] = paintBlob.position;
-                        return paintBlob.get() && hi == next_space_i && hj == next_space_j
-                      })
-                      if (over_paint != -1) {
-                        cur_level.paintBlobs[over_paint].value[real_tick] = false
-                        let inmunity = cur_level.paintBlobs[over_paint].inmune.at(-1)
-                        pushing_crates.forEach(pushing_crate => {
-    						          cur_level.crates[pushing_crate].inmune_history[real_tick] = inmunity
-            					  })
-                      }
-											fallFlying(cur_level, 0)
-                      // console.log("over_paint: ", over_paint)
-          					  // console.log(pushing_crates)
-                    }
-                  }
-                }
-              } else {
-                stepSound.play()
-                neutralTurn(cur_level)
-                cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
-                // let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
-                cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, false) + player_parity
-
-								let over_hat = cur_level.hats.findIndex(hat => {
-	                let [hi, hj] = hat.position;
-	                return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
-	              })
-
-								if (over_hat != -1) {
-									cur_level.hats[over_hat].value[real_tick] = false
-									cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
-								}
-
-                maybeBreakHoleCovers(cur_level, real_tick)
-								fallFlying(cur_level, 0)
-              }
-            }
-          }
-					if (!won_cur_level) fixPlayerOutsideBounds(cur_level)
-				}
-      }
-
-      let covered_goals_late = getCoveredGoals(cur_level)
-      if (covered_goals_late.some(n => {
-        return covered_goals.indexOf(n) == -1
-      })) goalSound.play();
-
-      // forbidden_overlap stuff
-      [pi, pj] = cur_level.player.history.at(-1)
-      let forbidden_overlap = cur_level.crates.some((crate, i) => {
-        // TODO: add hole support ?? already done, maybe
-        if (crate.superSolid) {
-          if (crate.inHole.get()) {
-            // overlaps with a crate outside the hole?
-            let [c1i, c1j] = crate.history.at(-1)
-            return cur_level.crates.some((crate2, j) => {
-              if (i == j) return false
-              let [c2i, c2j] = crate2.history.at(-1)
-              return c2i == c1i && c2j == c1j && crate2.inHole.get()
-            })
-          } else {
-            // overlaps with a crate outside a hole?
-            let [c1i, c1j] = crate.history.at(-1)
-            return (c1i == pi && c1j == pj) || cur_level.crates.some((crate2, j) => {
-              if (i == j) return false
-              let [c2i, c2j] = crate2.history.at(-1)
-              return c2i == c1i && c2j == c1j && !crate2.inHole.get()
-            })
-          }
-        } else {
-          return false
-        }
-      })
-
-      if (forbidden_overlap) {
-        // TODO: add hole support
-        // forget last move
-        true_timeline_undos.pop()
-        turn_time = 0
-        SKIPPED_TURN = true
-        cur_level.player.history.pop()
-        cur_level.player.inmune_history.pop()
-        cur_level.crates.forEach(crate => {
-          crate.history.pop()
-          crate.inmune_history.pop()
-          crate.inHole.value.pop()
-        })
-      }
-
-      /* if (!SKIPPED_TURN && cur_undo == 0) {
-        // drop crates over holes
-        let flying_crates = cur_level.crates.filter(crate => {
-          let [ci, cj] = crate.history.at(-1)
-          return openHoleAt(cur_level, ci, cj)
-          // return !crate.inHole.get() &&
-        })
-        // console.log('flying crates: ', flying_crates);
-        flying_crates.forEach(crate => {
-          crate.inHole.value[crate.inHole.value.length - 1] = true
-        })
-        if (flying_crates.length > 0) holeSound.play()
-      } */
-    }
+			doMainTurnLogic(cur_level)
+		}
   }
 
   if (ALLOW_EDITOR) {
@@ -3249,6 +2841,419 @@ function draw (timestamp) {
   mouse.wheel = 0
   keyboard_prev = Object.assign({}, keyboard)
   if (!HALT) window.requestAnimationFrame(draw)
+}
+
+function doMainTurnLogic (cur_level) {
+	let starts_won = isWon(cur_level)
+	let pressed_key = input_queue.shift()
+	let cur_undo = 0
+	for (let i = 0; i < 4; i++) {
+		if (pressed_key == 'zxcv'[i]) cur_undo = i + 1
+	}
+	let cur_di = 0
+	let cur_dj = 0
+	if (pressed_key == ('a')) cur_di -= 1
+	if (pressed_key == ('d')) cur_di += 1
+	if (pressed_key == ('w')) cur_dj -= 1
+	if (pressed_key == ('s')) cur_dj += 1
+
+	/*let magic_stuff_input = pressed_key == 'e' && ALLOW_MAGIC_INPUT
+	let machine_input_back = pressed_key == 'z' && ALLOW_MACHINES
+	let machine_input_front = pressed_key == 'x' && ALLOW_MACHINES
+	let machine_input = machine_input_back || machine_input_front*/
+	let machine_input = false
+	let magic_stuff_input = false
+
+	let SKIP_TURN = false
+	let SKIPPED_TURN = false
+
+	let covered_goals = getCoveredGoals(cur_level)
+
+	if (machine_input) {
+		console.log('machine input')
+		if (using_machine_type === null) {
+			[pi, pj] = cur_level.player.history.at(-1)
+			let machine = machineAt(cur_level, pi, pj)
+			if (machine === undefined || machine_input_front) {
+				// ignore this turn
+				SKIP_TURN = true
+			} else {
+				console.log('usingd a machine')
+				using_machine_type = machine[2]
+				cur_undo = machine_input_back ? using_machine_type : 9
+			}
+		} else {
+			cur_undo = machine_input_back ? using_machine_type : 9
+		}
+	} else {
+		using_machine_type = null
+	}
+
+	true_timeline_undos.push(cur_undo)
+	turn_time = 1
+
+	let real_tick = true_timeline_undos.length
+
+	let stuff = get_timeline_length(real_tick, 0)
+	// console.log("stuff is ", stuff)
+	if (stuff < 1 || SKIP_TURN) {
+		true_timeline_undos.pop() // undo this turn
+		turn_time = 0
+		SKIPPED_TURN = true
+	} else {
+		// console.log("doing a turn");
+		// travels = generate_travels(true_timeline_undos);
+
+		player_tick = get_original_tick_2(real_tick, cur_level.player.inmune_history) // player isn't inmune to any undo level
+		// console.log(player_tick);
+		if (player_tick < 0) {
+			console.log('NEVER HAPPENS')
+			true_timeline_undos.pop() // undo this turn
+			turn_time = 0
+			SKIPPED_TURN = true
+		} else {
+			// if (cur_level.player.history[player_tick] !== undefined) { // player is undoing
+			if (cur_undo > 0) {
+				let player_resisted = false
+				playUndoSound(cur_undo)
+				if (cur_level.player.history[player_tick] !== undefined) { // player is being undoed
+					[i, j] = cur_level.player.history[player_tick]
+					cur_level.player.history[real_tick] = [i, j]
+					cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[player_tick]
+					cur_level.player.inHole.value[real_tick] = cur_level.player.inHole.value[player_tick]
+					player_parity = 1 - player_parity
+				} else { // player is inmune to this undo level
+					player_resisted = true;
+					[i, j] = cur_level.player.history[real_tick - 1]
+					cur_level.player.history[real_tick] = [i, j]
+					cur_level.player.inmune_history[real_tick] = cur_level.player.inmune_history[real_tick - 1]
+					cur_level.player.inHole.value[real_tick] = cur_level.player.inHole.value[real_tick - 1]
+					player_parity = 1 - player_parity
+				}
+				cur_level.crates.forEach(crate => {
+					let crate_tick = get_original_tick_2(real_tick, crate.inmune_history)
+					if (crate.history[crate_tick] !== undefined) {
+						[i, j] = crate.history[crate_tick]
+						crate.history[real_tick] = [i, j]
+						crate.inmune_history[real_tick] = crate.inmune_history[crate_tick] // unchecked
+						crate.inHole.value[real_tick] = crate.inHole.value[crate_tick] // unchecked
+					} else {
+						[i, j] = crate.history[real_tick - 1]
+						crate.history[real_tick] = [i, j]
+						crate.inmune_history[real_tick] = crate.inmune_history[real_tick - 1] // unchecked
+						crate.inHole.value[real_tick] = crate.inHole.value[real_tick - 1]
+					}
+				})
+
+				cur_level.holeCovers.forEach(holeCover => {
+					let holeCover_tick = get_original_tick_2(real_tick, holeCover.inmune)
+					if (holeCover.value[holeCover_tick] !== undefined) {
+						holeCover.inmune[real_tick] = holeCover.inmune[holeCover_tick] // unchecked
+						holeCover.value[real_tick] = holeCover.value[holeCover_tick] // unchecked
+					} else {
+						// original move for the hole
+						holeCover.inmune[real_tick] = holeCover.inmune[real_tick - 1] // unchecked
+						if (holeCover.value[real_tick - 1]) {
+							// hole might break
+							let [hi, hj] = holeCover.position
+							if (weightOnTile(cur_level, real_tick-1, hi, hj) && !weightOnTile(cur_level, real_tick, hi, hj)) {
+								// hole broke!
+								holeCover.value[real_tick] = false
+							} else {
+								holeCover.value[real_tick] = true
+							}
+						} else { // hole is already broken
+							holeCover.value[real_tick] = false
+						}
+					}
+				})
+
+				cur_level.paintBlobs.forEach(paintBlob => {
+					let paintBlob_tick = get_original_tick_2(real_tick, paintBlob.inmune)
+					if (paintBlob.value[paintBlob_tick] !== undefined) {
+						paintBlob.inmune[real_tick] = paintBlob.inmune[paintBlob_tick] // unchecked
+						paintBlob.value[real_tick] = paintBlob.value[paintBlob_tick] // unchecked
+					} else {
+						paintBlob.inmune[real_tick] = paintBlob.inmune[real_tick - 1] // unchecked
+						paintBlob.value[real_tick] = paintBlob.value[real_tick - 1]
+					}
+				})
+
+				cur_level.hats.forEach(hat => {
+					let hat_tick = get_original_tick_2(real_tick, hat.inmune)
+					if (hat.value[hat_tick] !== undefined) {
+						hat.inmune[real_tick] = hat.inmune[hat_tick] // unchecked
+						hat.value[real_tick] = hat.value[hat_tick] // unchecked
+					} else {
+						hat.inmune[real_tick] = hat.inmune[real_tick - 1] // unchecked
+						hat.value[real_tick] = hat.value[real_tick - 1]
+					}
+				})
+
+				fallFlying(cur_level, cur_undo)
+
+				// if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
+				// if (player_resisted) {
+				if (!anyChangesLastTurn(cur_level)) {
+					input_queue.push('zxcv'[cur_undo-1])
+					turn_time = 0.0
+					doMainTurnLogic(cur_level)
+				}
+				// }
+			} else if (cur_level.player.inHole.value.at(-1) < 0) {
+				wallSound.play()
+				true_timeline_undos.pop()
+				turn_time = 0
+				SKIPPED_TURN = true
+			}	else if (magic_stuff_input) {
+				neutralTurn(cur_level)
+				cur_level.player.inmune_history[real_tick] = 2 // magic!
+				fallFlying(cur_level, 0)
+			} else if (starts_won && cur_di == cur_level.exit[0] && cur_dj == cur_level.exit[1]) {
+				// player exited the level
+				// nextLevel();
+				initTransitionToNextLevel()
+				won_cur_level = true
+				/* transitionSound.play();
+				screen_transition_turn = true
+				level_transition_time = 1 */
+				turn_time = 1
+				neutralTurn(cur_level);
+				[pi, pj] = cur_level.player.history.at(-1)
+				cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
+				fallFlying(cur_level, 0)
+				// cur_level.player.history[real_tick] = [pi + cur_di*2, pj + cur_dj*2]
+			} else { // player did an original move
+				[pi, pj] = cur_level.player.history[real_tick - 1]
+				let bad_move = (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
+					(pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
+					(cur_level.geo[pj + cur_dj][pi + cur_di] != '.') ||
+					closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) ||
+					openHoleAt(cur_level, pi + cur_di, pj + cur_dj)// ||
+					// movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
+				// console.log(bad_move);
+				if (bad_move) { // ignore this move
+					wallSound.play()
+					true_timeline_undos.pop()
+					turn_time = 0
+					SKIPPED_TURN = true
+				} else {
+					/* let pushing_crate = cur_level.crates.findIndex(crate => {
+						[ci, cj] = crate.history[crate.history.length - 1];
+						return ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get();
+					}); */
+					let pushing_crates = cur_level.crates.reduce((acc, crate, index) => {
+			[ci, cj] = crate.history[crate.history.length - 1]
+			if (ci == pi + cur_di && cj == pj + cur_dj && !crate.inHole.get()) acc.push(index)
+														return acc
+		}, [])
+		// console.log(pushing_crates);
+					if (pushing_crates.length > 0) { // trying to push a crate
+						let next_space_i = pi + cur_di * 2
+						let next_space_j = pj + cur_dj * 2
+						let occupied_by_wall = (cur_level.geo[next_space_j][next_space_i] != '.') || closedDoorAt(cur_level, next_space_i, next_space_j)
+						if (!ALLOW_CRATE_ON_TOP_OF_MACHINE) {
+							occupied_by_wall = occupied_by_wall || machineAt(cur_level, next_space_i, next_space_j)
+						}
+						if (occupied_by_wall) { // ignore this move
+							if (ALLOW_CHANGE_PLAYER) {
+								// Change inmunity of player!!
+								// arbitrary choice when pushing several crates, oops.
+								let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1]
+								let player_inmune = cur_level.player.inmune_history[real_tick - 1]
+								if (player_inmune != pushing_inmune) {
+									neutralTurn(cur_level)
+									cur_level.player.inmune_history[real_tick] = pushing_inmune
+									fallFlying(cur_level, 0)
+								} else { // ignore this move
+									true_timeline_undos.pop()
+									turn_time = 0
+									SKIPPED_TURN = true
+								}
+							} else {
+								wallSound.play()
+								true_timeline_undos.pop()
+								turn_time = 0
+								SKIPPED_TURN = true
+							}
+						} else {
+							let occupied_by_hole = openHoleAt(cur_level, next_space_i, next_space_j)
+
+							if (occupied_by_hole) {
+								holeSound.play()
+								neutralTurn(cur_level)
+								cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
+								// let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
+								cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + player_parity
+								pushing_crates.forEach(pushing_crate => {
+									cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j]
+									cur_level.crates[pushing_crate].inHole.value[real_tick] = true
+								})
+
+								let over_hat = cur_level.hats.findIndex(hat => {
+									let [hi, hj] = hat.position;
+									return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
+								})
+
+								if (over_hat != -1) {
+									cur_level.hats[over_hat].value[real_tick] = false
+									cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
+								}
+
+								maybeBreakHoleCovers(cur_level, real_tick)
+								fallFlying(cur_level, 0)
+							} else {
+								let occupied_by_crate = cur_level.crates.findIndex(crate => {
+									[ci, cj] = crate.history[crate.history.length - 1]
+									return ci == next_space_i && cj == next_space_j && !crate.inHole.get()
+								})
+								if (occupied_by_crate != -1) {
+									if (ALLOW_CHANGE_CRATES) {
+										// Change inmunity of pushed crate!!
+										// arbitrary choice when pushing several crates, oops.
+										let pushing_inmune = cur_level.crates[pushing_crates[0]].inmune_history[real_tick - 1]
+										let pushed_inmune = cur_level.crates[occupied_by_crate].inmune_history[real_tick - 1]
+										if (pushing_inmune != pushed_inmune) {
+											// but first, the neutral turn stuff
+											neutralTurn(cur_level)
+											cur_level.crates[occupied_by_crate].inmune_history[real_tick] = pushing_inmune
+											fallFlying(cur_level, 0)
+										} else { // ignore this move
+											true_timeline_undos.pop()
+											turn_time = 0
+											SKIPPED_TURN = true
+										}
+									} else {
+										wallSound.play()
+										true_timeline_undos.pop() // ignore this move
+										turn_time = 0
+										SKIPPED_TURN = true
+									}
+								} else {
+									pushSound.play()
+									neutralTurn(cur_level)
+									cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
+									// let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
+									cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, true) + player_parity
+									pushing_crates.forEach(pushing_crate => {
+										cur_level.crates[pushing_crate].history[real_tick] = [next_space_i, next_space_j]
+									})
+
+									let over_hat = cur_level.hats.findIndex(hat => {
+										let [hi, hj] = hat.position;
+										return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
+									})
+
+									if (over_hat != -1) {
+										cur_level.hats[over_hat].value[real_tick] = false
+										cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
+									}
+
+									maybeBreakHoleCovers(cur_level, real_tick)
+
+									let over_paint = cur_level.paintBlobs.findIndex(paintBlob => {
+										let [hi, hj] = paintBlob.position;
+										return paintBlob.get() && hi == next_space_i && hj == next_space_j
+									})
+									if (over_paint != -1) {
+										cur_level.paintBlobs[over_paint].value[real_tick] = false
+										let inmunity = cur_level.paintBlobs[over_paint].inmune.at(-1)
+										pushing_crates.forEach(pushing_crate => {
+											cur_level.crates[pushing_crate].inmune_history[real_tick] = inmunity
+										})
+									}
+									fallFlying(cur_level, 0)
+									// console.log("over_paint: ", over_paint)
+									// console.log(pushing_crates)
+								}
+							}
+						}
+					} else {
+						stepSound.play()
+						neutralTurn(cur_level)
+						cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
+						// let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
+						cur_level.player.inHole.value[real_tick] = dir2spr(cur_di, cur_dj, false) + player_parity
+
+						let over_hat = cur_level.hats.findIndex(hat => {
+							let [hi, hj] = hat.position;
+							return hat.get() && hi == pi + cur_di && hj == pj + cur_dj
+						})
+
+						if (over_hat != -1) {
+							cur_level.hats[over_hat].value[real_tick] = false
+							cur_level.player.inmune_history[real_tick] = cur_level.hats[over_hat].inmune[real_tick]
+						}
+
+						maybeBreakHoleCovers(cur_level, real_tick)
+						fallFlying(cur_level, 0)
+					}
+				}
+			}
+			if (!won_cur_level) fixPlayerOutsideBounds(cur_level)
+		}
+	}
+
+	let covered_goals_late = getCoveredGoals(cur_level)
+	if (covered_goals_late.some(n => {
+		return covered_goals.indexOf(n) == -1
+	})) goalSound.play();
+
+	// forbidden_overlap stuff
+	[pi, pj] = cur_level.player.history.at(-1)
+	let forbidden_overlap = cur_level.crates.some((crate, i) => {
+		// TODO: add hole support ?? already done, maybe
+		if (crate.superSolid) {
+			if (crate.inHole.get()) {
+				// overlaps with a crate outside the hole?
+				let [c1i, c1j] = crate.history.at(-1)
+				return cur_level.crates.some((crate2, j) => {
+					if (i == j) return false
+					let [c2i, c2j] = crate2.history.at(-1)
+					return c2i == c1i && c2j == c1j && crate2.inHole.get()
+				})
+			} else {
+				// overlaps with a crate outside a hole?
+				let [c1i, c1j] = crate.history.at(-1)
+				return (c1i == pi && c1j == pj) || cur_level.crates.some((crate2, j) => {
+					if (i == j) return false
+					let [c2i, c2j] = crate2.history.at(-1)
+					return c2i == c1i && c2j == c1j && !crate2.inHole.get()
+				})
+			}
+		} else {
+			return false
+		}
+	})
+
+	if (forbidden_overlap) {
+		// TODO: add hole support
+		// forget last move
+		true_timeline_undos.pop()
+		turn_time = 0
+		SKIPPED_TURN = true
+		cur_level.player.history.pop()
+		cur_level.player.inmune_history.pop()
+		cur_level.crates.forEach(crate => {
+			crate.history.pop()
+			crate.inmune_history.pop()
+			crate.inHole.value.pop()
+		})
+	}
+
+	/* if (!SKIPPED_TURN && cur_undo == 0) {
+		// drop crates over holes
+		let flying_crates = cur_level.crates.filter(crate => {
+			let [ci, cj] = crate.history.at(-1)
+			return openHoleAt(cur_level, ci, cj)
+			// return !crate.inHole.get() &&
+		})
+		// console.log('flying crates: ', flying_crates);
+		flying_crates.forEach(crate => {
+			crate.inHole.value[crate.inHole.value.length - 1] = true
+		})
+		if (flying_crates.length > 0) holeSound.play()
+	} */
 }
 
 canvas.addEventListener('mousemove', e => _mouseEvent(e))
