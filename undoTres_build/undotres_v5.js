@@ -764,7 +764,7 @@ function drawLevel (level) {
     }
   }
 
-  // only draw crates in holes
+	// only draw crates in holes
   sortedCrates.forEach(crate => {
     if (!crate.inHole.get()) return
     if (!crate.inHole.value.at(-2) && turn_time > 0) return
@@ -777,6 +777,64 @@ function drawLevel (level) {
     let cj = lerp(prevState[1], state[1], crate_forward ? forwardsT : backwardsT)
     drawSpr(crate_hole_sprites[inmune], ci, cj)
   })
+
+	let playerState = level.player.history.at(-1)
+  let prevPlayerState = level.player.history.at(-2)
+  if (prevPlayerState === undefined) {
+    // prevPlayerState = playerState
+    prevPlayerState = [playerState[0] - level.enter[0], playerState[1] - level.enter[1]]
+    // backwardsT = 1 - turn_time;
+    forwardsT = level_transition_time <= 0.5 ? Math.pow(1 - level_transition_time * 2, 1 / 2) : 1
+    // forwardsT = Math.pow(1 - level_transition_time * 2, 1 / 2)
+    // forwardsT = 1 - level_transition_time * 2
+  }
+  let player_forward = get_times_directions(level.player.history.length - 2)[0] == 1
+  // console.log(player_forward);
+
+  let pt = player_forward ? forwardsT : backwardsT
+
+  if (level_transition_time > 0.5 && won_cur_level) {
+    pt = (1 - level_transition_time) * 4
+    // pt += 1
+    // console.log(1-level_transition_time);
+  }
+
+  let pi = lerp(prevPlayerState[0], playerState[0], pt)
+  let pj = lerp(prevPlayerState[1], playerState[1], pt)
+  // drawSpr(playerSpr, pi, pj);
+
+	let player_inHole = level.player.inHole.value.at(-1);
+	let sprOffset = level_transition_time > 0.5 && won_cur_level ? 1 : 0
+  let odd = mod(player_inHole, 2) == 1
+  if (odd) sprOffset = -sprOffset
+  let player_spr_n = player_inHole + sprOffset
+	let player_inmune = level.player.inmune_history.at(-1)
+
+	if (player_inHole < 0) {
+		// player is in hole
+		player_spr_n += 16
+		player_sprite = raw_player_sprites[player_spr_n]
+		if (!player_sprite) {
+			console.log("bad stuff is happening.")
+			console.log(player_spr_n)
+		}
+		player_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
+		player_sprite.brightness = 0.4
+	  // player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+	  pintar.drawSprite(player_sprite)
+		player_sprite.brightness = 1.0
+		if (HATS_ENABLED) {
+			hat_sprite = raw_hat_sprites[player_spr_n]
+			hat_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
+			hat_sprite.color = PintarJS.Color.fromHex(COLORS.crates[player_inmune])
+			hat_sprite.brightness = 0.4
+			pintar.drawSprite(hat_sprite)
+			hat_sprite.brightness = 1.0
+		}
+	} else {
+		player_sprite = raw_player_sprites[player_spr_n]
+	}
+
   if (any_overlap) {
     pintar._renderer.setShader(wobblyShader)
     for (var k = sortedCrates.length - 1; k>=0; k--) {
@@ -838,31 +896,6 @@ function drawLevel (level) {
     pintar.drawSprite(floorHat_sprite)
   })
 
-  let playerState = level.player.history.at(-1)
-  let prevPlayerState = level.player.history.at(-2)
-  if (prevPlayerState === undefined) {
-    // prevPlayerState = playerState
-    prevPlayerState = [playerState[0] - level.enter[0], playerState[1] - level.enter[1]]
-    // backwardsT = 1 - turn_time;
-    forwardsT = level_transition_time <= 0.5 ? Math.pow(1 - level_transition_time * 2, 1 / 2) : 1
-    // forwardsT = Math.pow(1 - level_transition_time * 2, 1 / 2)
-    // forwardsT = 1 - level_transition_time * 2
-  }
-  let player_forward = get_times_directions(level.player.history.length - 2)[0] == 1
-  // console.log(player_forward);
-
-  let pt = player_forward ? forwardsT : backwardsT
-
-  if (level_transition_time > 0.5 && won_cur_level) {
-    pt = (1 - level_transition_time) * 4
-    // pt += 1
-    // console.log(1-level_transition_time);
-  }
-
-  let pi = lerp(prevPlayerState[0], playerState[0], pt)
-  let pj = lerp(prevPlayerState[1], playerState[1], pt)
-  // drawSpr(playerSpr, pi, pj);
-
   sortedCrates.forEach(crate => {
     if (crate.inHole.get()) {
       if (crate.inHole.value.at(-2) || turn_time == 0) {
@@ -906,17 +939,13 @@ function drawLevel (level) {
     // result[state[1]][state[0]] += (inmune + 1).toString();
   })
 
-  let sprOffset = level_transition_time > 0.5 && won_cur_level ? 1 : 0
-  let odd = level.player.inHole.value.at(-1) % 2 == 1
-  if (odd) sprOffset = -sprOffset
-  let player_spr_n = level.player.inHole.value.at(-1) + sprOffset
   /* if (player_spr_n >= 8 && turn_time == 0) {
     // edge case: pushed into a hole
     player_spr_n -= 8
   } */
   // if (!player_forward) {
-	let player_inmune = level.player.inmune_history.at(-1)
-  if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0) {
+  if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0 && player_inHole >= 0) {
+		// player is undoing
     // let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
     // let opts = [1.0, 0.6, 0.2]
     // let opts = [0.0]
@@ -936,15 +965,16 @@ function drawLevel (level) {
     }
     player_sprite.color = PintarJS.Color.white()
   }
-  player_sprite = raw_player_sprites[player_spr_n]
-  player_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
-  // player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-  pintar.drawSprite(player_sprite)
-	if (HATS_ENABLED) {
-		hat_sprite = raw_hat_sprites[player_spr_n]
-		hat_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
-		hat_sprite.color = PintarJS.Color.fromHex(COLORS.crates[player_inmune])
-		pintar.drawSprite(hat_sprite)
+	if (player_inHole >= 0) {
+		player_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
+	  // player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+	  pintar.drawSprite(player_sprite)
+		if (HATS_ENABLED) {
+			hat_sprite = raw_hat_sprites[player_spr_n]
+			hat_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
+			hat_sprite.color = PintarJS.Color.fromHex(COLORS.crates[player_inmune])
+			pintar.drawSprite(hat_sprite)
+		}
 	}
   // sortedCrates.reverse()
 
@@ -2118,6 +2148,12 @@ function deleteStuffAt (cur_level, mi, mj) {
 		return i != mi || j != mj
 	})
 	cur_level.machines = cur_level.machines.filter(([i, j, t]) =>	i != mi || j != mj)
+	if (cur_level.player.inHole.value.at(-1) < 0) {
+		let [pi, pj] = cur_level.player.history.at(-1);
+		if (pi === mi && pj === mj) {
+			cur_level.player.inHole.value[cur_level.player.inHole.value.length - 1] += 16;
+		}
+	}
 }
 
 function deleteCustomStuffAt (cur_level, mi, mj, holes, crates, blobs, covers) {
@@ -2481,8 +2517,17 @@ function fallFlying (level, undo_level, soundless=false) {
   // console.log('flying crates: ', flying_crates);
   flying_crates.forEach(crate => {
     crate.inHole.value[crate.inHole.value.length - 1] = true
-  })
-  if (flying_crates.length > 0 && !soundless) holeSound.play()
+  });
+
+	let flying_player = false;
+	if (level.player.inmune_history.at(-1) >= undo_level && level.player.inHole.value.at(-1) >= 0) {
+		let [pi, pj] = level.player.history.at(-1)
+		flying_player = openHoleAt(level, pi, pj)
+		if (flying_player) {
+			level.player.inHole.value[level.player.inHole.value.length - 1] -= 16;
+		}
+	}
+  if ((flying_crates.length || flying_player) > 0 && !soundless) holeSound.play()
 }
 
 function movesBackToEntrance (level, pi, pj, cur_di, cur_dj) {
@@ -2746,7 +2791,12 @@ function draw (timestamp) {
 							turn_time = 0.0
 						}
             // }
-          } else if (magic_stuff_input) {
+          } else if (cur_level.player.inHole.value.at(-1) < 0) {
+						wallSound.play()
+						true_timeline_undos.pop()
+						turn_time = 0
+						SKIPPED_TURN = true
+					}	else if (magic_stuff_input) {
             neutralTurn(cur_level)
             cur_level.player.inmune_history[real_tick] = 2 // magic!
 						fallFlying(cur_level, 0)
@@ -3048,20 +3098,25 @@ function draw (timestamp) {
         if (wasKeyPressed('1')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.crates.push(new Movable(mi, mj, 0, extra = true_timeline_undos.length))
+					fallFlying(cur_level)
         } else if (wasKeyPressed('2')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.crates.push(new Movable(mi, mj, 1, extra = true_timeline_undos.length))
+					fallFlying(cur_level)
         } else if (wasKeyPressed('3')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.crates.push(new Movable(mi, mj, 2, extra = true_timeline_undos.length))
+					fallFlying(cur_level)
         } else if (wasKeyPressed('4')) {
           cur_level.geo[mj][mi] = '.'
           cur_level.crates.push(new Movable(mi, mj, 3, extra = true_timeline_undos.length))
+					fallFlying(cur_level)
           ENABLE_UNDO_4 = true
         } else if (wasKeyPressed('e')) {
           cur_level.geo[mj][mi] = '.'
 					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
           cur_level.holes.push([mi, mj])
+					fallFlying(cur_level)
         } else if (wasKeyPressed('B1')) { // paint blobs
           cur_level.geo[mj][mi] = '.'
 					deleteCustomStuffAt(cur_level, mi, mj, true, false, true, true)
