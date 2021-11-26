@@ -205,7 +205,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
             }
         }
         var numVertsAround = subdivisionsAxis + 1;
-        var indices = twgl.primitives.createAugmentedTypedArray(4, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
+        var indices = twgl.primitives.createAugmentedTypedArray(3, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
         for (var _x2 = 0; _x2 < subdivisionsAxis; _x2++) {
             // eslint-disable-line
             for (var _y = 0; _y < subdivisionsHeight; _y++) {

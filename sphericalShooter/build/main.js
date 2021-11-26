@@ -37,6 +37,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     twgl.setDefaults({ attribPrefix: "a_" });
     const gl = document.querySelector('canvas').getContext("webgl2");
     gl.enable(gl.DEPTH_TEST);
+    const vecX = new Float32Array([1, 0, 0, 0]);
+    const vecY = new Float32Array([0, 1, 0, 0]);
+    const vecZ = new Float32Array([0, 0, 1, 0]);
+    const vecW = new Float32Array([0, 0, 0, 1]);
     // Passing in attribute names binds attribute location by index
     // In WebGL 2 we can also assign locations in GLSL (not sure which is better. This is global)
     //
@@ -139,7 +143,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
     const shapes = {
         cube: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createCustomCubeBufferInfo)(gl, 0.4)),
         greatCircle: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createGreatTubeBufferInfo)(gl, 1.0, 0.02, 32, 16)),
-        sphere: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createCustomSphereBufferInfo)(gl, 0.5, 12, 12)),
+        sphere: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createCustomSphereBufferInfo)(gl, 0.05, 32, 32, 0, Math.PI, 0, Math.PI * 2)),
         /*quad: twgl.createVertexArrayInfo(gl, programInfos,
           twgl.createBufferInfoFromArrays(gl, arrays)),*/
     };
@@ -159,11 +163,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
             transform: (0, math_1.pureRot)(Math.PI / 2, 0, 2), // yz
         },
         {
-            vertexArrayInfo: shapes.cube,
+            vertexArrayInfo: shapes.greatCircle,
             transform: (0, math_1.pureRot)(Math.PI / 2, 1, 3), //xw
         },
         {
-            vertexArrayInfo: shapes.sphere,
+            vertexArrayInfo: shapes.greatCircle,
             transform: (0, math_1.pureRot)(Math.PI / 2, 0, 3), // yw
         },
         {
@@ -172,15 +176,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
         },
     ];
     let bullets = [
-        {
-            position: (0, math_1.identity)(),
-            velocity: (0, math_1.pureRot)(0.01 * Math.PI, 2, 3),
-        }
+    /*{
+      transform: identity(),
+    }*/
     ];
     const z0 = 0.1;
     const projNear = (0, math_1.projMat)(z0, true);
     const projFar = (0, math_1.projMat)(z0, false);
     let viewInverse = (0, math_1.identity)();
+    let view = (0, math_1.identity)();
+    let tempMat = (0, math_1.identity)();
     // Called when loading the page
     function initOnce() {
         init();
@@ -228,8 +233,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
         // rotate x into y, a positive distance (roll right)
         if ((0, engine_1.isKeyDown)('o'))
             (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 1), viewInverse, viewInverse);
+        (0, math_1.inverse)(viewInverse, view);
+        if ((0, engine_1.wasKeyPressed)(' ')) {
+            console.log("Pew!");
+            bullets.push({
+                transform: (0, math_1.copyMat)(view),
+            });
+        }
         bullets.forEach(bullet => {
-            (0, math_1.multMatMat)(bullet.velocity, bullet.position, bullet.position);
+            (0, math_1.pureRot)(engine_1.delta_time * 0.002, 2, 3, tempMat),
+                (0, math_1.multMatMat)(bullet.transform, tempMat, bullet.transform);
         });
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -259,10 +272,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
         bullets.forEach(obj => {
             // console.log(obj.position);
             twgl.setUniforms(debugUnlitProgramInfo, {
-                u_transform: obj.position,
+                u_transform: obj.transform,
             });
-            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
-            twgl.drawBufferInfo(gl, shapes.cube);
+            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.sphere);
+            twgl.drawBufferInfo(gl, shapes.sphere);
         });
         // Draw far hemisphere
         twgl.setUniforms(debugUnlitProgramInfo, {
@@ -277,10 +290,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
         });
         bullets.forEach(obj => {
             twgl.setUniforms(debugUnlitProgramInfo, {
-                u_transform: obj.position,
+                u_transform: obj.transform,
             });
-            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
-            twgl.drawBufferInfo(gl, shapes.cube);
+            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.sphere);
+            twgl.drawBufferInfo(gl, shapes.sphere);
         });
         (0, engine_1.engine_post_update)();
         window.requestAnimationFrame(update);

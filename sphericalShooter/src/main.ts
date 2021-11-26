@@ -2,13 +2,18 @@
 import { engine_pre_update, engine_post_update, game_time, delta_time, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed, isKeyDown } from './engine';
 import * as twgl from './../external/twgl-full'
 import { vs, fs } from './shaders'
-import { Matrix4, Vec4, projMat, identity, negateMat, multMatVec, pureRot, multMatMat } from './math';
+import { Matrix4, Vec4, projMat, identity, negateMat, multMatVec, pureRot, multMatMat, inverse, copyMat } from './math';
 import { createCustomCubeBufferInfo, createCustomSphereBufferInfo, createGreatTubeBufferInfo } from './geometry';
 
 twgl.setDefaults({attribPrefix: "a_"});
 
 const gl = document.querySelector('canvas')!.getContext("webgl2")!;
 gl.enable(gl.DEPTH_TEST);
+
+const vecX = new Float32Array([1,0,0,0])
+const vecY = new Float32Array([0,1,0,0])
+const vecZ = new Float32Array([0,0,1,0])
+const vecW = new Float32Array([0,0,0,1])
 
 // Passing in attribute names binds attribute location by index
 // In WebGL 2 we can also assign locations in GLSL (not sure which is better. This is global)
@@ -117,7 +122,7 @@ const shapes = {
   greatCircle: twgl.createVertexArrayInfo(gl, programInfos,
     createGreatTubeBufferInfo(gl, 1.0, 0.02, 32, 16)),
   sphere: twgl.createVertexArrayInfo(gl, programInfos,
-    createCustomSphereBufferInfo(gl, 0.5, 12, 12)),
+    createCustomSphereBufferInfo(gl, 0.05, 32, 32, 0, Math.PI, 0, Math.PI * 2)),
   /*quad: twgl.createVertexArrayInfo(gl, programInfos,
     twgl.createBufferInfoFromArrays(gl, arrays)),*/
 }
@@ -138,11 +143,11 @@ let myStaticObjects = [
     transform: pureRot(Math.PI / 2, 0, 2), // yz
   },
   {
-    vertexArrayInfo: shapes.cube,
+    vertexArrayInfo: shapes.greatCircle,
     transform: pureRot(Math.PI / 2, 1, 3),  //xw
   },
   {
-    vertexArrayInfo: shapes.sphere,
+    vertexArrayInfo: shapes.greatCircle,
     transform: pureRot(Math.PI / 2, 0, 3),  // yw
   },
   {
@@ -152,10 +157,9 @@ let myStaticObjects = [
 ]
 
 let bullets = [
-  {
-    position: identity(),
-    velocity: pureRot(0.01 * Math.PI, 2, 3),
-  }
+  /*{
+    transform: identity(),
+  }*/
 ]
 
 const z0 = 0.1
@@ -163,6 +167,9 @@ const projNear = projMat(z0, true)
 const projFar = projMat(z0, false)
 
 let viewInverse = identity();
+let view = identity();
+
+let tempMat = identity()
 
 // Called when loading the page
 function initOnce() {
@@ -207,9 +214,18 @@ function update(curTime: number) {
   if (isKeyDown('u')) multMatMat(pureRot( 0.001 * delta_time, 1, 0), viewInverse, viewInverse)
   // rotate x into y, a positive distance (roll right)
   if (isKeyDown('o')) multMatMat(pureRot( 0.001 * delta_time, 0, 1), viewInverse, viewInverse)
+  inverse(viewInverse, view)
+
+  if (wasKeyPressed(' ')) {
+    console.log("Pew!")
+    bullets.push({
+      transform: copyMat(view),
+    })
+  }
 
   bullets.forEach(bullet => {
-    multMatMat(bullet.velocity, bullet.position, bullet.position);
+    pureRot(delta_time * 0.002, 2, 3, tempMat),
+    multMatMat(bullet.transform, tempMat, bullet.transform);
   })
 
   twgl.resizeCanvasToDisplaySize(gl.canvas);
@@ -245,10 +261,10 @@ function update(curTime: number) {
   bullets.forEach(obj => {
     // console.log(obj.position);
     twgl.setUniforms(debugUnlitProgramInfo, {
-      u_transform: obj.position,
+      u_transform: obj.transform,
     });
-    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
-    twgl.drawBufferInfo(gl, shapes.cube);
+    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.sphere);
+    twgl.drawBufferInfo(gl, shapes.sphere);
   })
   // Draw far hemisphere
   twgl.setUniforms(debugUnlitProgramInfo, {
@@ -263,10 +279,10 @@ function update(curTime: number) {
   })
   bullets.forEach(obj => {
     twgl.setUniforms(debugUnlitProgramInfo, {
-      u_transform: obj.position,
+      u_transform: obj.transform,
     });
-    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
-    twgl.drawBufferInfo(gl, shapes.cube);
+    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.sphere);
+    twgl.drawBufferInfo(gl, shapes.sphere);
   })
 
 

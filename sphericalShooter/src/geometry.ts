@@ -201,7 +201,7 @@ function createCustomSphereVertices(radius, subdivisionsAxis, subdivisionsHeight
   }
 
   var numVertsAround = subdivisionsAxis + 1;
-  var indices = twgl.primitives.createAugmentedTypedArray(4, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
+  var indices = twgl.primitives.createAugmentedTypedArray(3, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
 
   for (var _x2 = 0; _x2 < subdivisionsAxis; _x2++) {
     // eslint-disable-line
