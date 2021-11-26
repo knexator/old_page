@@ -28,7 +28,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.createGreatTubeVerticesBufferInfo = exports.createCustomCubeBufferInfo = void 0;
+    exports.createCustomSphereBufferInfo = exports.createGreatTubeBufferInfo = exports.createCustomCubeBufferInfo = void 0;
     const twgl = __importStar(require("../external/twgl-full"));
     function createBufferInfoFunc(fn) {
         return function (gl) {
@@ -108,7 +108,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
             indices: indices
         };
     }
-    exports.createGreatTubeVerticesBufferInfo = createBufferInfoFunc(createGreatTubeVertices);
+    exports.createGreatTubeBufferInfo = createBufferInfoFunc(createGreatTubeVertices);
+    exports.createCustomSphereBufferInfo = createBufferInfoFunc(createCustomSphereVertices);
     function createGreatTubeVertices(radius, thickness, radialSubdivisions, bodySubdivisions, startAngle, endAngle) {
         if (radialSubdivisions < 3) {
             throw new Error('radialSubdivisions must be 3 or greater');
@@ -159,6 +160,59 @@ var __importStar = (this && this.__importStar) || function (mod) {
                 var nextSliceIndex = 1 + _slice;
                 indices.push(radialParts * _slice + _ring, radialParts * nextSliceIndex + _ring, radialParts * _slice + nextRingIndex);
                 indices.push(radialParts * nextSliceIndex + _ring, radialParts * nextSliceIndex + nextRingIndex, radialParts * _slice + nextRingIndex);
+            }
+        }
+        return {
+            position: positions,
+            // normal: normals,
+            texcoord: texcoords,
+            indices: indices
+        };
+    }
+    function createCustomSphereVertices(radius, subdivisionsAxis, subdivisionsHeight, opt_startLatitudeInRadians, opt_endLatitudeInRadians, opt_startLongitudeInRadians, opt_endLongitudeInRadians) {
+        if (subdivisionsAxis <= 0 || subdivisionsHeight <= 0) {
+            throw new Error('subdivisionAxis and subdivisionHeight must be > 0');
+        }
+        opt_startLatitudeInRadians = opt_startLatitudeInRadians || 0;
+        opt_endLatitudeInRadians = opt_endLatitudeInRadians || Math.PI;
+        opt_startLongitudeInRadians = opt_startLongitudeInRadians || 0;
+        opt_endLongitudeInRadians = opt_endLongitudeInRadians || Math.PI * 2;
+        var latRange = opt_endLatitudeInRadians - opt_startLatitudeInRadians;
+        var longRange = opt_endLongitudeInRadians - opt_startLongitudeInRadians; // We are going to generate our sphere by iterating through its
+        // spherical coordinates and generating 2 triangles for each quad on a
+        // ring of the sphere.
+        var numVertices = (subdivisionsAxis + 1) * (subdivisionsHeight + 1);
+        var positions = twgl.primitives.createAugmentedTypedArray(4, numVertices);
+        // var normals = twgl.primitives.createAugmentedTypedArray(3, numVertices);
+        var texcoords = twgl.primitives.createAugmentedTypedArray(2, numVertices); // Generate the individual vertices in our vertex buffer.
+        for (var y = 0; y <= subdivisionsHeight; y++) {
+            for (var x = 0; x <= subdivisionsAxis; x++) {
+                // Generate a vertex based on its spherical coordinates
+                var u = x / subdivisionsAxis;
+                var v = y / subdivisionsHeight;
+                var theta = longRange * u + opt_startLongitudeInRadians;
+                var phi = latRange * v + opt_startLatitudeInRadians;
+                var sinTheta = Math.sin(theta);
+                var cosTheta = Math.cos(theta);
+                var sinPhi = Math.sin(phi);
+                var cosPhi = Math.cos(phi);
+                var ux = cosTheta * sinPhi;
+                var uy = cosPhi;
+                var uz = sinTheta * sinPhi;
+                positions.push(radius * ux, radius * uy, radius * uz, 1.0);
+                // normals.push(ux, uy, uz);
+                texcoords.push(1 - u, v);
+            }
+        }
+        var numVertsAround = subdivisionsAxis + 1;
+        var indices = twgl.primitives.createAugmentedTypedArray(4, subdivisionsAxis * subdivisionsHeight * 2, Uint16Array);
+        for (var _x2 = 0; _x2 < subdivisionsAxis; _x2++) {
+            // eslint-disable-line
+            for (var _y = 0; _y < subdivisionsHeight; _y++) {
+                // eslint-disable-line
+                // Make triangle 1 of quad.
+                indices.push((_y + 0) * numVertsAround + _x2, (_y + 0) * numVertsAround + _x2 + 1, (_y + 1) * numVertsAround + _x2); // Make triangle 2 of quad.
+                indices.push((_y + 1) * numVertsAround + _x2, (_y + 0) * numVertsAround + _x2 + 1, (_y + 1) * numVertsAround + _x2 + 1);
             }
         }
         return {

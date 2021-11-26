@@ -3,7 +3,7 @@ import { engine_pre_update, engine_post_update, game_time, delta_time, mouse, wa
 import * as twgl from './../external/twgl-full'
 import { vs, fs } from './shaders'
 import { Matrix4, Vec4, projMat, identity, negateMat, multMatVec, pureRot, multMatMat } from './math';
-import { createCustomCubeBufferInfo, createGreatTubeVerticesBufferInfo } from './geometry';
+import { createCustomCubeBufferInfo, createCustomSphereBufferInfo, createGreatTubeBufferInfo } from './geometry';
 
 twgl.setDefaults({attribPrefix: "a_"});
 
@@ -108,12 +108,18 @@ const arrays2 = {
 // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
 // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
 // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
-const bufferInfo = createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 32, 16)
-const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
+// const bufferInfo = createGreatTubeBufferInfo(gl, 1.0, 0.02, 32, 16)
+// const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
 
 const shapes = {
+  cube: twgl.createVertexArrayInfo(gl, programInfos,
+    createCustomCubeBufferInfo(gl, 0.4)),
   greatCircle: twgl.createVertexArrayInfo(gl, programInfos,
-    createGreatTubeVerticesBufferInfo(gl, 1.0, 0.02, 32, 16)),
+    createGreatTubeBufferInfo(gl, 1.0, 0.02, 32, 16)),
+  sphere: twgl.createVertexArrayInfo(gl, programInfos,
+    createCustomSphereBufferInfo(gl, 0.5, 12, 12)),
+  /*quad: twgl.createVertexArrayInfo(gl, programInfos,
+    twgl.createBufferInfoFromArrays(gl, arrays)),*/
 }
 
 let temp = pureRot(Math.PI / 2, 1, 2);//xz
@@ -132,17 +138,24 @@ let myStaticObjects = [
     transform: pureRot(Math.PI / 2, 0, 2), // yz
   },
   {
-    vertexArrayInfo: shapes.greatCircle,
+    vertexArrayInfo: shapes.cube,
     transform: pureRot(Math.PI / 2, 1, 3),  //xw
   },
   {
-    vertexArrayInfo: shapes.greatCircle,
+    vertexArrayInfo: shapes.sphere,
     transform: pureRot(Math.PI / 2, 0, 3),  // yw
   },
   {
     vertexArrayInfo: shapes.greatCircle,
     transform: temp,  // zw
   },
+]
+
+let bullets = [
+  {
+    position: identity(),
+    velocity: pureRot(0.01 * Math.PI, 2, 3),
+  }
 ]
 
 const z0 = 0.1
@@ -159,7 +172,6 @@ function initOnce() {
 
 // Called when game is reset
 function init() {
-  console.log(bufferInfo)
 }
 
 // Called every frame
@@ -196,6 +208,10 @@ function update(curTime: number) {
   // rotate x into y, a positive distance (roll right)
   if (isKeyDown('o')) multMatMat(pureRot( 0.001 * delta_time, 0, 1), viewInverse, viewInverse)
 
+  bullets.forEach(bullet => {
+    multMatMat(bullet.velocity, bullet.position, bullet.position);
+  })
+
   twgl.resizeCanvasToDisplaySize(gl.canvas);
   gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -211,7 +227,7 @@ function update(curTime: number) {
   })*/
 
   gl.useProgram(debugUnlitProgramInfo.program);
-  twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
+  // twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
 
   twgl.setUniforms(debugUnlitProgramInfo, commonUniforms);
 
@@ -223,7 +239,16 @@ function update(curTime: number) {
     twgl.setUniforms(debugUnlitProgramInfo, {
       u_transform: obj.transform,
     });
+    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, obj.vertexArrayInfo);
     twgl.drawBufferInfo(gl, obj.vertexArrayInfo);
+  })
+  bullets.forEach(obj => {
+    // console.log(obj.position);
+    twgl.setUniforms(debugUnlitProgramInfo, {
+      u_transform: obj.position,
+    });
+    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
+    twgl.drawBufferInfo(gl, shapes.cube);
   })
   // Draw far hemisphere
   twgl.setUniforms(debugUnlitProgramInfo, {
@@ -233,7 +258,15 @@ function update(curTime: number) {
     twgl.setUniforms(debugUnlitProgramInfo, {
       u_transform: obj.transform,
     });
+    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, obj.vertexArrayInfo);
     twgl.drawBufferInfo(gl, obj.vertexArrayInfo);
+  })
+  bullets.forEach(obj => {
+    twgl.setUniforms(debugUnlitProgramInfo, {
+      u_transform: obj.position,
+    });
+    twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
+    twgl.drawBufferInfo(gl, shapes.cube);
   })
 
 

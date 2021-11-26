@@ -134,10 +134,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     // const bufferInfo = twgl.primitives.createCubeBufferInfo(gl, .1);
     // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
     // const bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays2);
-    const bufferInfo = (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.02, 32, 16);
-    const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
+    // const bufferInfo = createGreatTubeBufferInfo(gl, 1.0, 0.02, 32, 16)
+    // const vertexArrayInfo = twgl.createVertexArrayInfo(gl, programInfos, bufferInfo);
     const shapes = {
-        greatCircle: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createGreatTubeVerticesBufferInfo)(gl, 1.0, 0.02, 32, 16)),
+        cube: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createCustomCubeBufferInfo)(gl, 0.4)),
+        greatCircle: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createGreatTubeBufferInfo)(gl, 1.0, 0.02, 32, 16)),
+        sphere: twgl.createVertexArrayInfo(gl, programInfos, (0, geometry_1.createCustomSphereBufferInfo)(gl, 0.5, 12, 12)),
+        /*quad: twgl.createVertexArrayInfo(gl, programInfos,
+          twgl.createBufferInfoFromArrays(gl, arrays)),*/
     };
     let temp = (0, math_1.pureRot)(Math.PI / 2, 1, 2); //xz
     (0, math_1.multMatMat)(temp, (0, math_1.pureRot)(Math.PI / 2, 0, 3), temp); //zw
@@ -155,17 +159,23 @@ var __importStar = (this && this.__importStar) || function (mod) {
             transform: (0, math_1.pureRot)(Math.PI / 2, 0, 2), // yz
         },
         {
-            vertexArrayInfo: shapes.greatCircle,
+            vertexArrayInfo: shapes.cube,
             transform: (0, math_1.pureRot)(Math.PI / 2, 1, 3), //xw
         },
         {
-            vertexArrayInfo: shapes.greatCircle,
+            vertexArrayInfo: shapes.sphere,
             transform: (0, math_1.pureRot)(Math.PI / 2, 0, 3), // yw
         },
         {
             vertexArrayInfo: shapes.greatCircle,
             transform: temp, // zw
         },
+    ];
+    let bullets = [
+        {
+            position: (0, math_1.identity)(),
+            velocity: (0, math_1.pureRot)(0.01 * Math.PI, 2, 3),
+        }
     ];
     const z0 = 0.1;
     const projNear = (0, math_1.projMat)(z0, true);
@@ -178,7 +188,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     }
     // Called when game is reset
     function init() {
-        console.log(bufferInfo);
     }
     // Called every frame
     function update(curTime) {
@@ -219,6 +228,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
         // rotate x into y, a positive distance (roll right)
         if ((0, engine_1.isKeyDown)('o'))
             (0, math_1.multMatMat)((0, math_1.pureRot)(0.001 * engine_1.delta_time, 0, 1), viewInverse, viewInverse);
+        bullets.forEach(bullet => {
+            (0, math_1.multMatMat)(bullet.velocity, bullet.position, bullet.position);
+        });
         twgl.resizeCanvasToDisplaySize(gl.canvas);
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -231,7 +243,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
           pureRot(game_time * 0.001, 1, 2, obj.transform)
         })*/
         gl.useProgram(debugUnlitProgramInfo.program);
-        twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
+        // twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, vertexArrayInfo);
         twgl.setUniforms(debugUnlitProgramInfo, commonUniforms);
         // Draw near hemisphere
         twgl.setUniforms(debugUnlitProgramInfo, {
@@ -241,7 +253,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
             twgl.setUniforms(debugUnlitProgramInfo, {
                 u_transform: obj.transform,
             });
+            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, obj.vertexArrayInfo);
             twgl.drawBufferInfo(gl, obj.vertexArrayInfo);
+        });
+        bullets.forEach(obj => {
+            // console.log(obj.position);
+            twgl.setUniforms(debugUnlitProgramInfo, {
+                u_transform: obj.position,
+            });
+            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
+            twgl.drawBufferInfo(gl, shapes.cube);
         });
         // Draw far hemisphere
         twgl.setUniforms(debugUnlitProgramInfo, {
@@ -251,7 +272,15 @@ var __importStar = (this && this.__importStar) || function (mod) {
             twgl.setUniforms(debugUnlitProgramInfo, {
                 u_transform: obj.transform,
             });
+            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, obj.vertexArrayInfo);
             twgl.drawBufferInfo(gl, obj.vertexArrayInfo);
+        });
+        bullets.forEach(obj => {
+            twgl.setUniforms(debugUnlitProgramInfo, {
+                u_transform: obj.position,
+            });
+            twgl.setBuffersAndAttributes(gl, debugUnlitProgramInfo, shapes.cube);
+            twgl.drawBufferInfo(gl, shapes.cube);
         });
         (0, engine_1.engine_post_update)();
         window.requestAnimationFrame(update);
