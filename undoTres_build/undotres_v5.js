@@ -212,7 +212,7 @@ let ENABLE_RESTART = false
 let ENABLE_UNDO_2 = false
 let ENABLE_UNDO_3 = false
 let ENABLE_UNDO_4 = false
-let HATS_ENABLED = false
+let HATS_ENABLED = true
 let DRAW_TIMEBARS = false
 let ALLOW_CHEATS = false
 
@@ -1013,93 +1013,16 @@ function drawLevel (level) {
 
   if (level.extraDrawCode) level.extraDrawCode()
 }
-/*
-function drawEntranceGradient (level) {
-  if (ALLOW_EDITOR) return;
-  let [ei, ej] = level.player.history[0]
-  let [di, dj] = level.enter
-
-  let gradSpr = raw_gradient_sprites[dir2gradSpr(di, dj)]
-  // gradSpr.color = PintarJS.Color.red()
-  gradSpr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-  if (di == 0) {
-    if (dj > 0) {
-      ei -= 1
-      ej -= 2
-    } else {
-      ei -= 1
-      ej += 1
-    }
-  } else {
-    if (di > 0) {
-      ei -= 2
-      ej -= 1
-    } else {
-      ei += 1
-      ej -= 1
-    }
-  }
-  gradSpr.position = new PintarJS.Point(
-    OFFX + ei * TILE,
-    OFFY + ej * TILE
-  )
-  pintar.drawSprite(gradSpr)
-}
-
-function dir2gradSpr (di, dj) {
-  return dj == 0 ?
-    (di > 0 ? 1 : 2) :
-    (dj > 0 ? 3 : 0)
-}
-
-function drawExitGradient (level) {
-  if (ALLOW_EDITOR) return;
-  let [ei, ej] = level.targets[0]
-  let [di, dj] = level.exit
-  di *= -1
-  dj *= -1
-
-  let gradSpr = raw_gradient_sprites[dir2gradSpr(di, dj)]
-  // gradSpr.color = PintarJS.Color.red()
-  gradSpr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-  if (di == 0) {
-    if (dj > 0) {
-      ei -= 1
-      ej -= 2
-    } else {
-      ei -= 1
-      ej += 1
-    }
-  } else {
-    if (di > 0) {
-    } else {
-      ei += 1
-      ej -= 1
-    }
-  }
-  gradSpr.position = new PintarJS.Point(
-    OFFX + ei * TILE,
-    OFFY + ej * TILE
-  )
-  pintar.drawSprite(gradSpr)
-}
-*/
-/* let text_logo_sprite = new PintarJS.TextSprite("Tres\nUndos")
-text_logo_sprite.font = "Helvetica"
-text_logo_sprite.color = PintarJS.Color.white();
-text_logo_sprite.strokeWidth = 2;
-text_logo_sprite.strokeColor = PintarJS.Color.black();
-text_logo_sprite.fontSize = 128;
-text_logo_sprite.position = new PintarJS.Point(20, 100); */
 
 function deleteDraft (button) {
   button.parentElement.parentElement.remove()
 }
 
 function playDraft (button) {
-	let new_level = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0])
+	let new_level = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0], "Your Level", "You")
 	if (new_level) {
-		levels[cur_level_n] = new_level
+		levels['editor'] = new_level
+		// levels[cur_level_n] = new_level
 	  true_timeline_undos = []
 	}
 }
@@ -1133,14 +1056,33 @@ let editorSidebar = document.getElementById("leftCol");
 let editorTopbar = document.getElementById("topArea");
 let canvasContainer = document.getElementById("canvasContainer");
 function enterEditor () {
-  editorSidebar.hidden = false
-  editorTopbar.hidden = false
+	if (cur_level_n !== 'editor') {
+		levels["editor"] = levels[cur_level_n]
+		levels[cur_level_n] = str2level(...levels_named[cur_level_n])
+		levels[cur_level_n].unmodified = true
+		levels["editor"].author = "You"
+		levels["editor"].name = "Your Level"
+		levels["editor"].unmodified = false
+		cur_level_n = "editor"
+		// just in case:
+		levels[0].extraDrawCode = drawIntroText
+		levels[1].extraDrawCode = drawSecondText
+		levels[3].extraDrawCode = drawXtoReallyText
+		levels[5].extraDrawCode = drawSkipText
+		levels[6].extraDrawCode = drawRecapText
+		levels[7].extraDrawCode = drawCtoRRText
+	}
+	if (ALLOW_EDITOR) {
+		editorSidebar.hidden = false
+	  editorTopbar.hidden = false
+		canvasContainer.className = "openEditor_canvasContainer_class"
+	}
   setExtraDisplay(-1)
   ENABLE_RESTART = true
   ENABLE_UNDO_2 = true
   ENABLE_UNDO_3 = true
   saveDraft()
-  canvasContainer.className = "openEditor_canvasContainer_class"
+	updateMenuButtons()
 }
 
 function exitEditor () {
@@ -1519,7 +1461,7 @@ function getCoveredGoals (level) {
   })
 }
 
-levels = hole_levels_raw.map(([str, enter, exit]) => str2level(str, enter, exit))
+levels = levels_named.map(([str, enter, exit, name, author]) => str2level(str, enter, exit, name, author))
 levels.forEach(level => level.unmodified = true);
 
 levels[0].extraDrawCode = drawIntroText
@@ -1557,7 +1499,7 @@ function geoMapChar (chr) {
   return '.'
 }
 
-function str2level (str, enter, exit) {
+function str2level (str, enter, exit, name, author) {
   str = str.split('\n')
   let w = str[0].length
   let h = str.length
@@ -1620,7 +1562,7 @@ function str2level (str, enter, exit) {
   let level = { geo: geo, player: player, crates: crates, targets: targets,
     buttons: buttons, doors: doors, player_target: player_target,
     machines: machines, holes: holes, holeCovers: holeCovers, paintBlobs: paintBlobs, hats: hats,
-    w: w, h: h, enter: enter, exit: exit, unmodified: false }
+    w: w, h: h, enter: enter, exit: exit, unmodified: false, name: name, author: author }
   /* neutralTurn(level);
   level.player.history[0][0] -= enter[0];
   level.player.history[0][1] -= enter[1]; */
@@ -1635,7 +1577,7 @@ function str2level (str, enter, exit) {
   level.player.inHole.value[0] = dir2spr(level.enter[0], level.enter[1], false)
   real_times = [0,0,0]
   won_cur_level = false
-  true_timeline_undos = []
+  // true_timeline_undos = []
   input_queue = []
 	fallFlying (level, 0, true)
   return level
@@ -1951,10 +1893,6 @@ function level2strOld (level) {
   return res.map(x => x.join('')).join('\n')
 }
 
-function loadFromText () {
-  levels[cur_level_n] = str2level(document.getElementById('inText').value, [1,0], [1,0])
-  loadLevel(cur_level_n)
-}
 function exportToText () {
   document.getElementById('inText').value = level2str(levels[cur_level_n])
 }
@@ -2077,55 +2015,6 @@ function resizeLevel (a, b, c, d, level) {
 
 	level.h = h
 	level.w = w
-}
-
-function resizeLevelOld (a, b, c, d) {
-  // exportToText()
-  let w = levels[cur_level_n].w
-  let h = levels[cur_level_n].h
-  let text = level2str(levels[cur_level_n])
-  // let text = document.getElementById('inText').value
-  let rows = text.split('\n')
-  if (a > 0) {
-    rows.unshift('#'.repeat(w))
-    h += 1
-  } else if (a < 0) {
-    rows.shift()
-    h -= 1
-  }
-  if (b > 0) {
-    rows = rows.map(row => '#' + row)
-    w += 1
-  } else if (b < 0) {
-    rows = rows.map(row => row.slice(1))
-    w -= 1
-  }
-  if (c > 0) {
-    rows.push('#'.repeat(w))
-    h += 1
-  } else if (c < 0) {
-    rows.pop()
-    h -= 1
-  }
-  if (d > 0) {
-    rows = rows.map(row => row + '#')
-    w += 1
-  } else if (d < 0) {
-    rows = rows.map(row => row.slice(0, -1))
-    w -= 1
-  }
-  text = rows.join('\n')
-  let new_level = str2level(text, levels[cur_level_n].enter, levels[cur_level_n].exit)
-  if (new_level) {
-    let [si, sj] = new_level.player.history[0]
-    if (si > 0 && sj > 0 && si + 1 < new_level.w && sj + 1 < new_level.h) {
-      levels[cur_level_n] = new_level
-    }
-  }
-
-  // document.getElementById('inText').value = text
-  // loadFromText()
-
 }
 
 function deleteStuffAt (cur_level, mi, mj) {
@@ -2294,6 +2183,7 @@ function updateMenuButtons () {
 }
 
 function loadLevel (n) {
+	let from_editor = cur_level_n === "editor"
   real_times = [0,0,0]
   won_cur_level = false
   in_last_level = n == levels.length - 1
@@ -2342,6 +2232,7 @@ function loadLevel (n) {
   }
   setExtraDisplay(ALLOW_EDITOR ? -1 : n)
   updateMenuButtons()
+	if (from_editor) enterEditor()
 }
 
 function maybeBreakHoleCovers (level, real_tick) {
@@ -2580,7 +2471,7 @@ function draw (timestamp) {
 
   // console.log(first_undo_press)
 
-  if (wasKeyPressed("editor") && cur_level_n + 1 < levels.length) {
+  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || cur_level_n + 1 < levels.length)) {
     toggleEditor()
   }
 
