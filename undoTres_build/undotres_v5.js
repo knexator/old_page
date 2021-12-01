@@ -32,7 +32,51 @@ let canvas = document.getElementById('canvas')
 // let ctx = canvas.getContext('2d')
 
 let menuDiv = document.getElementById('levelSelectMenuContainer')
-let levelSelectButtons = menuDiv?.querySelectorAll('button')
+let levelSelectButtons = menuDiv?.querySelectorAll('.levelSelectButton')
+let mainPackContainer = document.getElementById('mainPack')
+let playerPackContainer = document.getElementById('playerPack')
+
+function openPlayerPack() {
+	mainPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, 0vh)" },
+    { transform: "translate(0vw, -100vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-in',
+  });
+	playerPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, 100vh)" },
+    { transform: "translate(0vw, 0vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-out',
+  });
+}
+
+function openMainPack() {
+	mainPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, -100vh)" },
+    { transform: "translate(0vw, 0vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-out',
+  });
+	playerPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, 0vh)" },
+    { transform: "translate(0vw, 100vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-in',
+  });
+}
 
 let globalT = 0.0
 let last_t = null
@@ -1127,7 +1171,7 @@ function setExtraDisplay (n) {
   text_6.hidden = ultraHide || n !== 6
   text_7.hidden = ultraHide || n !== 7
   text_end.forEach(item => {
-    item.hidden = ultraHide || (n !== levels.length - 1)
+    item.hidden = ultraHide || (n !== 18)
   });
 }
 
@@ -2107,7 +2151,8 @@ function nextLevel () {
 
 /*transitionElement.style.animation="openUp 4s linear 0 infinite forwards both";*/
 
-function initTransitionToLevel (n) {
+function initTransitionToLevel (n,extra) {
+	if (extra) n += 19
   if (n >= 0 && n < levels.length - 1) {
     // transitionElement.style.animation="flashUp .5s linear";
     let di = levels[n].enter[0]
@@ -2168,25 +2213,32 @@ function updateMenuButtons () {
   let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18, 18, 18, 18, 18, 18];
   let n_unlocked = unlock_n[total_solved]
   for (let k = 0; k < levels.length - 1; k++) {
-    if (!ALLOW_CHEATS && solved_levels.indexOf(k) === -1) {
-      levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
-      levelSelectButtons[k].disabled = n_unlocked <= k
-    } else {
-      levelSelectButtons[k].className = "solvedSelectButton"
-      levelSelectButtons[k].disabled = false
-    }
+		if (k > 18) {
+			levelSelectButtons[k - 1].className = (solved_levels.indexOf(k) === -1) ? "levelSelectButton" : "solvedSelectButton"
+			levelSelectButtons[k - 1].disabled = false
+		} else {
+    	if (!ALLOW_CHEATS && solved_levels.indexOf(k) === -1) {
+	      levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
+	      levelSelectButtons[k].disabled = n_unlocked <= k
+	    } else {
+	      levelSelectButtons[k].className = "solvedSelectButton"
+	      levelSelectButtons[k].disabled = false
+	    }
+		}
   }
-  let curButton = levelSelectButtons[cur_level_n]
-  if (!curButton) return
-  curButton.className += (!ALLOW_CHEATS && (solved_levels.indexOf(cur_level_n) === -1)) ? " curLevelSelectButton" : " curLevelSelectWonButton"
-  curButton.disabled = false
+	if (cur_level_n !== 18) {
+	  let curButton = levelSelectButtons[cur_level_n > 18 ? cur_level_n - 1 : cur_level_n]
+	  if (!curButton) return
+	  curButton.className += (!ALLOW_CHEATS && (solved_levels.indexOf(cur_level_n) === -1)) ? " curLevelSelectButton" : " curLevelSelectWonButton"
+	  curButton.disabled = false
+	}
 }
 
 function loadLevel (n) {
 	let from_editor = cur_level_n === "editor"
   real_times = [0,0,0]
   won_cur_level = false
-  in_last_level = n == levels.length - 1
+  in_last_level = n == 18
   cur_level_n = n
   true_timeline_undos = []
   input_queue = []
@@ -2471,7 +2523,7 @@ function draw (timestamp) {
 
   // console.log(first_undo_press)
 
-  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || cur_level_n + 1 < levels.length)) {
+  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || cur_level_n !== 18)) {
     toggleEditor()
   }
 
@@ -2701,7 +2753,7 @@ function draw (timestamp) {
   }
 
   // cheat
-  if (ALLOW_CHEATS && wasKeyPressed('m') && cur_level_n < levels.length - 1) {
+  /*if (ALLOW_CHEATS && wasKeyPressed('m') && cur_level_n < levels.length - 1) {
     // nextLevel()
     // cur_level = levels[cur_level_n]
     if (level_transition_time == 0) {
@@ -2714,7 +2766,7 @@ function draw (timestamp) {
     if (level_transition_time == 0) {
       initTransitionToPrevLevel()
     }
-  }
+  }*/
 
   // drawLevel(cur_level)
   drawScreen()

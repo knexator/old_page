@@ -68,6 +68,7 @@ html, body {
   -ms-user-select: none;
   user-select: none;
 	cursor: default;
+	overflow: hidden;
 }
 
 .openEditor_canvasContainer_class {
@@ -340,7 +341,7 @@ canvas {
 	top: 0;
 }
 
-#levelSelectMenuButtons {
+.levelSelectMenuButtons {
 	width: fit-content;
   /* To adjust the height as well */
   height: fit-content;
@@ -349,6 +350,7 @@ canvas {
 	margin: auto;
 	top:0;bottom:0; /* vertical center */
 	left:0;right:0; /* horizontal center */
+	/* transform: translate(0vw, 0vh); */
 	background: #383F69;
 	border: 4px solid #383F69;
 }
@@ -373,6 +375,31 @@ canvas {
 }
 
 .levelSelectButton:hover {
+  background-color: #7988C0; /* 7988C0 4F69BA */
+  color: white;
+}
+
+.bigArrow {
+	box-sizing: border-box;
+	font-family: 'Verdana';
+	background-color: #4F69BA; /* 7988C0 4F69BA 565EA1 383F69 */
+  color: black;
+  border: 2px solid #565EA1; /* 7988C0 4F69BA 565EA1 */
+	width: calc(100% - 8px);
+	/* aspect-ratio: 12/1; */
+  /* padding: 16px 32px; */
+  /* padding: 16px; */
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 1.0em;
+  /* margin: 4px 2px; */
+  margin: 4px;
+  transition-duration: 0.4s;
+  cursor: pointer;
+}
+
+.bigArrow:hover {
   background-color: #7988C0; /* 7988C0 4F69BA */
   color: white;
 }
@@ -445,6 +472,18 @@ canvas {
     to   { opacity: 1; }
 }
 
+.tabShape {
+	background:#4F69BA;
+	width: fit-content;
+  /* height: 10%; */
+	border-right: thick solid #383F69;
+	border-top: thick solid #383F69;
+	position:absolute;
+	padding: .5%;
+	bottom:0;
+	left:0;
+}
+
 </style></head>
 <body oncontextmenu="return false;">
 	<div id="container">
@@ -502,8 +541,9 @@ canvas {
 			<div hidden class="_7 usefulText" style="font-size: 1.2em; text-align: left; left: 23%;top: 11%;">C to <i>really</i>, <i><b>really</b></i> undo</div>
 			<div hidden class="_end titleText" style="font-size: 6.0em; text-align: center; left: 0%;top: 0%; min-width: 100%; min-height: 100%;">Thanks for Playing!</div>
 			<a href="https://twitter.com/knexator" target="_blank" hidden class="_end titleText" style="left: 70%; top: 77%; font-size: 1.5em">- @knexator</a>
+			<div class="tabShape">LevelName, by LevelAuthor</div>
 			<div hidden id="levelSelectMenuContainer">
-				<div id="levelSelectMenuButtons">
+				<div class="levelSelectMenuButtons" id="mainPack" style="transform: translate(0vw, 0vh);">
 					<button
 					class="levelSelectButton" onclick="initTransitionToLevel(0)">1.1</button><button
 					class="levelSelectButton" onclick="initTransitionToLevel(1)">1.2</button><button
@@ -522,7 +562,22 @@ canvas {
 					class="levelSelectButton" onclick="initTransitionToLevel(14)">3.3</button><button
 					class="levelSelectButton" onclick="initTransitionToLevel(15)">3.4</button><button
 					class="levelSelectButton" onclick="initTransitionToLevel(16)">3.5</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(17)">???</button>
+					class="levelSelectButton" onclick="initTransitionToLevel(17)">4.1</button><br><button
+					class="bigArrow" onclick="openPlayerPack()">Player Pack</button>
+				</div>
+				<div class="levelSelectMenuButtons" id="playerPack" style="transform: translate(0vw, 100vh);">
+					<button
+					class="bigArrow" onclick="openMainPack()">Main Pack</button><br><button
+					class="levelSelectButton" onclick="initTransitionToLevel(0,true)">P.1</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(1,true)">P.2</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(2,true)">P.3</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(3,true)">P.4</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(4,true)">P.5</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(5,true)">P.6</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(6,true)">P.7</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(7,true)">P.8</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(8,true)">P.9</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(9,true)">P.9</button>
 				</div>
 			</div>
 			<div id="transition"></div>
