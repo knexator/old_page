@@ -1149,6 +1149,8 @@ function toggleEditor () {
   }
 }
 
+let creditsUI = document.getElementById('creditsUI')
+
 let text_0 = document.querySelectorAll('._0')
 let text_1 = document.querySelector('._1')
 let text_1a = document.querySelector('._1a')
@@ -1173,6 +1175,13 @@ function setExtraDisplay (n) {
   text_end.forEach(item => {
     item.hidden = ultraHide || (n !== 18)
   });
+	let level = levels[n];
+	if (level) {
+		creditsUI.innerHTML = `${level.name} by ${level.author}`
+	} else {
+		creditsUI.innerHTML = "ERROR!"
+	}
+
 }
 
 function drawIntroText () {

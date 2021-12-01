@@ -198,7 +198,7 @@ levels_named = [
 ##..2.._##
 ##.1###.##
 .O..###_*.
-##########`, [1, 0], [1, 0], "Tight fit", "Menderbug"],
+##########`, [1, 0], [1, 0], "Tight fit", `<a href="https://twitter.com/menderbug" target="_blank">Menderbug</a>`],
 [`\
 ###.########
 #..O....####
