@@ -1121,11 +1121,11 @@ function enterEditor () {
 	  editorTopbar.hidden = false
 		canvasContainer.className = "openEditor_canvasContainer_class"
 	}
-  setExtraDisplay(-1)
+  setExtraDisplay("editor")
   ENABLE_RESTART = true
   ENABLE_UNDO_2 = true
   ENABLE_UNDO_3 = true
-  saveDraft()
+	if (editorSidebar.childElementCount < 1) saveDraft()
 	updateMenuButtons()
 }
 
@@ -2228,7 +2228,7 @@ function updateMenuButtons () {
 		} else {
     	if (!ALLOW_CHEATS && solved_levels.indexOf(k) === -1) {
 	      levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
-	      levelSelectButtons[k].disabled = n_unlocked <= k
+	      // levelSelectButtons[k].disabled = n_unlocked <= k
 	    } else {
 	      levelSelectButtons[k].className = "solvedSelectButton"
 	      levelSelectButtons[k].disabled = false
@@ -2244,7 +2244,7 @@ function updateMenuButtons () {
 }
 
 function loadLevel (n) {
-	let from_editor = cur_level_n === "editor"
+	let from_editor = ALLOW_EDITOR //cur_level_n === "editor"
   real_times = [0,0,0]
   won_cur_level = false
   in_last_level = n == 18
@@ -2291,7 +2291,7 @@ function loadLevel (n) {
     ENABLE_UNDO_2 = true
     ENABLE_UNDO_3 = true
   }
-  setExtraDisplay(ALLOW_EDITOR ? -1 : n)
+  setExtraDisplay(ALLOW_EDITOR ? "editor" : n)
   updateMenuButtons()
 	if (from_editor) enterEditor()
 }
@@ -2299,15 +2299,15 @@ function loadLevel (n) {
 function maybeBreakHoleCovers (level, real_tick) {
 	level.holeCovers.forEach(holeCover => {
 		if (holeCover.value[real_tick - 1]) {
-			console.log("might break!")
+			//console.log("might break!")
 			// hole might break
 			let [hi, hj] = holeCover.position
 			if (weightOnTile(level, real_tick-1, hi, hj) && !weightOnTile(level, real_tick, hi, hj)) {
 				// hole broke!
-				console.log("broke!")
+				//console.log("broke!")
 				holeCover.value[real_tick] = false
 			} else {
-				console.log("didn't break!")
+				//console.log("didn't break!")
 				holeCover.value[real_tick] = true
 			}
 		} else { // hole is already broken

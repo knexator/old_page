@@ -473,15 +473,17 @@ canvas {
 }
 
 #creditsUI {
-	background:#4F69BA;
+	background: #4F69BA; /* 4F69BA FF9500 */
 	width: fit-content;
   /* height: 10%; */
-	border-right: thick solid #383F69;
-	border-top: thick solid #383F69;
+	border-right: thick solid black; /* 383F69 E74059 */
+	border-top: thick solid black;
 	position:absolute;
 	padding: .5%;
 	bottom:0;
 	left:0;
+	font-size: 1.2em;
+	font-family: 'Verdana';
 }
 
 </style></head>
@@ -568,16 +570,17 @@ canvas {
 				<div class="levelSelectMenuButtons" id="playerPack" style="transform: translate(0vw, 100vh);">
 					<button
 					class="bigArrow" onclick="openMainPack()">Main Pack</button><br><button
-					class="levelSelectButton" onclick="initTransitionToLevel(0,true)">P.1</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(1,true)">P.2</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(2,true)">P.3</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(3,true)">P.4</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(4,true)">P.5</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(5,true)">P.6</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(6,true)">P.7</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(7,true)">P.8</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(8,true)">P.9</button><button
-					class="levelSelectButton" onclick="initTransitionToLevel(9,true)">P.9</button>
+					class="levelSelectButton" onclick="initTransitionToLevel(0,true)">1.7</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(1,true)">2.7</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(2,true)">3.7</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(3,true)">3.8</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(4,true)">3.9</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(5,true)">3.A</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(6,true)">3.B</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(7,true)">4.2</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(8,true)">4.3</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(9,true)">4.4</button><button
+					class="levelSelectButton" onclick="initTransitionToLevel(10,true)">4.5</button>
 				</div>
 			</div>
 			<div id="transition"></div>
