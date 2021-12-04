@@ -1142,6 +1142,8 @@ function toggleEditor () {
 	ALLOW_EDITOR = !ALLOW_EDITOR
   if (!ALLOW_EDITOR) {
     exitEditor();
+		ALLOW_CHEATS = false
+    updateMenuButtons()
   } else {
     enterEditor();
     ALLOW_CHEATS = true
@@ -1530,6 +1532,11 @@ let localStorageWorks = true
 let solved_levels = []
 try {
   solved_levels = JSON.parse(localStorage.getItem("solved_levels") || '[]')
+	for (let k=0; k<levels_named.length; k++) {
+		if (JSON.parse(localStorage.getItem(levels_named[k]) || 'false')) {
+			solved_levels.push(k)
+		}
+	}
 } catch (err) {
   localStorageWorks = false
 }
@@ -2226,8 +2233,8 @@ function updateMenuButtons () {
 			levelSelectButtons[k - 1].className = (solved_levels.indexOf(k) === -1) ? "levelSelectButton" : "solvedSelectButton"
 			levelSelectButtons[k - 1].disabled = false
 		} else {
-    	if (!ALLOW_CHEATS && solved_levels.indexOf(k) === -1) {
-	      levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
+    	if (solved_levels.indexOf(k) === -1) {
+	      levelSelectButtons[k].className = (ALLOW_CHEATS || n_unlocked > k) ? "levelSelectButton" : "lockedSelectButton"
 	      // levelSelectButtons[k].disabled = n_unlocked <= k
 	    } else {
 	      levelSelectButtons[k].className = "solvedSelectButton"
@@ -2238,7 +2245,7 @@ function updateMenuButtons () {
 	if (cur_level_n !== 18) {
 	  let curButton = levelSelectButtons[cur_level_n > 18 ? cur_level_n - 1 : cur_level_n]
 	  if (!curButton) return
-	  curButton.className += (!ALLOW_CHEATS && (solved_levels.indexOf(cur_level_n) === -1)) ? " curLevelSelectButton" : " curLevelSelectWonButton"
+	  curButton.className += (solved_levels.indexOf(cur_level_n) === -1) ? " curLevelSelectButton" : " curLevelSelectWonButton"
 	  curButton.disabled = false
 	}
 }
@@ -2738,7 +2745,10 @@ function draw (timestamp) {
   if (is_won) {
     if (solved_levels.indexOf(cur_level_n) === -1) {
       solved_levels.push(cur_level_n)
-      if (localStorageWorks) localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
+      if (localStorageWorks) {
+				// localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
+				localStorage.setItem(levels_named[cur_level_n], "true")
+			}
       updateMenuButtons()
     }
 
