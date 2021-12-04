@@ -1,4 +1,4 @@
-import { CONFIG, pos_data, vel_data, won_data, IJ2K, tree_data, ball_collisions_data } from 'base'
+import { CONFIG, pos_data, vel_data, won_data, IJ2K } from 'base'
 import { XY2Hole, afterHolePos } from 'board'
 
 export function advanceGame(deltaTime: number) {
@@ -123,10 +123,6 @@ export function advanceGame(deltaTime: number) {
             vel_data[k1 + 1] -= dd1y - dd2y;
             vel_data[k2] -= dd2x - dd1x;
             vel_data[k2 + 1] -= dd2y - dd1y;
-
-            tree_data[j].push(i1 + i2 * CONFIG.N_BALLS)
-            ball_collisions_data[j][i1].push(i2)
-            ball_collisions_data[j][i2].push(i1)
           }
         }
       }
@@ -167,14 +163,4 @@ export function ballPosSTD(ball_i: number) {
     }
   }
   return Math.sqrt(std / n_lost)
-}
-
-export function areTreesEqual(tree1: number[], tree2: number[]) {
-  if (tree1.length !== tree2.length) return false;
-  for (let k=0; k<tree1.length; k++) {
-    if (tree1[k] != tree2[k]) {
-      return false
-    }
-  }
-  return true;
 }

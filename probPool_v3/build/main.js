@@ -172,7 +172,6 @@ var __importStar = (this && this.__importStar) || function (mod) {
     collapseFolder.add(base_1.CONFIG, 'COLLAPSE_EXTENT', ["ball", "world"]);
     collapseFolder.add(base_1.CONFIG, 'COLLAPSE_TARGET', ["mean", "selected"]);
     collapseFolder.add(base_1.CONFIG, 'AUTOCOLLAPSE_WHITE');
-    collapseFolder.add(base_1.CONFIG, 'USE_BRANCHES');
     collapseFolder.open();
     const gamefeelFolder = gui.addFolder('Gamefeel');
     gamefeelFolder.add(base_1.CONFIG, 'FORCE_SCALER', 0.01, 4);

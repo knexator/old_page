@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ball_colors = exports.ball_hex_colors = exports.IJ2K = exports.original_won_data = exports.original_vel_data = exports.original_pos_data = exports.ball_collisions_data = exports.tree_data = exports.won_data = exports.vel_data = exports.pos_data = exports.selected = exports.VARS = exports.CONFIG = exports.pintar = void 0;
+    exports.ball_colors = exports.ball_hex_colors = exports.IJ2K = exports.original_won_data = exports.original_vel_data = exports.original_pos_data = exports.won_data = exports.vel_data = exports.pos_data = exports.selected = exports.VARS = exports.CONFIG = exports.pintar = void 0;
     exports.pintar = new PintarJS();
     exports.CONFIG = {
         N_BALLS: 8,
@@ -31,7 +31,6 @@
         COLLAPSE_EXTENT: "ball",
         COLLAPSE_TARGET: "mean",
         AUTOCOLLAPSE_WHITE: true,
-        USE_BRANCHES: false,
         /*export let BALL_R_SQ = BALL_R * BALL_R
         export let BORDER_R_SQ = BORDER_R * BORDER_R
         export let CHAOS_AMOUNT = 0.001
@@ -51,18 +50,6 @@
     exports.pos_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.vel_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.won_data = new Int8Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS);
-    exports.tree_data = [];
-    for (let j = 0; j < exports.CONFIG.N_WORLDS; j++) {
-        exports.tree_data.push([]);
-    }
-    exports.ball_collisions_data = [];
-    for (let j = 0; j < exports.CONFIG.N_WORLDS; j++) {
-        let cur_world = [];
-        for (let i = 0; i < exports.CONFIG.N_BALLS; i++) {
-            cur_world.push([]);
-        }
-        exports.ball_collisions_data.push(cur_world);
-    }
     exports.original_pos_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.original_vel_data = new Float32Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS * 2);
     exports.original_won_data = new Int8Array(exports.CONFIG.N_BALLS * exports.CONFIG.N_WORLDS);

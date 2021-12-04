@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.areTreesEqual = exports.ballPosSTD = exports.advanceGame = void 0;
+    exports.ballPosSTD = exports.advanceGame = void 0;
     const base_1 = require("base");
     const board_1 = require("board");
     function advanceGame(deltaTime) {
@@ -128,9 +128,6 @@
                             base_1.vel_data[k1 + 1] -= dd1y - dd2y;
                             base_1.vel_data[k2] -= dd2x - dd1x;
                             base_1.vel_data[k2 + 1] -= dd2y - dd1y;
-                            base_1.tree_data[j].push(i1 + i2 * base_1.CONFIG.N_BALLS);
-                            base_1.ball_collisions_data[j][i1].push(i2);
-                            base_1.ball_collisions_data[j][i2].push(i1);
                         }
                     }
                 }
@@ -170,15 +167,4 @@
         return Math.sqrt(std / n_lost);
     }
     exports.ballPosSTD = ballPosSTD;
-    function areTreesEqual(tree1, tree2) {
-        if (tree1.length !== tree2.length)
-            return false;
-        for (let k = 0; k < tree1.length; k++) {
-            if (tree1[k] != tree2[k]) {
-                return false;
-            }
-        }
-        return true;
-    }
-    exports.areTreesEqual = areTreesEqual;
 });

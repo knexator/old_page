@@ -4,7 +4,7 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "base", "./engine", "./graphics", "./main", "./physics"], factory);
+        define(["require", "exports", "base", "./engine", "./graphics", "./main"], factory);
     }
 })(function (require, exports) {
     "use strict";
@@ -14,7 +14,6 @@
     const engine_1 = require("./engine");
     const graphics_1 = require("./graphics");
     const main_1 = require("./main");
-    const physics_1 = require("./physics");
     function backupCurrent() {
         base_1.original_pos_data.set(base_1.pos_data);
         base_1.original_vel_data.set(base_1.vel_data);
@@ -71,7 +70,6 @@
         }
         backupCurrent();
         base_1.VARS.anim_time = 1.0;
-        // TODO: take into account the "USE_BRANCHES" config
         if (base_1.CONFIG.COLLAPSE_EXTENT === "ball") {
             collapseBall(base_1.selected.ball);
         }
@@ -228,38 +226,14 @@
             return;
         base_1.pintar._renderer.setShader(graphics_1.outline_ball_shader);
         if (base_1.CONFIG.COLLAPSE_EXTENT === "world") {
-            if (base_1.CONFIG.USE_BRANCHES) {
-                let canonTree = base_1.tree_data[base_1.selected.world];
-                for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
-                    if (!(0, physics_1.areTreesEqual)(canonTree, base_1.tree_data[j]))
-                        continue;
-                    for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
-                        let k = (0, base_1.IJ2K)(i, j, true);
-                        (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[i]);
-                    }
-                }
-            }
-            else {
-                for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
-                    let k = (0, base_1.IJ2K)(i, base_1.selected.world, true);
-                    (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[i]);
-                }
+            for (let i = 0; i < base_1.CONFIG.N_BALLS; i++) {
+                let k = (0, base_1.IJ2K)(i, base_1.selected.world, true);
+                (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[i]);
             }
         }
         else {
-            if (base_1.CONFIG.USE_BRANCHES) {
-                let canonCollisions = base_1.ball_collisions_data[base_1.selected.world][base_1.selected.ball];
-                for (let j = 0; j < base_1.CONFIG.N_WORLDS; j++) {
-                    if ((0, physics_1.areTreesEqual)(canonCollisions, base_1.ball_collisions_data[j][base_1.selected.ball])) {
-                        let k = (0, base_1.IJ2K)(base_1.selected.ball, j, true);
-                        (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[base_1.selected.ball]);
-                    }
-                }
-            }
-            else {
-                let k = (0, base_1.IJ2K)(base_1.selected.ball, base_1.selected.world, true);
-                (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[base_1.selected.ball]);
-            }
+            let k = (0, base_1.IJ2K)(base_1.selected.ball, base_1.selected.world, true);
+            (0, graphics_1.drawBallOutlineAt)(base_1.pos_data[k], base_1.pos_data[k + 1], base_1.ball_colors[base_1.selected.ball]);
         }
     }
     exports.drawSelected = drawSelected;
