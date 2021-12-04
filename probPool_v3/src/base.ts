@@ -23,6 +23,7 @@ export let CONFIG = {
   COLLAPSE_EXTENT: "ball", // ball, world
   COLLAPSE_TARGET: "mean", // mean, selected
   AUTOCOLLAPSE_WHITE: true,
+  USE_BRANCHES: false,
   /*export let BALL_R_SQ = BALL_R * BALL_R
   export let BORDER_R_SQ = BORDER_R * BORDER_R
   export let CHAOS_AMOUNT = 0.001
@@ -43,6 +44,18 @@ export let selected = {
 export let pos_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
 export let vel_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
 export let won_data: Int8Array = new Int8Array(CONFIG.N_BALLS * CONFIG.N_WORLDS)
+export let tree_data: number[][] = []
+for (let j=0; j<CONFIG.N_WORLDS; j++) {
+  tree_data.push([]);
+}
+export let ball_collisions_data: number[][][] = []
+for (let j=0; j<CONFIG.N_WORLDS; j++) {
+  let cur_world = [];
+  for (let i=0; i<CONFIG.N_BALLS; i++) {
+    cur_world.push([])
+  }
+  ball_collisions_data.push(cur_world);
+}
 
 export let original_pos_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)
 export let original_vel_data: Float32Array = new Float32Array(CONFIG.N_BALLS * CONFIG.N_WORLDS * 2)

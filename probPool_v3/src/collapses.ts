@@ -1,7 +1,8 @@
-import { selected, CONFIG, pos_data, vel_data, won_data, IJ2K, ball_colors, pintar, original_pos_data, original_won_data, original_vel_data, VARS } from 'base'
+import { selected, CONFIG, pos_data, vel_data, won_data, IJ2K, ball_colors, pintar, original_pos_data, original_won_data, original_vel_data, VARS, tree_data, ball_collisions_data } from 'base'
 import { mouse } from './engine';
 import { drawBallOutlineAt, outline_ball_shader } from './graphics';
 import { wheel_offset } from './main';
+import { areTreesEqual } from './physics';
 
 function backupCurrent() {
   original_pos_data.set(pos_data)
@@ -60,6 +61,8 @@ export function collapse() {
   }
   backupCurrent()
   VARS.anim_time = 1.0
+
+  // TODO: take into account the "USE_BRANCHES" config
   if (CONFIG.COLLAPSE_EXTENT === "ball") {
     collapseBall(selected.ball)
   } else if (CONFIG.COLLAPSE_EXTENT === "world") {
@@ -210,13 +213,34 @@ export function drawSelected() {
   if (selected.ball === null || selected.world === null) return
   pintar._renderer.setShader(outline_ball_shader);
   if (CONFIG.COLLAPSE_EXTENT === "world") {
-    for (let i = 0; i < CONFIG.N_BALLS; i++) {
-      let k = IJ2K(i, selected.world, true)
-      drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+    if (CONFIG.USE_BRANCHES) {
+      let canonTree = tree_data[selected.world];
+      for (let j = 0; j < CONFIG.N_WORLDS; j++) {
+        if (!areTreesEqual(canonTree, tree_data[j])) continue
+        for (let i = 0; i < CONFIG.N_BALLS; i++) {
+          let k = IJ2K(i, j, true)
+          drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+        }
+      }
+    } else {
+      for (let i = 0; i < CONFIG.N_BALLS; i++) {
+        let k = IJ2K(i, selected.world, true)
+        drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[i])
+      }
     }
   } else {
-    let k = IJ2K(selected.ball, selected.world, true)
-    drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[selected.ball])
+    if (CONFIG.USE_BRANCHES) {
+      let canonCollisions = ball_collisions_data[selected.world][selected.ball];
+      for (let j=0; j<CONFIG.N_WORLDS; j++) {
+        if (areTreesEqual(canonCollisions, ball_collisions_data[j][selected.ball])) {
+          let k = IJ2K(selected.ball, j, true)
+          drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[selected.ball])
+        }
+      }
+    } else {
+      let k = IJ2K(selected.ball, selected.world, true)
+      drawBallOutlineAt(pos_data[k], pos_data[k + 1], ball_colors[selected.ball])
+    }
   }
 }
 
