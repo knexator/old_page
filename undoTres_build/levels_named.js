@@ -198,7 +198,7 @@ levels_named = [
 ##..2.._##
 ##.1###.##
 .O..###_*.
-##########`, [1, 0], [1, 0], "Tight fit", `<a href="https://twitter.com/menderbug" target="_blank">Menderbug</a>`],
+##########`, [1, 0], [1, 0], "unnamed", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ###############
 .*___.........#
@@ -220,7 +220,7 @@ levels_named = [
 .O...._.o.__*.
 ##.1.#########
 ##...#########
-##############`, [1, 0], [1, 0], "unnamed_2", "Menderbug"],
+##############`, [1, 0], [1, 0], "unnamed_2", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ###.########
 #..O....####
@@ -292,7 +292,7 @@ levels_named = [
 ##.########
 ##.########
 ##O########
-##.########`, [0, 1], [0, 1], "carbonyl group", "Notan"],
+##.########`, [0, -1], [0, -1], "carbonyl group", "Notan"],
 [`\
 ##########
 ####l#...#
@@ -302,14 +302,35 @@ levels_named = [
 ####l._.*.
 ###....###
 ####_3_###
-##########`, [1, 0], [1, 0], "The Crossing", "Menderbug"],
+##########`, [1, 0], [1, 0], "unnamed", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ###########
 ##..#######
 .O3.j..####
 ##..##1####
 ##.....__*.
-###########`, [1, 0], [1, 0], "Point of No Undo", "Menderbug"],
+###########`, [1, 0], [1, 0], "Point of No Undo", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
+[`\
+#################
+####..###########
+####..####..#####
+####...._..._####
+#####.#3##..2.###
+.O.1.l._###_._.*.
+###.#.#.####..###
+###.#.3.#########
+###..l###########
+#################`, [1, 0], [1, 0], "The Crossing", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
+[`\
+.......#.#....
+.......#.####.
+.......#*#..##
+.......#_..1.#
+.......#..1..#
+.......#.#._.#
+########.#####
+..O..1.._#....
+##########....`, [1, 0], [0, -1], "The end 2", "knexator"],
 ];
 /*
 [`\

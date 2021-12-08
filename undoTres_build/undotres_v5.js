@@ -1175,7 +1175,7 @@ function setExtraDisplay (n) {
   text_6.hidden = ultraHide || n !== 6
   text_7.hidden = ultraHide || n !== 7
   text_end.forEach(item => {
-    item.hidden = ultraHide || (n !== 18)
+    item.hidden = ultraHide || (n !== 18 && n !== 32)
   });
 	let level = levels[n];
 	if (level) {
@@ -2226,8 +2226,8 @@ function initTransitionToPrevLevel () {
 function updateMenuButtons () {
   if (!levelSelectButtons) return
   let total_solved = solved_levels.length
-  let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18, 18, 18, 18, 18, 18];
-  let n_unlocked = unlock_n[total_solved]
+  let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18];
+  let n_unlocked = unlock_n[total_solved] || 18;
   for (let k = 0; k < levels.length - 1; k++) {
 		if (k > 18) {
 			levelSelectButtons[k - 1].className = (solved_levels.indexOf(k) === -1) ? "levelSelectButton" : "solvedSelectButton"
@@ -2254,7 +2254,7 @@ function loadLevel (n) {
 	let from_editor = ALLOW_EDITOR //cur_level_n === "editor"
   real_times = [0,0,0]
   won_cur_level = false
-  in_last_level = n == 18
+  in_last_level = n == 18 || n == 32
   cur_level_n = n
   true_timeline_undos = []
   input_queue = []
@@ -2539,7 +2539,7 @@ function draw (timestamp) {
 
   // console.log(first_undo_press)
 
-  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || cur_level_n !== 18)) {
+  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || (cur_level_n !== 18 && cur_level_n !== 32))) {
     toggleEditor()
   }
 
