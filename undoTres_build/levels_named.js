@@ -193,11 +193,11 @@ levels_named = [
 ..O..1.._#....
 ##########....`, [1, 0], [0, -1], "The end", "knexator"],
 [`\
-###########
-##.....#.##
-.O.1.2.._##
-##.....#_*.
-###########`, [1, 0], [1, 0], "Sidewalk Salsa", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
+##########
+##....#.##
+.O.12.._##
+##....#_..
+##########`, [1, 0], [1, 0], "Sidewalk Salsa", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ###############
 .*___.........#
@@ -211,7 +211,7 @@ levels_named = [
 .O..####3.#####
 ########.1#####
 ########..#####
-###############`, [1, 0], [-1, 0], "In a Trenchcoat", "domcamus"],
+###############`, [1, 0], [-1, 0], "In a Trenchcoat", `<a href="https://twitter.com/fastramdesign" target="_blank">domcamus</a>`],
 [`\
 ##############
 ##...#########
@@ -219,7 +219,7 @@ levels_named = [
 .O...._.o.__*.
 ##.1.#########
 ##...#########
-##############`, [1, 0], [1, 0], "unnamed_2", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
+##############`, [1, 0], [1, 0], "Jump!", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ###.########
 #..O....####
@@ -227,7 +227,7 @@ levels_named = [
 #.......__##
 #.o.1..#..##
 #......#._*.
-############`, [0, 1], [1, 0], "unnamed_1", "domcamus"],
+############`, [0, 1], [1, 0], "unnamed_1", `<a href="https://twitter.com/fastramdesign" target="_blank">domcamus</a>`],
 [`\
 ##.#######
 ##O###...#
@@ -281,13 +281,13 @@ levels_named = [
 .O._.._..__*.
 #############`, [1, 0], [-1, 0], "Hatman John", "domcamus & Notan"],
 [`\
-##.####
-##*####
-##_####
-.O..j.#
-##.2#.#
-###...#
-#######`, [1, 0], [0, -1], "unnamed", "knexator"],
+###########
+#####..####
+#####2.####
+.O1jk_j__*.
+####3.#####
+####..#####
+###########`, [1, 0], [1, 0], "Hole Covers 101", `<a href="https://twitter.com/knexator" target="_blank">knexator</a>`],
 [`\
 ##.########
 ##*########
@@ -299,7 +299,7 @@ levels_named = [
 ##.########
 ##.########
 ##O########
-##.########`, [0, -1], [0, -1], "carbonyl group", "Notan"],
+##.########`, [0, -1], [0, -1], "Carbonyl group", "Notan"],
 [`\
 ##########
 ####l#...#
@@ -309,7 +309,7 @@ levels_named = [
 ####l._.*.
 ###....###
 ####_3_###
-##########`, [1, 0], [1, 0], "unnamed", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
+##########`, [1, 0], [1, 0], "Sinkholes", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ###########
 ##..#######
