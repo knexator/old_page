@@ -259,6 +259,7 @@ let ENABLE_UNDO_4 = false
 let HATS_ENABLED = true
 let DRAW_TIMEBARS = false
 let ALLOW_CHEATS = false
+let WALK_INTO_HOLES = true
 
 function PropertyHistory (initial_value, inmune, extra = 0) {
   this.value = [initial_value]
@@ -854,13 +855,17 @@ function drawLevel (level) {
   // drawSpr(playerSpr, pi, pj);
 
 	let player_inHole = level.player.inHole.value.at(-1);
+	let player_actually_in_hole = player_inHole < 0 && (turn_time === 0);
 	let sprOffset = level_transition_time > 0.5 && won_cur_level ? 1 : 0
   let odd = mod(player_inHole, 2) == 1
   if (odd) sprOffset = -sprOffset
   let player_spr_n = player_inHole + sprOffset
+	if (player_inHole < 0 && (turn_time !== 0)) {
+		player_spr_n += 16;
+	}
 	let player_inmune = level.player.inmune_history.at(-1)
 
-	if (player_inHole < 0) {
+	if (player_actually_in_hole) {
 		// player is in hole
 		player_spr_n += 16
 		player_sprite = raw_player_sprites[player_spr_n]
@@ -884,6 +889,29 @@ function drawLevel (level) {
 	} else {
 		player_sprite = raw_player_sprites[player_spr_n]
 	}
+
+	// this whole block is for when the player undoes into a hole
+	if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0 && player_inHole < 0) {
+		// player is undoing
+    // let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
+    // let opts = [1.0, 0.6, 0.2]
+    // let opts = [0.0]
+    let opts = [1.0]
+    for (var i = 0; i < opts.length; i++) {
+      let opt = opts[i]
+      // if (1 - turn_time < opt && 1) {// - turn_time > opt - 0.66) {
+      let opi = lerp(prevPlayerState[0], playerState[0], opt)
+      let opj = lerp(prevPlayerState[1], playerState[1], opt)
+      player_sprite = raw_player_sprites[player_spr_n]
+      player_sprite.position = new PintarJS.Point(OFFX + opi * TILE, OFFY + opj * TILE)
+      player_sprite.color = PintarJS.Color.fromHex(COLORS.crates[true_timeline_undos.at(-1) - 1])
+      player_sprite.color.a = 0.4
+			// TODO: DRAW COOL HAT
+      pintar.drawSprite(player_sprite)
+      // }
+    }
+    player_sprite.color = PintarJS.Color.white()
+  }
 
   if (any_overlap) {
     pintar._renderer.setShader(wobblyShader)
@@ -1015,7 +1043,7 @@ function drawLevel (level) {
     }
     player_sprite.color = PintarJS.Color.white()
   }
-	if (player_inHole >= 0) {
+	if (!player_actually_in_hole) {
 		player_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
 	  // player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
 	  pintar.drawSprite(player_sprite)
@@ -3010,10 +3038,12 @@ function doMainTurnLogic (cur_level) {
 				let bad_move = (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
 					(pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
 					(cur_level.geo[pj + cur_dj][pi + cur_di] != '.') ||
-					closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) ||
-					openHoleAt(cur_level, pi + cur_di, pj + cur_dj)// ||
+					closedDoorAt(cur_level, pi + cur_di, pj + cur_dj);
 					// movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
 				// console.log(bad_move);
+				if (!WALK_INTO_HOLES) {
+					bad_move = bad_move || openHoleAt(cur_level, pi + cur_di, pj + cur_dj);
+				}
 				if (bad_move) { // ignore this move
 					wallSound.play()
 					true_timeline_undos.pop()
