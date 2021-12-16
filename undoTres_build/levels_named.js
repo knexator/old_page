@@ -196,7 +196,7 @@ levels_named = [
 ##########
 ##....#.##
 .O.12.._##
-##....#_..
+##....#_*.
 ##########`, [1, 0], [1, 0], "Sidewalk Salsa", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ###############
@@ -211,7 +211,7 @@ levels_named = [
 .O..####3.#####
 ########.1#####
 ########..#####
-###############`, [1, 0], [-1, 0], "In a Trenchcoat", `<a href="https://twitter.com/fastramdesign" target="_blank">domcamus</a>`],
+###############`, [1, 0], [-1, 0], "In a Trenchcoat", `<a href="https://twitter.com/fastramdesign" target="_blank">Dom Camus</a>`],
 [`\
 ##############
 ##...#########
@@ -227,7 +227,7 @@ levels_named = [
 #.......__##
 #.o.1..#..##
 #......#._*.
-############`, [0, 1], [1, 0], "unnamed_1", `<a href="https://twitter.com/fastramdesign" target="_blank">domcamus</a>`],
+############`, [0, 1], [1, 0], "unnamed_1", `<a href="https://twitter.com/fastramdesign" target="_blank">Dom Camus</a>`],
 [`\
 ##.#######
 ##O###...#
@@ -279,7 +279,7 @@ levels_named = [
 #........c###
 #.#.##.##.###
 .O._.._..__*.
-#############`, [1, 0], [-1, 0], "Hatman John", "domcamus & Notan"],
+#############`, [1, 0], [-1, 0], "Hatman John", `<a href="https://twitter.com/fastramdesign" target="_blank">Dom Camus</a> & Notan`],
 [`\
 ###########
 #####..####
