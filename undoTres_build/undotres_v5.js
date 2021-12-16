@@ -417,14 +417,14 @@ let hats_texture = new PintarJS.Texture('imgs/onlyhats.png', () => {
 
 let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   floor_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(floor_sprite, 0, 0, 3, 3, 2, setSize=true)
+  setSourceFromSheet(floor_sprite, 0, 0, 3, 5, 2, setSize=true)
 
   crate_sprites = []
   crate_hole_sprites = []
   let crate_spr_data = [[0, 2], [1, 2], [2, 2], [2, 0]]
   for (let k = 0; k < 4; k++) {
     let curSpr = new PintarJS.Sprite(world_texture)
-    setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 4, 2, setSize=true)
+    setSourceFromSheet(curSpr, crate_spr_data[k][0], crate_spr_data[k][1], 3, 5, 2, setSize=true)
     curSpr.color = new PintarJS.Color.fromHex(COLORS.crates[k])
     crate_sprites.push(curSpr)
 
@@ -434,25 +434,31 @@ let world_texture = new PintarJS.Texture('imgs/world_new_2.png', () => {
   }
 
   hole_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(hole_sprite, 1, 0, 3, 4, 2, setSize=true)
+  setSourceFromSheet(hole_sprite, 1, 0, 3, 5, 2, setSize=true)
 
   black_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(black_sprite, 0, 1, 3, 4, 2, setSize=true)
+  setSourceFromSheet(black_sprite, 0, 1, 3, 5, 2, setSize=true)
 
   holeCover_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(holeCover_sprite, 0, 3, 3, 4, 2, setSize=true)
+  setSourceFromSheet(holeCover_sprite, 0, 3, 3, 5, 2, setSize=true)
 
   holeCoverBroken_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(holeCoverBroken_sprite, 1, 3, 3, 4, 2, setSize=true)
+  setSourceFromSheet(holeCoverBroken_sprite, 1, 3, 3, 5, 2, setSize=true)
+
+	holeCoverAbove_sprite = new PintarJS.Sprite(world_texture)
+  setSourceFromSheet(holeCoverAbove_sprite, 0, 4, 3, 5, 2, setSize=true)
+
+  holeCoverBrokenAbove_sprite = new PintarJS.Sprite(world_texture)
+  setSourceFromSheet(holeCoverBrokenAbove_sprite, 1, 4, 3, 5, 2, setSize=true)
 
   paintBlob_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(paintBlob_sprite, 1, 1, 3, 4, 2, setSize=true)
+  setSourceFromSheet(paintBlob_sprite, 1, 1, 3, 5, 2, setSize=true)
 
   paintBlobBroken_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 4, 2, setSize=true)
+  setSourceFromSheet(paintBlobBroken_sprite, 2, 1, 3, 5, 2, setSize=true)
 
 	floorHat_sprite = new PintarJS.Sprite(world_texture)
-  setSourceFromSheet(floorHat_sprite, 2, 3, 3, 4, 2, setSize=true)
+  setSourceFromSheet(floorHat_sprite, 2, 3, 3, 5, 2, setSize=true)
 })
 /*let gradients_texture = new PintarJS.Texture('imgs/gradients.png', () => {
   // let _4x4 = new PintarJS.Point(4, 4)
@@ -1043,6 +1049,17 @@ function drawLevel (level) {
     pintar._renderer.setShader(null)
   }
 
+	// draw hole covers, top part
+  level.holeCovers.forEach(holeCover => {
+    let spr = holeCover.value.at(-1) ? holeCoverAbove_sprite : holeCoverBrokenAbove_sprite
+    let [hi, hj] = holeCover.position
+    spr.position = new PintarJS.Point(OFFX + hi * TILE, OFFY + hj * TILE)
+    // spr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+    spr.color = PintarJS.Color.fromHex(COLORS.crates[holeCover.inmune.at(-1)])
+    pintar.drawSprite(spr)
+  })
+
+	// Draw walls
   for (let j = 0; j <= geo.length; j++) {
     for (let i = 0; i <= geo[0].length; i++) {
       drawModularGeoSpr(level, i, j)
@@ -2423,6 +2440,8 @@ function recalcTileSize (level) {
     hole_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     holeCover_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     holeCoverBroken_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+		holeCoverAbove_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
+		holeCoverBrokenAbove_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     paintBlob_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
     paintBlobBroken_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
 		floorHat_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
