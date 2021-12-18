@@ -1,7 +1,7 @@
 import { Hex, FrozenHex, Layout, Point } from 'hexLib';
 import { mod } from './index';
 
-type CableType = "standard" | "tachyon" | "bridgeBackward" | "bridgeForward";
+type CableType = "standard" | "tachyon" | "bridgeBackward" | "bridgeForward" | "swapper";
 type BallType = "forward" | "backward";
 
 export class Cable {
@@ -45,9 +45,25 @@ export class Tile {
       this.cables[toDelete.target] = null;
     }
   }
+  swapCables(swapper: Cable, moving_dir: BallType) {
+    let uniqueCables = new Set(this.cables.filter(x => x !== null));
+    uniqueCables.delete(swapper);
+    if (uniqueCables.size !== 2) return;
+    let [cableA, cableB] = uniqueCables;
+    let temp = cableA!.target;
+    cableA!.target = cableB!.target;
+    cableB!.target = temp;
+    this.cables[cableA!.target] = cableA;
+    this.cables[cableB!.target] = cableB;
+    if (moving_dir === "backward") {
+      let temp2 = cableA!.state;
+      cableA!.state = cableB!.state;
+      cableB!.state = temp2;
+    }
+  }
 }
 
-export const layout = new Layout(Layout.flat, 100, new Point(0, 0));
+export const layout = new Layout(Layout.flat, 70, new Point(0, 0));
 
 export const board = new Map<FrozenHex, Tile>();
 
@@ -69,7 +85,7 @@ function getStateFromPrev(cur_cable: Cable, ball_type: BallType) {
     let prev_cable = prev_tile.cables[prev_cable_target];
     if (prev_cable !== null && prev_cable.target === prev_cable_target) {
       if (ball_type === "forward") {
-        return prev_cable.state && (prev_cable.type === "standard" || prev_cable.type === "bridgeForward");
+        return prev_cable.state && (prev_cable.type === "standard" || prev_cable.type === "bridgeForward" || prev_cable.type === "swapper");
       } else if (ball_type === "backward") {
         return prev_cable.state && (prev_cable.type === "tachyon" || prev_cable.type === "bridgeBackward");
       }
@@ -88,7 +104,7 @@ function getStateFromNext(cur_cable: Cable, ball_type: BallType) {
     let next_cable = next_tile.cables[next_cable_origin];
     if (next_cable !== null && next_cable.origin === next_cable_origin) {
       if (ball_type === "forward") {
-        return next_cable.state && (next_cable.type === "standard" || next_cable.type === "bridgeBackward");
+        return next_cable.state && (next_cable.type === "standard" || next_cable.type === "bridgeBackward" || next_cable.type === "swapper");
       } else if (ball_type === "backward") {
         return next_cable.state && (next_cable.type === "tachyon" || next_cable.type === "bridgeForward");
       }
@@ -106,7 +122,7 @@ export function updateToNext(time: number) {
     for (let k = 0; k < 6; k++) {
       let cur_cable = cur_tile.cables[k];
       if (cur_cable !== null && cur_cable.origin === k) {
-        if (cur_cable.type === "standard") {
+        if (cur_cable.type === "standard" || cur_cable.type === "swapper") {
           cur_cable.nextState = getStateFromPrev(cur_cable, "forward");
         } else if (cur_cable.type === "tachyon") {
           cur_cable.nextState = getStateFromNext(cur_cable, "backward");
@@ -123,6 +139,9 @@ export function updateToNext(time: number) {
     for (let k = 0; k < 6; k++) {
       let cur_cable = cur_tile.cables[k];
       if (cur_cable !== null && cur_cable.origin === k) {
+        if (cur_cable.type === "swapper" && cur_cable.state !== cur_cable.nextState) {
+          cur_tile.swapCables(cur_cable, "forward");
+        }
         cur_cable.state = cur_cable.nextState;
       }
     }
@@ -138,7 +157,7 @@ export function updateToPrev(time: number) {
     for (let k = 0; k < 6; k++) {
       let cur_cable = cur_tile.cables[k];
       if (cur_cable !== null && cur_cable.target === k) {
-        if (cur_cable.type === "standard") {
+        if (cur_cable.type === "standard" || cur_cable.type === "swapper") {
           cur_cable.nextState = getStateFromNext(cur_cable, "forward");
         } else if (cur_cable.type === "tachyon") {
           cur_cable.nextState = getStateFromPrev(cur_cable, "backward");
@@ -155,6 +174,9 @@ export function updateToPrev(time: number) {
     for (let k = 0; k < 6; k++) {
       let cur_cable = cur_tile.cables[k];
       if (cur_cable !== null && cur_cable.origin === k) {
+        if (cur_cable.type === "swapper" && cur_cable.state !== cur_cable.nextState) {
+          cur_tile.swapCables(cur_cable, "backward");
+        }
         cur_cable.state = cur_cable.nextState;
       }
     }

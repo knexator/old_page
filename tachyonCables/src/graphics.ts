@@ -35,12 +35,14 @@ function drawTile(tile: Tile, time: number) {
       } else {
         ctx.strokeStyle = "gray";
       }
+      ctx.fillStyle = cur_cable.type === "swapper" ? "#751c1c" : "#6c751c"
       pathCable(tile.coords, cur_cable.origin, cur_cable.target);
       ctx.stroke();
+      ctx.fill();
       ctx.lineWidth = 1;
 
       if (cur_cable.state) {
-        if (cur_cable.type === "standard") {
+        if (cur_cable.type === "standard" || cur_cable.type === "swapper") {
           let ballStart = cableSample(cur_cable, mod(time, 1));
           ctx.beginPath();
           ctx.moveTo(ballStart.x, ballStart.y);
@@ -114,17 +116,25 @@ export function drawGhostCable(hex: Hex, origin: number, target: number) {
 }
 
 function pathCable(hex: Hex, origin: number, target: number) {
-  let start = layout.hexToPixel(hex.add(Hex.directions[origin].scale(0.5)));
+  let start_hex = hex.add(Hex.directions[origin].scale(0.5));
+  let start_hex_right = start_hex.add(Hex.diagonals[mod(origin+1,6)].scale(0.05));
+  let start_hex_left = start_hex.add(Hex.diagonals[mod(origin-2,6)].scale(0.05));
+  let start = layout.hexToPixel(start_hex);
+  let start_right = layout.hexToPixel(start_hex_right);
+  let start_left = layout.hexToPixel(start_hex_left);
   let end = layout.hexToPixel(hex.add(Hex.directions[target].scale(0.5)));
   let middle = layout.hexToPixel(hex);
 
   ctx.beginPath();
-  ctx.moveTo(start.x, start.y);
+  ctx.moveTo(start_left.x, start_left.y);
   ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, end.x, end.y);
+  ctx.moveTo(end.x, end.y);
+  ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, start_right.x, start_right.y);
+  ctx.lineTo(start_left.x, start_left.y);
 
-  /*let ballStart = bezierSample(0.1, start, middle, middle, end);
-  ctx.moveTo(ballStart.x, ballStart.y);
-  ctx.arc(ballStart.x, ballStart.y, layout.size * 0.2, 0, Math.PI * 2);*/
+  /*let startMarker = bezierSample(0.05, start, middle, middle, end);
+  ctx.moveTo(startMarker.x, startMarker.y);
+  ctx.arc(startMarker.x, startMarker.y, layout.size * 0.1, 0, Math.PI * 2);*/
 }
 
 function cableSample(cable: Cable, t: number) {

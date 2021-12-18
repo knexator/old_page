@@ -55,6 +55,10 @@
                     let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "bridgeForward", false);
                     cur_tile.addCable(cur_cable);
                 }
+                else if ((0, engine_1.wasKeyPressed)('5')) {
+                    let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "swapper", false);
+                    cur_tile.addCable(cur_cable);
+                }
             }
             else {
                 // yes cable

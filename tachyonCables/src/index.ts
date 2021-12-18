@@ -48,6 +48,9 @@ function update(curTime: number) {
       } else if (wasKeyPressed('4')) {
         let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "bridgeForward", false);
         cur_tile.addCable(cur_cable);
+      } else if (wasKeyPressed('5')) {
+        let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "swapper", false);
+        cur_tile.addCable(cur_cable);
       }
     } else {
       // yes cable

@@ -45,11 +45,13 @@
                 else {
                     exports.ctx.strokeStyle = "gray";
                 }
+                exports.ctx.fillStyle = cur_cable.type === "swapper" ? "#751c1c" : "#6c751c";
                 pathCable(tile.coords, cur_cable.origin, cur_cable.target);
                 exports.ctx.stroke();
+                exports.ctx.fill();
                 exports.ctx.lineWidth = 1;
                 if (cur_cable.state) {
-                    if (cur_cable.type === "standard") {
+                    if (cur_cable.type === "standard" || cur_cable.type === "swapper") {
                         let ballStart = cableSample(cur_cable, (0, index_1.mod)(time, 1));
                         exports.ctx.beginPath();
                         exports.ctx.moveTo(ballStart.x, ballStart.y);
@@ -122,15 +124,23 @@
     }
     exports.drawGhostCable = drawGhostCable;
     function pathCable(hex, origin, target) {
-        let start = hexGame_1.layout.hexToPixel(hex.add(hexLib_1.Hex.directions[origin].scale(0.5)));
+        let start_hex = hex.add(hexLib_1.Hex.directions[origin].scale(0.5));
+        let start_hex_right = start_hex.add(hexLib_1.Hex.diagonals[(0, index_1.mod)(origin + 1, 6)].scale(0.05));
+        let start_hex_left = start_hex.add(hexLib_1.Hex.diagonals[(0, index_1.mod)(origin - 2, 6)].scale(0.05));
+        let start = hexGame_1.layout.hexToPixel(start_hex);
+        let start_right = hexGame_1.layout.hexToPixel(start_hex_right);
+        let start_left = hexGame_1.layout.hexToPixel(start_hex_left);
         let end = hexGame_1.layout.hexToPixel(hex.add(hexLib_1.Hex.directions[target].scale(0.5)));
         let middle = hexGame_1.layout.hexToPixel(hex);
         exports.ctx.beginPath();
-        exports.ctx.moveTo(start.x, start.y);
+        exports.ctx.moveTo(start_left.x, start_left.y);
         exports.ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, end.x, end.y);
-        /*let ballStart = bezierSample(0.1, start, middle, middle, end);
-        ctx.moveTo(ballStart.x, ballStart.y);
-        ctx.arc(ballStart.x, ballStart.y, layout.size * 0.2, 0, Math.PI * 2);*/
+        exports.ctx.moveTo(end.x, end.y);
+        exports.ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, start_right.x, start_right.y);
+        exports.ctx.lineTo(start_left.x, start_left.y);
+        /*let startMarker = bezierSample(0.05, start, middle, middle, end);
+        ctx.moveTo(startMarker.x, startMarker.y);
+        ctx.arc(startMarker.x, startMarker.y, layout.size * 0.1, 0, Math.PI * 2);*/
     }
     function cableSample(cable, t) {
         let hex = cable.tile.coords;
