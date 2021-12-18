@@ -1,0 +1,152 @@
+import { layout, board, Tile, Cable } from 'hexGame';
+import { Hex, Point } from './hexLib';
+import { mod } from './index';
+
+export let canvas = document.querySelector("canvas") as HTMLCanvasElement;
+export let ctx = canvas.getContext("2d")!;
+
+window.addEventListener("resize", _e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+});
+
+export function beginFrame() {
+  // ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = "#4e4e4e";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+export function drawBoard(time: number) {
+  board.forEach(tile => {
+    drawTile(tile, time);
+  })
+}
+
+function drawTile(tile: Tile, time: number) {
+  ctx.strokeStyle = "gray";
+  pathHex(tile.coords);
+  ctx.stroke();
+  for (let k = 0; k < 6; k++) {
+    let cur_cable = tile.cables[k];
+    if (cur_cable !== null && cur_cable.origin === k) {
+      ctx.lineWidth = 3;
+      if (cur_cable.inputReqs.has(Math.floor(time))) {
+        ctx.strokeStyle = cur_cable.inputReqs.get(Math.floor(time)) ? "white" : "black";
+      } else {
+        ctx.strokeStyle = "gray";
+      }
+      pathCable(tile.coords, cur_cable.origin, cur_cable.target);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+
+      if (cur_cable.state) {
+        if (cur_cable.type === "standard") {
+          let ballStart = cableSample(cur_cable, mod(time, 1));
+          ctx.beginPath();
+          ctx.moveTo(ballStart.x, ballStart.y);
+          ctx.arc(ballStart.x, ballStart.y, layout.size * 0.2, 0, Math.PI * 2);
+          ctx.fillStyle = "orange";
+          ctx.fill();
+        } else if (cur_cable.type === "tachyon") {
+          let ballStart = cableSample(cur_cable, 1 - mod(time, 1));
+          ctx.beginPath();
+          ctx.moveTo(ballStart.x, ballStart.y);
+          ctx.arc(ballStart.x, ballStart.y, layout.size * 0.2, 0, Math.PI * 2);
+          ctx.fillStyle = "purple";
+          ctx.fill();
+        } else if (cur_cable.type === "bridgeBackward") {
+          if (mod(time, 1) < 0.5) {
+            let ballStart1 = cableSample(cur_cable, mod(time, 1));
+            ctx.beginPath();
+            ctx.moveTo(ballStart1.x, ballStart1.y);
+            ctx.arc(ballStart1.x, ballStart1.y, layout.size * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = "orange";
+            ctx.fill();
+
+            let ballStart2 = cableSample(cur_cable, 1 - mod(time, 1));
+            ctx.beginPath();
+            ctx.moveTo(ballStart2.x, ballStart2.y);
+            ctx.arc(ballStart2.x, ballStart2.y, layout.size * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = "purple";
+            ctx.fill();
+          }
+        } else if (cur_cable.type === "bridgeForward") {
+          if (mod(time, 1) > 0.5) {
+            let ballStart1 = cableSample(cur_cable, mod(time, 1));
+            ctx.beginPath();
+            ctx.moveTo(ballStart1.x, ballStart1.y);
+            ctx.arc(ballStart1.x, ballStart1.y, layout.size * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = "orange";
+            ctx.fill();
+
+            let ballStart2 = cableSample(cur_cable, 1 - mod(time, 1));
+            ctx.beginPath();
+            ctx.moveTo(ballStart2.x, ballStart2.y);
+            ctx.arc(ballStart2.x, ballStart2.y, layout.size * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = "purple";
+            ctx.fill();
+          }
+        }
+      }
+    }
+  }
+}
+
+export function drawGhostHex(hex: Hex) {
+  ctx.fillStyle = "#65944a";
+  pathHex(hex);
+  ctx.fill();
+}
+
+function pathHex(hex: Hex) {
+  let corners = layout.polygonCorners(hex);
+  ctx.beginPath();
+  ctx.moveTo(corners[0].x, corners[0].y);
+  for (let k = 1; k < 6; k++) {
+    ctx.lineTo(corners[k].x, corners[k].y);
+  }
+  ctx.closePath();
+}
+
+export function drawGhostCable(hex: Hex, origin: number, target: number) {
+  pathCable(hex, origin, target);
+  ctx.stroke();
+}
+
+function pathCable(hex: Hex, origin: number, target: number) {
+  let start = layout.hexToPixel(hex.add(Hex.directions[origin].scale(0.5)));
+  let end = layout.hexToPixel(hex.add(Hex.directions[target].scale(0.5)));
+  let middle = layout.hexToPixel(hex);
+
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, end.x, end.y);
+
+  /*let ballStart = bezierSample(0.1, start, middle, middle, end);
+  ctx.moveTo(ballStart.x, ballStart.y);
+  ctx.arc(ballStart.x, ballStart.y, layout.size * 0.2, 0, Math.PI * 2);*/
+}
+
+function cableSample(cable: Cable, t: number) {
+  let hex = cable.tile.coords;
+  let start = layout.hexToPixel(hex.add(Hex.directions[cable.origin].scale(0.5)));
+  let end = layout.hexToPixel(hex.add(Hex.directions[cable.target].scale(0.5)));
+  let middle = layout.hexToPixel(hex);
+  return bezierSample(t, start, middle, middle, end);
+}
+
+// https://stackoverflow.com/questions/16227300/how-to-draw-bezier-curves-with-native-javascript-code-without-ctx-beziercurveto
+function bezierSample(t: number, p0: Point, p1: Point, p2: Point, p3: Point): Point {
+  var cX = 3 * (p1.x - p0.x),
+    bX = 3 * (p2.x - p1.x) - cX,
+    aX = p3.x - p0.x - cX - bX;
+
+  var cY = 3 * (p1.y - p0.y),
+    bY = 3 * (p2.y - p1.y) - cY,
+    aY = p3.y - p0.y - cY - bY;
+
+  var x = (aX * Math.pow(t, 3)) + (bX * Math.pow(t, 2)) + (cX * t) + p0.x;
+  var y = (aY * Math.pow(t, 3)) + (bY * Math.pow(t, 2)) + (cY * t) + p0.y;
+
+  return { x: x, y: y };
+};
