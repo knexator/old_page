@@ -99,11 +99,17 @@
             }
             anim_t = new_anim_t;
         }
-        if ((0, engine_1.wasKeyPressed)('s')) {
-            localStorage.setItem("level", (0, hexGame_1.board2str)());
+        /*if (wasKeyPressed('s')) {
+          localStorage.setItem("level", board2str());
         }
-        if ((0, engine_1.wasKeyPressed)('m')) {
-            hexGame_1.board.clear();
+        if (wasKeyPressed('m')) {
+          board.clear();
+        }*/
+        if ((0, engine_1.wasKeyPressed)('w')) {
+            localStorage.setItem("level_small", (0, hexGame_1.board2str_onlyVisible)());
+        }
+        if ((0, engine_1.wasKeyPressed)('q')) {
+            (0, hexGame_1.hacky_printAllPaths)(time);
         }
         if ((0, engine_1.isKeyDown)('k'))
             hexGame_1.layout.origin.y -= deltaTime * 0.4;

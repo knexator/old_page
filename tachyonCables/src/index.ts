@@ -1,5 +1,5 @@
 import { engine_update, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
-import { layout, board, Tile, Cable, updateToNext, updateToPrev, board2str, } from 'hexGame';
+import { layout, board, Tile, Cable, updateToNext, updateToPrev, board2str, board2str_onlyVisible, hacky_printAllPaths, } from 'hexGame';
 import { beginFrame, ctx, drawBoard, drawGhostCable, drawGhostHex } from './graphics';
 
 let last_time = 0;
@@ -89,11 +89,17 @@ function update(curTime: number) {
     anim_t = new_anim_t;
   }
 
-  if (wasKeyPressed('s')) {
+  /*if (wasKeyPressed('s')) {
     localStorage.setItem("level", board2str());
   }
   if (wasKeyPressed('m')) {
     board.clear();
+  }*/
+  if (wasKeyPressed('w')) {
+    localStorage.setItem("level_small", board2str_onlyVisible());
+  }
+  if (wasKeyPressed('q')) {
+    hacky_printAllPaths(time);
   }
 
   if (isKeyDown('k')) layout.origin.y -= deltaTime * 0.4;

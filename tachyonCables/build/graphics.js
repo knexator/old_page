@@ -32,6 +32,11 @@
     }
     exports.drawBoard = drawBoard;
     function drawTile(tile, time) {
+        let tile_hex = tile.coords;
+        let center = hexGame_1.layout.hexToPixel(tile_hex);
+        if (center.x < 0 || center.x >= exports.canvas.width || center.y < 0 || center.y >= exports.canvas.height) {
+            return;
+        }
         exports.ctx.strokeStyle = "gray";
         pathHex(tile.coords);
         exports.ctx.stroke();

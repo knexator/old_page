@@ -23,6 +23,12 @@ export function drawBoard(time: number) {
 }
 
 function drawTile(tile: Tile, time: number) {
+  let tile_hex = tile.coords;
+  let center = layout.hexToPixel(tile_hex);
+  if (center.x < 0 || center.x >= canvas.width || center.y < 0 || center.y >= canvas.height) {
+    return;
+  }
+
   ctx.strokeStyle = "gray";
   pathHex(tile.coords);
   ctx.stroke();

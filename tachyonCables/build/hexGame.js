@@ -4,13 +4,14 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "hexLib", "./index"], factory);
+        define(["require", "exports", "hexLib", "./graphics", "./index"], factory);
     }
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.board2str = exports.updateToPrev = exports.updateToNext = exports.board = exports.layout = exports.Tile = exports.Cable = void 0;
+    exports.hacky_printAllPaths = exports.board2str_onlyVisible = exports.board2str = exports.updateToPrev = exports.updateToNext = exports.board = exports.layout = exports.Tile = exports.Cable = void 0;
     const hexLib_1 = require("hexLib");
+    const graphics_1 = require("./graphics");
     const index_1 = require("./index");
     class Cable {
         constructor(tile, origin, target, type, state) {
@@ -97,7 +98,8 @@
     exports.Tile = Tile;
     exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 70, new hexLib_1.Point(0, 0));
     // export let board = new Map<FrozenHex, Tile>();
-    exports.board = str2board(localStorage.getItem("level") || "[]");
+    // export const board = str2board(localStorage.getItem("level") || "[]");
+    exports.board = str2board(localStorage.getItem("level_small") || "[]");
     function applyInput(time) {
         exports.board.forEach(tile => {
             tile.cables.forEach(cable => {
@@ -239,5 +241,177 @@
             board_res.set(cur_hex.freeze(), cur_tile);
         });
         return board_res;
+    }
+    function board2str_onlyVisible() {
+        let tiles = [];
+        let offset = exports.layout.pixelToHex({ x: 0, y: 0 }).round();
+        exports.board.forEach(tile => {
+            let tile_hex = tile.coords;
+            let center = exports.layout.hexToPixel(tile_hex);
+            if (center.x < 0 || center.x >= graphics_1.canvas.width || center.y < 0 || center.y >= graphics_1.canvas.height) {
+                return;
+            }
+            let simpleTile = tile.toSimpleObject();
+            if (simpleTile.cables.length === 0) {
+                return;
+            }
+            simpleTile.q -= offset.q;
+            simpleTile.r -= offset.r;
+            tiles.push(simpleTile);
+        });
+        return JSON.stringify(tiles);
+    }
+    exports.board2str_onlyVisible = board2str_onlyVisible;
+    function copyPath(path) {
+        let res = {
+            start: path.start,
+            finish: path.finish,
+            time: path.time,
+            effects: [],
+            requires: []
+        };
+        path.effects.forEach(x => {
+            res.effects.push({ cable: x.cable, time: x.time });
+        });
+        path.requires.forEach(x => {
+            res.requires.push({ cable: x.cable, time: x.time, swapped: x.swapped });
+        });
+        return res;
+    }
+    function getAllPathsFrom(starting_cable, stopping_cables) {
+        const deltas = {
+            "standard": 1,
+            "swapper": 1,
+            "tachyon": -1,
+            "bridgeForward": 0,
+            "bridgeBackward": 0,
+        };
+        let finished_paths = [];
+        let pending_paths = [
+            { start: starting_cable, finish: starting_cable, time: 0, effects: [], requires: [] }
+        ];
+        while (pending_paths.length > 0 && finished_paths.length < 5) {
+            let cur_path = pending_paths.shift();
+            let cur_cable = cur_path.finish;
+            let direct_next = nextCable(cur_cable);
+            let other_next = otherNextCable(cur_cable);
+            if (!direct_next)
+                continue; // path ends abruptly
+            if (!other_next) {
+                // only one path forward
+                cur_path.finish = direct_next;
+                if (cur_cable.type === "swapper") {
+                    cur_path.effects.push({ cable: cur_cable, time: cur_path.time });
+                }
+                cur_path.time += deltas[cur_cable.type];
+                if (stopping_cables.indexOf(direct_next) !== -1) {
+                    finished_paths.push(cur_path);
+                }
+                else {
+                    pending_paths.push(cur_path);
+                }
+            }
+            else {
+                // two possible paths forward
+                let cur_path_other = copyPath(cur_path);
+                let cur_swapper = cur_cable.tile.cables.find(x => x.type === "swapper");
+                // path 1
+                cur_path.finish = direct_next;
+                cur_path.requires.push({ cable: cur_swapper, time: cur_path.time, swapped: false });
+                cur_path.time += deltas[cur_cable.type];
+                if (stopping_cables.indexOf(direct_next) !== -1) {
+                    finished_paths.push(cur_path);
+                }
+                else {
+                    pending_paths.push(cur_path);
+                }
+                // path 2
+                cur_path_other.finish = other_next;
+                cur_path_other.requires.push({ cable: cur_swapper, time: cur_path_other.time, swapped: true });
+                cur_path_other.time += deltas[cur_cable.type];
+                if (stopping_cables.indexOf(other_next) !== -1) {
+                    finished_paths.push(cur_path_other);
+                }
+                else {
+                    pending_paths.push(cur_path_other);
+                }
+            }
+        }
+        return finished_paths;
+    }
+    function hacky_printAllPaths(time) {
+        let interesting_cables = [];
+        exports.board.forEach(cur_tile => {
+            for (let k = 0; k < 6; k++) {
+                let cur_cable = cur_tile.cables[k];
+                if (cur_cable !== null && cur_cable.target === k && cur_cable.inputReqs.get(time)) {
+                    interesting_cables.push(cur_cable);
+                }
+            }
+        });
+        interesting_cables.forEach(cur_cable => {
+            let cur_paths = getAllPathsFrom(cur_cable, interesting_cables);
+            cur_paths.forEach(cur_path => {
+                let effects = cur_path.effects.map(x => `${hacky_cableName(x.cable)} ON at ${x.time}`);
+                let requires = cur_path.requires.map(x => `${hacky_cableName(x.cable)} ${x.swapped ? 'ON' : 'OFF'} at ${x.time}`);
+                console.log(`\
+${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_path.time}.
+  Effects:\n\t${effects.join(';\n\t')}
+  Requires:\n\t${requires.join(';\n\t')}`);
+            });
+        });
+    }
+    exports.hacky_printAllPaths = hacky_printAllPaths;
+    function hacky_cableName(cable) {
+        let hex = cable.tile.coords;
+        if (cable.type === "swapper") {
+            if (hex.q === 3 && hex.r === 1) {
+                return 'X';
+            }
+            if (hex.q === 4 && hex.r === 2) {
+                return 'Y';
+            }
+            if (hex.q === 2 && hex.r === 3) {
+                return 'Z';
+            }
+        }
+        else if (hex.q === 3 && hex.r === 2) {
+            if (cable.target === 2) {
+                return 'A';
+            }
+            if (cable.target === 0) {
+                return 'B';
+            }
+            if (cable.target === 4) {
+                return 'C';
+            }
+        }
+    }
+    function nextCable(cur_cable) {
+        let cur_tile = cur_cable.tile;
+        let next_tile = exports.board.get(cur_tile.coords.neighbor(cur_cable.target).freeze());
+        if (next_tile !== undefined) {
+            let next_cable_origin = (0, index_1.mod)(cur_cable.target + 3, 6);
+            let next_cable = next_tile.cables[next_cable_origin];
+            if (next_cable !== null && next_cable.origin === next_cable_origin) {
+                return next_cable;
+            }
+        }
+        return null;
+    }
+    function otherNextCable(cur_cable) {
+        if (cur_cable.type === "swapper")
+            return null;
+        let swapper_on_tile = cur_cable.tile.cables.some(x => (x === null || x === void 0 ? void 0 : x.type) === "swapper");
+        if (!swapper_on_tile)
+            return null;
+        let swapCables = new Set(cur_cable.tile.cables.filter(x => {
+            return x !== null && x.type !== "swapper";
+        }));
+        if (swapCables.size !== 2)
+            return null;
+        swapCables.delete(cur_cable);
+        let [otherCable] = swapCables;
+        return nextCable(otherCable);
     }
 });
