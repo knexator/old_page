@@ -1,5 +1,5 @@
-import { engine_update, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
-import { layout, board, Tile, Cable, updateToNext, updateToPrev, } from 'hexGame';
+import { engine_update, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
+import { layout, board, Tile, Cable, updateToNext, updateToPrev, board2str, } from 'hexGame';
 import { beginFrame, ctx, drawBoard, drawGhostCable, drawGhostHex } from './graphics';
 
 let last_time = 0;
@@ -82,12 +82,24 @@ function update(curTime: number) {
       anim_t += .99;
     }
   } else {
-    let new_anim_t = moveToZero(anim_t, 0.001 * deltaTime);
+    let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
     if (new_anim_t === 0 && anim_t < 0) {
       updateToNext(time - 1);
     }
     anim_t = new_anim_t;
   }
+
+  if (wasKeyPressed('s')) {
+    localStorage.setItem("level", board2str());
+  }
+  if (wasKeyPressed('m')) {
+    board.clear();
+  }
+
+  if (isKeyDown('k')) layout.origin.y -= deltaTime * 0.4;
+  if (isKeyDown('i')) layout.origin.y += deltaTime * 0.4;
+  if (isKeyDown('l')) layout.origin.x -= deltaTime * 0.4;
+  if (isKeyDown('j')) layout.origin.x += deltaTime * 0.4;
 
   drawBoard(time + anim_t);
 

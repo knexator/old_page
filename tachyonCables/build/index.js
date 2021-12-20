@@ -93,12 +93,26 @@
             }
         }
         else {
-            let new_anim_t = moveToZero(anim_t, 0.001 * deltaTime);
+            let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
             if (new_anim_t === 0 && anim_t < 0) {
                 (0, hexGame_1.updateToNext)(time - 1);
             }
             anim_t = new_anim_t;
         }
+        if ((0, engine_1.wasKeyPressed)('s')) {
+            localStorage.setItem("level", (0, hexGame_1.board2str)());
+        }
+        if ((0, engine_1.wasKeyPressed)('m')) {
+            hexGame_1.board.clear();
+        }
+        if ((0, engine_1.isKeyDown)('k'))
+            hexGame_1.layout.origin.y -= deltaTime * 0.4;
+        if ((0, engine_1.isKeyDown)('i'))
+            hexGame_1.layout.origin.y += deltaTime * 0.4;
+        if ((0, engine_1.isKeyDown)('l'))
+            hexGame_1.layout.origin.x -= deltaTime * 0.4;
+        if ((0, engine_1.isKeyDown)('j'))
+            hexGame_1.layout.origin.x += deltaTime * 0.4;
         (0, graphics_1.drawBoard)(time + anim_t);
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);

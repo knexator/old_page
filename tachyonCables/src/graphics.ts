@@ -35,7 +35,16 @@ function drawTile(tile: Tile, time: number) {
       } else {
         ctx.strokeStyle = "gray";
       }
-      ctx.fillStyle = cur_cable.type === "swapper" ? "#751c1c" : "#6c751c"
+      let fillStyles = {
+        standard: "#bda564",
+        tachyon: "#a461ba",
+        bridgeForward: "#61baa8",
+        bridgeBackward: "#ba6161",
+        swapper: "#751c1c",
+      }
+      ctx.fillStyle = fillStyles[cur_cable.type];
+      // ctx.strokeStyle = fillStyles[cur_cable.type];
+      // ctx.fillStyle = cur_cable.type === "swapper" ? "#751c1c" : "#6c751c"
       pathCable(tile.coords, cur_cable.origin, cur_cable.target);
       ctx.stroke();
       ctx.fill();

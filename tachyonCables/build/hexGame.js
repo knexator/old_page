@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.updateToPrev = exports.updateToNext = exports.board = exports.layout = exports.Tile = exports.Cable = void 0;
+    exports.board2str = exports.updateToPrev = exports.updateToNext = exports.board = exports.layout = exports.Tile = exports.Cable = void 0;
     const hexLib_1 = require("hexLib");
     const index_1 = require("./index");
     class Cable {
@@ -72,17 +72,41 @@
                 let temp2 = cableA.state;
                 cableA.state = cableB.state;
                 cableB.state = temp2;
+                temp2 = cableA.nextState;
+                cableA.nextState = cableB.nextState;
+                cableB.nextState = temp2;
             }
+        }
+        toSimpleObject() {
+            let uniqueCables = new Set(this.cables.filter(x => x !== null));
+            let simpleCables = [];
+            uniqueCables.forEach(x => {
+                simpleCables.push({
+                    origin: x.origin,
+                    target: x.target,
+                    type: x.type
+                });
+            });
+            return {
+                q: this.coords.q,
+                r: this.coords.r,
+                cables: simpleCables
+            };
         }
     }
     exports.Tile = Tile;
     exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 70, new hexLib_1.Point(0, 0));
-    exports.board = new Map();
+    // export let board = new Map<FrozenHex, Tile>();
+    exports.board = str2board(localStorage.getItem("level") || "[]");
     function applyInput(time) {
         exports.board.forEach(tile => {
             tile.cables.forEach(cable => {
                 if (cable !== null && cable.inputReqs.has(time)) {
-                    cable.state = cable.inputReqs.get(time);
+                    let new_state = cable.inputReqs.get(time);
+                    if (cable.type === "swapper" && cable.state !== new_state) {
+                        tile.swapCables(cable, "forward");
+                    }
+                    cable.state = new_state;
                 }
             });
         });
@@ -193,4 +217,27 @@
         applyInput(time - 1);
     }
     exports.updateToPrev = updateToPrev;
+    function board2str() {
+        let tiles = [];
+        exports.board.forEach(tile => {
+            tiles.push(tile.toSimpleObject());
+        });
+        return JSON.stringify(tiles);
+    }
+    exports.board2str = board2str;
+    function str2board(str) {
+        let board_res = new Map();
+        let simpleObject = JSON.parse(str);
+        simpleObject.forEach(simpleTile => {
+            let cur_hex = new hexLib_1.Hex(simpleTile.q, simpleTile.r, -simpleTile.r - simpleTile.q);
+            let cur_tile = new Tile(cur_hex);
+            simpleTile.cables.forEach(x => {
+                let cur_cable = new Cable(cur_tile, x.origin, x.target, x.type, false);
+                cur_tile.cables[x.origin] = cur_cable;
+                cur_tile.cables[x.target] = cur_cable;
+            });
+            board_res.set(cur_hex.freeze(), cur_tile);
+        });
+        return board_res;
+    }
 });
