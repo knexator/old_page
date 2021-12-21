@@ -111,6 +111,9 @@
         if ((0, engine_1.wasKeyPressed)('q')) {
             (0, hexGame_1.hacky_printAllPaths)(time);
         }
+        if ((0, engine_1.wasKeyPressed)('e')) {
+            (0, hexGame_1.hacky_printAllLoops)(time);
+        }
         if ((0, engine_1.isKeyDown)('k'))
             hexGame_1.layout.origin.y -= deltaTime * 0.4;
         if ((0, engine_1.isKeyDown)('i'))

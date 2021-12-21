@@ -392,6 +392,7 @@ function hacky_cableName(cable: Cable) {
       return 'C'
     }
   }
+  return cable.tile.coords.q.toString() + ',' + cable.tile.coords.r.toString();
 }
 
 function nextCable(cur_cable: Cable) {
@@ -419,4 +420,90 @@ function otherNextCable(cur_cable: Cable) {
   swapCables.delete(cur_cable);
   let [otherCable] = swapCables;
   return nextCable(otherCable!);
+}
+
+export function getAllLoopsFrom(starting_cable: Cable) {
+  const deltas = {
+    "standard": 1,
+    "swapper": 1,
+    "tachyon": -1,
+    "bridgeForward": 0,
+    "bridgeBackward": 0,
+  }
+
+  let finished_paths: Path[] = [];
+
+  let pending_paths: Path[] = [
+    { start: starting_cable, finish: starting_cable, time: 0, effects: [], requires: [] }
+  ];
+  while (pending_paths.length > 0 && finished_paths.length < 10) {
+    let cur_path = pending_paths.shift() as Path;
+    let cur_cable = cur_path.finish;
+    let direct_next = nextCable(cur_cable);
+    let other_next = otherNextCable(cur_cable);
+    if (!direct_next) continue; // path ends abruptly
+    if (!other_next) {
+      // only one path forward
+      cur_path.finish = direct_next;
+      if (cur_cable.type === "swapper") {
+        cur_path.effects.push({ cable: cur_cable, time: cur_path.time });
+      }
+      cur_path.time += deltas[cur_cable.type];
+      if (cur_path.time === 0 && direct_next === starting_cable) {
+        finished_paths.push(cur_path);
+      } else {
+        pending_paths.push(cur_path);
+      }
+    } else {
+      // two possible paths forward
+      let cur_path_other = copyPath(cur_path);
+      let cur_swapper = cur_cable.tile.cables.find(x => x!.type === "swapper")!;
+
+      // path 1
+      cur_path.finish = direct_next;
+      cur_path.requires.push({ cable: cur_swapper, time: cur_path.time, swapped: false });
+      cur_path.time += deltas[cur_cable.type];
+      if (cur_path.time === 0 && direct_next === starting_cable) {
+        finished_paths.push(cur_path);
+      } else {
+        pending_paths.push(cur_path);
+      }
+
+      // path 2
+      cur_path_other.finish = other_next;
+      cur_path_other.requires.push({ cable: cur_swapper, time: cur_path_other.time, swapped: true });
+      cur_path_other.time += deltas[cur_cable.type];
+      if (cur_path.time === 0 && other_next === starting_cable) {
+        finished_paths.push(cur_path_other);
+      } else {
+        pending_paths.push(cur_path_other);
+      }
+    }
+  }
+
+  return finished_paths;
+}
+
+export function hacky_printAllLoops(time: number) {
+  let interesting_cable: Cable | null = null;
+  board.forEach(cur_tile => {
+    for (let k = 0; k < 6; k++) {
+      let cur_cable = cur_tile.cables[k];
+      if (cur_cable !== null && cur_cable.target === k && cur_cable.inputReqs.get(time)) {
+        interesting_cable = cur_cable;
+        break;
+      }
+    }
+  });
+  if (interesting_cable === null) return;
+
+  let cur_paths = getAllLoopsFrom(interesting_cable);
+  cur_paths.forEach(cur_path => {
+    let effects = cur_path.effects.map(x => `${hacky_cableName(x.cable)} ON at ${x.time}`);
+    let requires = cur_path.requires.map(x => `${hacky_cableName(x.cable)} ${x.swapped ? 'ON' : 'OFF'} at ${x.time}`);
+    console.log(`\
+${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_path.time}.
+Effects:\n\t${effects.join(';\n\t')}
+Requires:\n\t${requires.join(';\n\t')}`);
+  })
 }

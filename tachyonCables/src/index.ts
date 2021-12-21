@@ -1,5 +1,5 @@
 import { engine_update, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
-import { layout, board, Tile, Cable, updateToNext, updateToPrev, board2str, board2str_onlyVisible, hacky_printAllPaths, } from 'hexGame';
+import { layout, board, Tile, Cable, updateToNext, updateToPrev, board2str, board2str_onlyVisible, hacky_printAllPaths, hacky_printAllLoops, } from 'hexGame';
 import { beginFrame, ctx, drawBoard, drawGhostCable, drawGhostHex } from './graphics';
 
 let last_time = 0;
@@ -100,6 +100,9 @@ function update(curTime: number) {
   }
   if (wasKeyPressed('q')) {
     hacky_printAllPaths(time);
+  }
+  if (wasKeyPressed('e')) {
+    hacky_printAllLoops(time);
   }
 
   if (isKeyDown('k')) layout.origin.y -= deltaTime * 0.4;
