@@ -144,10 +144,17 @@
         let start = hexGame_1.layout.hexToPixel(start_hex);
         let start_right = hexGame_1.layout.hexToPixel(start_hex_right);
         let start_left = hexGame_1.layout.hexToPixel(start_hex_left);
-        let end = hexGame_1.layout.hexToPixel(hex.add(hexLib_1.Hex.directions[target].scale(0.5)));
+        let end_hex = hex.add(hexLib_1.Hex.directions[target].scale(0.5));
+        // let end_hex_right = end_hex.add(Hex.diagonals[mod(target+1,6)].scale(0.025));
+        // let end_hex_left = end_hex.add(Hex.diagonals[mod(target-2,6)].scale(0.025));
+        let end = hexGame_1.layout.hexToPixel(end_hex);
+        // let end_right = layout.hexToPixel(end_hex_right);
+        // let end_left = layout.hexToPixel(end_hex_left);
         let middle = hexGame_1.layout.hexToPixel(hex);
         exports.ctx.beginPath();
         exports.ctx.moveTo(start_left.x, start_left.y);
+        // ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, end_left.x, end_left.y);
+        // ctx.lineTo(end_right.x, end_right.y);
         exports.ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, end.x, end.y);
         exports.ctx.moveTo(end.x, end.y);
         exports.ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, start_right.x, start_right.y);

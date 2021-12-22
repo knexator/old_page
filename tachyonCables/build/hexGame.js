@@ -501,4 +501,7 @@ Requires:\n\t${requires.join(';\n\t')}`);
         });
     }
     exports.hacky_printAllLoops = hacky_printAllLoops;
+    function areLoopsCompatible(loops) {
+        // loop.time = the second in which loop.start is started
+    }
 });

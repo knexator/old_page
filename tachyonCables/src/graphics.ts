@@ -137,11 +137,18 @@ function pathCable(hex: Hex, origin: number, target: number) {
   let start = layout.hexToPixel(start_hex);
   let start_right = layout.hexToPixel(start_hex_right);
   let start_left = layout.hexToPixel(start_hex_left);
-  let end = layout.hexToPixel(hex.add(Hex.directions[target].scale(0.5)));
+  let end_hex = hex.add(Hex.directions[target].scale(0.5));
+  // let end_hex_right = end_hex.add(Hex.diagonals[mod(target+1,6)].scale(0.025));
+  // let end_hex_left = end_hex.add(Hex.diagonals[mod(target-2,6)].scale(0.025));
+  let end = layout.hexToPixel(end_hex);
+  // let end_right = layout.hexToPixel(end_hex_right);
+  // let end_left = layout.hexToPixel(end_hex_left);
   let middle = layout.hexToPixel(hex);
 
   ctx.beginPath();
   ctx.moveTo(start_left.x, start_left.y);
+  // ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, end_left.x, end_left.y);
+  // ctx.lineTo(end_right.x, end_right.y);
   ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, end.x, end.y);
   ctx.moveTo(end.x, end.y);
   ctx.bezierCurveTo(middle.x, middle.y, middle.x, middle.y, start_right.x, start_right.y);

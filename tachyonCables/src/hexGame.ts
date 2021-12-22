@@ -507,3 +507,8 @@ Effects:\n\t${effects.join(';\n\t')}
 Requires:\n\t${requires.join(';\n\t')}`);
   })
 }
+
+function areLoopsCompatible(loops: Path[]) {
+  // loop.time = the second in which loop.start is started
+  
+}
