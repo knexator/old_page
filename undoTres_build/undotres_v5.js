@@ -32,7 +32,51 @@ let canvas = document.getElementById('canvas')
 // let ctx = canvas.getContext('2d')
 
 let menuDiv = document.getElementById('levelSelectMenuContainer')
-let levelSelectButtons = menuDiv?.querySelectorAll('button')
+let levelSelectButtons = menuDiv?.querySelectorAll('.levelSelectButton')
+let mainPackContainer = document.getElementById('mainPack')
+let playerPackContainer = document.getElementById('playerPack')
+
+function openPlayerPack() {
+	mainPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, 0vh)" },
+    { transform: "translate(0vw, -100vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-in',
+  });
+	playerPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, 100vh)" },
+    { transform: "translate(0vw, 0vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-out',
+  });
+}
+
+function openMainPack() {
+	mainPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, -100vh)" },
+    { transform: "translate(0vw, 0vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-out',
+  });
+	playerPackContainer.animate([
+    // keyframes
+    { transform: "translate(0vw, 0vh)" },
+    { transform: "translate(0vw, 100vh)" }
+  ], {
+    duration: 500,
+    fill: 'both',
+    easing: 'ease-in',
+  });
+}
 
 let globalT = 0.0
 let last_t = null
@@ -212,9 +256,10 @@ let ENABLE_RESTART = false
 let ENABLE_UNDO_2 = false
 let ENABLE_UNDO_3 = false
 let ENABLE_UNDO_4 = false
-let HATS_ENABLED = false
+let HATS_ENABLED = true
 let DRAW_TIMEBARS = false
 let ALLOW_CHEATS = false
+let WALK_INTO_HOLES = true
 
 function PropertyHistory (initial_value, inmune, extra = 0) {
   this.value = [initial_value]
@@ -804,13 +849,17 @@ function drawLevel (level) {
   // drawSpr(playerSpr, pi, pj);
 
 	let player_inHole = level.player.inHole.value.at(-1);
+	let player_actually_in_hole = player_inHole < 0 && (turn_time === 0);
 	let sprOffset = level_transition_time > 0.5 && won_cur_level ? 1 : 0
   let odd = mod(player_inHole, 2) == 1
   if (odd) sprOffset = -sprOffset
   let player_spr_n = player_inHole + sprOffset
+	if (player_inHole < 0 && (turn_time !== 0)) {
+		player_spr_n += 16;
+	}
 	let player_inmune = level.player.inmune_history.at(-1)
 
-	if (player_inHole < 0) {
+	if (player_actually_in_hole) {
 		// player is in hole
 		player_spr_n += 16
 		player_sprite = raw_player_sprites[player_spr_n]
@@ -834,6 +883,29 @@ function drawLevel (level) {
 	} else {
 		player_sprite = raw_player_sprites[player_spr_n]
 	}
+
+	// this whole block is for when the player undoes into a hole
+	if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0 && player_inHole < 0) {
+		// player is undoing
+    // let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
+    // let opts = [1.0, 0.6, 0.2]
+    // let opts = [0.0]
+    let opts = [1.0]
+    for (var i = 0; i < opts.length; i++) {
+      let opt = opts[i]
+      // if (1 - turn_time < opt && 1) {// - turn_time > opt - 0.66) {
+      let opi = lerp(prevPlayerState[0], playerState[0], opt)
+      let opj = lerp(prevPlayerState[1], playerState[1], opt)
+      player_sprite = raw_player_sprites[player_spr_n]
+      player_sprite.position = new PintarJS.Point(OFFX + opi * TILE, OFFY + opj * TILE)
+      player_sprite.color = PintarJS.Color.fromHex(COLORS.crates[true_timeline_undos.at(-1) - 1])
+      player_sprite.color.a = 0.4
+			// TODO: DRAW COOL HAT
+      pintar.drawSprite(player_sprite)
+      // }
+    }
+    player_sprite.color = PintarJS.Color.white()
+  }
 
   if (any_overlap) {
     pintar._renderer.setShader(wobblyShader)
@@ -965,7 +1037,7 @@ function drawLevel (level) {
     }
     player_sprite.color = PintarJS.Color.white()
   }
-	if (player_inHole >= 0) {
+	if (!player_actually_in_hole) {
 		player_sprite.position = new PintarJS.Point(OFFX + pi * TILE, OFFY + pj * TILE)
 	  // player_sprite.scale = new PintarJS.Point(TILE / 16, TILE / 16)
 	  pintar.drawSprite(player_sprite)
@@ -1013,93 +1085,16 @@ function drawLevel (level) {
 
   if (level.extraDrawCode) level.extraDrawCode()
 }
-/*
-function drawEntranceGradient (level) {
-  if (ALLOW_EDITOR) return;
-  let [ei, ej] = level.player.history[0]
-  let [di, dj] = level.enter
-
-  let gradSpr = raw_gradient_sprites[dir2gradSpr(di, dj)]
-  // gradSpr.color = PintarJS.Color.red()
-  gradSpr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-  if (di == 0) {
-    if (dj > 0) {
-      ei -= 1
-      ej -= 2
-    } else {
-      ei -= 1
-      ej += 1
-    }
-  } else {
-    if (di > 0) {
-      ei -= 2
-      ej -= 1
-    } else {
-      ei += 1
-      ej -= 1
-    }
-  }
-  gradSpr.position = new PintarJS.Point(
-    OFFX + ei * TILE,
-    OFFY + ej * TILE
-  )
-  pintar.drawSprite(gradSpr)
-}
-
-function dir2gradSpr (di, dj) {
-  return dj == 0 ?
-    (di > 0 ? 1 : 2) :
-    (dj > 0 ? 3 : 0)
-}
-
-function drawExitGradient (level) {
-  if (ALLOW_EDITOR) return;
-  let [ei, ej] = level.targets[0]
-  let [di, dj] = level.exit
-  di *= -1
-  dj *= -1
-
-  let gradSpr = raw_gradient_sprites[dir2gradSpr(di, dj)]
-  // gradSpr.color = PintarJS.Color.red()
-  gradSpr.scale = new PintarJS.Point(TILE / 16, TILE / 16)
-  if (di == 0) {
-    if (dj > 0) {
-      ei -= 1
-      ej -= 2
-    } else {
-      ei -= 1
-      ej += 1
-    }
-  } else {
-    if (di > 0) {
-    } else {
-      ei += 1
-      ej -= 1
-    }
-  }
-  gradSpr.position = new PintarJS.Point(
-    OFFX + ei * TILE,
-    OFFY + ej * TILE
-  )
-  pintar.drawSprite(gradSpr)
-}
-*/
-/* let text_logo_sprite = new PintarJS.TextSprite("Tres\nUndos")
-text_logo_sprite.font = "Helvetica"
-text_logo_sprite.color = PintarJS.Color.white();
-text_logo_sprite.strokeWidth = 2;
-text_logo_sprite.strokeColor = PintarJS.Color.black();
-text_logo_sprite.fontSize = 128;
-text_logo_sprite.position = new PintarJS.Point(20, 100); */
 
 function deleteDraft (button) {
   button.parentElement.parentElement.remove()
 }
 
 function playDraft (button) {
-	let new_level = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0])
+	let new_level = str2level(button.parentElement.previousElementSibling.value.trim(), [1,0], [1,0], "Your Level", "You")
 	if (new_level) {
-		levels[cur_level_n] = new_level
+		levels['editor'] = new_level
+		// levels[cur_level_n] = new_level
 	  true_timeline_undos = []
 	}
 }
@@ -1133,14 +1128,33 @@ let editorSidebar = document.getElementById("leftCol");
 let editorTopbar = document.getElementById("topArea");
 let canvasContainer = document.getElementById("canvasContainer");
 function enterEditor () {
-  editorSidebar.hidden = false
-  editorTopbar.hidden = false
-  setExtraDisplay(-1)
+	if (cur_level_n !== 'editor') {
+		levels["editor"] = levels[cur_level_n]
+		levels[cur_level_n] = str2level(...levels_named[cur_level_n])
+		levels[cur_level_n].unmodified = true
+		levels["editor"].author = "You"
+		levels["editor"].name = "Your Level"
+		levels["editor"].unmodified = false
+		cur_level_n = "editor"
+		// just in case:
+		levels[0].extraDrawCode = drawIntroText
+		levels[1].extraDrawCode = drawSecondText
+		levels[3].extraDrawCode = drawXtoReallyText
+		levels[5].extraDrawCode = drawSkipText
+		levels[6].extraDrawCode = drawRecapText
+		levels[7].extraDrawCode = drawCtoRRText
+	}
+	if (ALLOW_EDITOR) {
+		editorSidebar.hidden = false
+	  editorTopbar.hidden = false
+		canvasContainer.className = "openEditor_canvasContainer_class"
+	}
+  setExtraDisplay("editor")
   ENABLE_RESTART = true
   ENABLE_UNDO_2 = true
   ENABLE_UNDO_3 = true
-  saveDraft()
-  canvasContainer.className = "openEditor_canvasContainer_class"
+	if (editorSidebar.childElementCount < 1) saveDraft()
+	updateMenuButtons()
 }
 
 function exitEditor () {
@@ -1156,12 +1170,16 @@ function toggleEditor () {
 	ALLOW_EDITOR = !ALLOW_EDITOR
   if (!ALLOW_EDITOR) {
     exitEditor();
+		ALLOW_CHEATS = false
+    updateMenuButtons()
   } else {
     enterEditor();
     ALLOW_CHEATS = true
     updateMenuButtons()
   }
 }
+
+let creditsUI = document.getElementById('creditsUI')
 
 let text_0 = document.querySelectorAll('._0')
 let text_1 = document.querySelector('._1')
@@ -1185,8 +1203,16 @@ function setExtraDisplay (n) {
   text_6.hidden = ultraHide || n !== 6
   text_7.hidden = ultraHide || n !== 7
   text_end.forEach(item => {
-    item.hidden = ultraHide || (n !== levels.length - 1)
+    item.hidden = ultraHide || (n !== 18 && n !== 33)
   });
+	let level = levels[n];
+	if (level && level.author !== "knexator") {
+		creditsUI.innerHTML = `${level.name} by ${level.author}`
+		creditsUI.hidden = false
+	} else {
+		creditsUI.hidden = true
+	}
+
 }
 
 function drawIntroText () {
@@ -1519,7 +1545,7 @@ function getCoveredGoals (level) {
   })
 }
 
-levels = hole_levels_raw.map(([str, enter, exit]) => str2level(str, enter, exit))
+levels = levels_named.map(([str, enter, exit, name, author]) => str2level(str, enter, exit, name, author))
 levels.forEach(level => level.unmodified = true);
 
 levels[0].extraDrawCode = drawIntroText
@@ -1535,6 +1561,11 @@ let localStorageWorks = true
 let solved_levels = []
 try {
   solved_levels = JSON.parse(localStorage.getItem("solved_levels") || '[]')
+	for (let k=0; k<levels_named.length; k++) {
+		if (JSON.parse(localStorage.getItem(levels_named[k]) || 'false')) {
+			solved_levels.push(k)
+		}
+	}
 } catch (err) {
   localStorageWorks = false
 }
@@ -1557,7 +1588,7 @@ function geoMapChar (chr) {
   return '.'
 }
 
-function str2level (str, enter, exit) {
+function str2level (str, enter, exit, name, author) {
   str = str.split('\n')
   let w = str[0].length
   let h = str.length
@@ -1620,7 +1651,7 @@ function str2level (str, enter, exit) {
   let level = { geo: geo, player: player, crates: crates, targets: targets,
     buttons: buttons, doors: doors, player_target: player_target,
     machines: machines, holes: holes, holeCovers: holeCovers, paintBlobs: paintBlobs, hats: hats,
-    w: w, h: h, enter: enter, exit: exit, unmodified: false }
+    w: w, h: h, enter: enter, exit: exit, unmodified: false, name: name, author: author }
   /* neutralTurn(level);
   level.player.history[0][0] -= enter[0];
   level.player.history[0][1] -= enter[1]; */
@@ -1635,7 +1666,7 @@ function str2level (str, enter, exit) {
   level.player.inHole.value[0] = dir2spr(level.enter[0], level.enter[1], false)
   real_times = [0,0,0]
   won_cur_level = false
-  true_timeline_undos = []
+  // true_timeline_undos = []
   input_queue = []
 	fallFlying (level, 0, true)
   return level
@@ -1951,10 +1982,6 @@ function level2strOld (level) {
   return res.map(x => x.join('')).join('\n')
 }
 
-function loadFromText () {
-  levels[cur_level_n] = str2level(document.getElementById('inText').value, [1,0], [1,0])
-  loadLevel(cur_level_n)
-}
 function exportToText () {
   document.getElementById('inText').value = level2str(levels[cur_level_n])
 }
@@ -2079,55 +2106,6 @@ function resizeLevel (a, b, c, d, level) {
 	level.w = w
 }
 
-function resizeLevelOld (a, b, c, d) {
-  // exportToText()
-  let w = levels[cur_level_n].w
-  let h = levels[cur_level_n].h
-  let text = level2str(levels[cur_level_n])
-  // let text = document.getElementById('inText').value
-  let rows = text.split('\n')
-  if (a > 0) {
-    rows.unshift('#'.repeat(w))
-    h += 1
-  } else if (a < 0) {
-    rows.shift()
-    h -= 1
-  }
-  if (b > 0) {
-    rows = rows.map(row => '#' + row)
-    w += 1
-  } else if (b < 0) {
-    rows = rows.map(row => row.slice(1))
-    w -= 1
-  }
-  if (c > 0) {
-    rows.push('#'.repeat(w))
-    h += 1
-  } else if (c < 0) {
-    rows.pop()
-    h -= 1
-  }
-  if (d > 0) {
-    rows = rows.map(row => row + '#')
-    w += 1
-  } else if (d < 0) {
-    rows = rows.map(row => row.slice(0, -1))
-    w -= 1
-  }
-  text = rows.join('\n')
-  let new_level = str2level(text, levels[cur_level_n].enter, levels[cur_level_n].exit)
-  if (new_level) {
-    let [si, sj] = new_level.player.history[0]
-    if (si > 0 && sj > 0 && si + 1 < new_level.w && sj + 1 < new_level.h) {
-      levels[cur_level_n] = new_level
-    }
-  }
-
-  // document.getElementById('inText').value = text
-  // loadFromText()
-
-}
-
 function deleteStuffAt (cur_level, mi, mj) {
 	cur_level.holes = cur_level.holes.filter(([i, j]) =>	i != mi || j != mj)
 	cur_level.targets = cur_level.targets.filter(([i, j]) =>	i != mi || j != mj)
@@ -2218,7 +2196,8 @@ function nextLevel () {
 
 /*transitionElement.style.animation="openUp 4s linear 0 infinite forwards both";*/
 
-function initTransitionToLevel (n) {
+function initTransitionToLevel (n,extra) {
+	if (extra) n += 19
   if (n >= 0 && n < levels.length - 1) {
     // transitionElement.style.animation="flashUp .5s linear";
     let di = levels[n].enter[0]
@@ -2276,27 +2255,35 @@ function initTransitionToPrevLevel () {
 function updateMenuButtons () {
   if (!levelSelectButtons) return
   let total_solved = solved_levels.length
-  let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18, 18, 18, 18, 18, 18];
-  let n_unlocked = unlock_n[total_solved]
+  let unlock_n = [1, 3, 5, 6, 7, 9, 10, 12, 13, 15, 17, 18];
+  let n_unlocked = unlock_n[total_solved] || 18;
   for (let k = 0; k < levels.length - 1; k++) {
-    if (!ALLOW_CHEATS && solved_levels.indexOf(k) === -1) {
-      levelSelectButtons[k].className = n_unlocked > k ? "levelSelectButton" : "lockedSelectButton"
-      levelSelectButtons[k].disabled = n_unlocked <= k
-    } else {
-      levelSelectButtons[k].className = "solvedSelectButton"
-      levelSelectButtons[k].disabled = false
-    }
+		if (k > 18) {
+			levelSelectButtons[k - 1].className = (solved_levels.indexOf(k) === -1) ? "levelSelectButton" : "solvedSelectButton"
+			levelSelectButtons[k - 1].disabled = false
+		} else {
+    	if (solved_levels.indexOf(k) === -1) {
+	      levelSelectButtons[k].className = (ALLOW_CHEATS || n_unlocked > k) ? "levelSelectButton" : "lockedSelectButton"
+	      // levelSelectButtons[k].disabled = n_unlocked <= k
+	    } else {
+	      levelSelectButtons[k].className = "solvedSelectButton"
+	      levelSelectButtons[k].disabled = false
+	    }
+		}
   }
-  let curButton = levelSelectButtons[cur_level_n]
-  if (!curButton) return
-  curButton.className += (!ALLOW_CHEATS && (solved_levels.indexOf(cur_level_n) === -1)) ? " curLevelSelectButton" : " curLevelSelectWonButton"
-  curButton.disabled = false
+	if (cur_level_n !== 18) {
+	  let curButton = levelSelectButtons[cur_level_n > 18 ? cur_level_n - 1 : cur_level_n]
+	  if (!curButton) return
+	  curButton.className += (solved_levels.indexOf(cur_level_n) === -1) ? " curLevelSelectButton" : " curLevelSelectWonButton"
+	  curButton.disabled = false
+	}
 }
 
 function loadLevel (n) {
+	let from_editor = ALLOW_EDITOR //cur_level_n === "editor"
   real_times = [0,0,0]
   won_cur_level = false
-  in_last_level = n == levels.length - 1
+  in_last_level = n == 18 || n == 33
   cur_level_n = n
   true_timeline_undos = []
   input_queue = []
@@ -2340,22 +2327,23 @@ function loadLevel (n) {
     ENABLE_UNDO_2 = true
     ENABLE_UNDO_3 = true
   }
-  setExtraDisplay(ALLOW_EDITOR ? -1 : n)
+  setExtraDisplay(ALLOW_EDITOR ? "editor" : n)
   updateMenuButtons()
+	if (from_editor) enterEditor()
 }
 
 function maybeBreakHoleCovers (level, real_tick) {
 	level.holeCovers.forEach(holeCover => {
 		if (holeCover.value[real_tick - 1]) {
-			console.log("might break!")
+			//console.log("might break!")
 			// hole might break
 			let [hi, hj] = holeCover.position
 			if (weightOnTile(level, real_tick-1, hi, hj) && !weightOnTile(level, real_tick, hi, hj)) {
 				// hole broke!
-				console.log("broke!")
+				//console.log("broke!")
 				holeCover.value[real_tick] = false
 			} else {
-				console.log("didn't break!")
+				//console.log("didn't break!")
 				holeCover.value[real_tick] = true
 			}
 		} else { // hole is already broken
@@ -2580,7 +2568,7 @@ function draw (timestamp) {
 
   // console.log(first_undo_press)
 
-  if (wasKeyPressed("editor") && cur_level_n + 1 < levels.length) {
+  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || (cur_level_n !== 18 && cur_level_n !== 33))) {
     toggleEditor()
   }
 
@@ -2786,7 +2774,10 @@ function draw (timestamp) {
   if (is_won) {
     if (solved_levels.indexOf(cur_level_n) === -1) {
       solved_levels.push(cur_level_n)
-      if (localStorageWorks) localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
+      if (localStorageWorks) {
+				// localStorage.setItem("solved_levels", JSON.stringify(solved_levels))
+				localStorage.setItem(levels_named[cur_level_n], "true")
+			}
       updateMenuButtons()
     }
 
@@ -2810,7 +2801,7 @@ function draw (timestamp) {
   }
 
   // cheat
-  if (ALLOW_CHEATS && wasKeyPressed('m') && cur_level_n < levels.length - 1) {
+  /*if (ALLOW_CHEATS && wasKeyPressed('m') && cur_level_n < levels.length - 1) {
     // nextLevel()
     // cur_level = levels[cur_level_n]
     if (level_transition_time == 0) {
@@ -2823,7 +2814,7 @@ function draw (timestamp) {
     if (level_transition_time == 0) {
       initTransitionToPrevLevel()
     }
-  }
+  }*/
 
   // drawLevel(cur_level)
   drawScreen()
@@ -3028,10 +3019,12 @@ function doMainTurnLogic (cur_level) {
 				let bad_move = (pi + cur_di < 0) || (pi + cur_di >= cur_level.w) ||
 					(pj + cur_dj < 0) || (pj + cur_dj >= cur_level.h) ||
 					(cur_level.geo[pj + cur_dj][pi + cur_di] != '.') ||
-					closedDoorAt(cur_level, pi + cur_di, pj + cur_dj) ||
-					openHoleAt(cur_level, pi + cur_di, pj + cur_dj)// ||
+					closedDoorAt(cur_level, pi + cur_di, pj + cur_dj);
 					// movesBackToEntrance(cur_level, pi, pj, cur_di, cur_dj)
 				// console.log(bad_move);
+				if (!WALK_INTO_HOLES) {
+					bad_move = bad_move || openHoleAt(cur_level, pi + cur_di, pj + cur_dj);
+				}
 				if (bad_move) { // ignore this move
 					wallSound.play()
 					true_timeline_undos.pop()
