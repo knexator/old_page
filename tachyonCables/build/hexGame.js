@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.hacky_printAllLoops = exports.getAllLoopsFrom = exports.hacky_printAllPaths = exports.board2str_onlyVisible = exports.board2str = exports.updateToPrev = exports.updateToNext = exports.board = exports.layout = exports.Tile = exports.Cable = void 0;
+    exports.hacky_drawStuff = exports.hacky_printAllLoops = exports.getAllLoopsFrom = exports.hacky_printAllPaths = exports.board2str_onlyVisible = exports.board2str = exports.updateToPrev = exports.updateToNext = exports.board = exports.layout = exports.Tile = exports.Cable = void 0;
     const hexLib_1 = require("hexLib");
     const graphics_1 = require("./graphics");
     const index_1 = require("./index");
@@ -427,7 +427,9 @@ ${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_pa
         let pending_paths = [
             { start: starting_cable, finish: starting_cable, time: 0, effects: [], requires: [] }
         ];
-        while (pending_paths.length > 0 && finished_paths.length < 10) {
+        let k = 0;
+        while (pending_paths.length > 0 && finished_paths.length < 10 && k < 10000) {
+            k++;
             let cur_path = pending_paths.shift();
             let cur_cable = cur_path.finish;
             let direct_next = nextCable(cur_cable);
@@ -477,6 +479,7 @@ ${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_pa
         return finished_paths;
     }
     exports.getAllLoopsFrom = getAllLoopsFrom;
+    let hacky_loopsToDraw = [];
     function hacky_printAllLoops(time) {
         let interesting_cable = null;
         exports.board.forEach(cur_tile => {
@@ -498,10 +501,160 @@ ${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_pa
 ${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_path.time}.
 Effects:\n\t${effects.join(';\n\t')}
 Requires:\n\t${requires.join(';\n\t')}`);
+            hacky_loopsToDraw.push(cur_path);
         });
     }
     exports.hacky_printAllLoops = hacky_printAllLoops;
-    function areLoopsCompatible(loops) {
+    function hacky_drawLoop(loop, x, y) {
+        let SIDE = 20;
+        let min_t = Math.min(...loop.effects.map(x => x.time), ...loop.requires.map(x => x.time));
+        let max_t = 1 + Math.max(...loop.effects.map(x => x.time), ...loop.requires.map(x => x.time));
+        graphics_1.ctx.strokeStyle = "black";
+        graphics_1.ctx.lineWidth = 3;
+        graphics_1.ctx.beginPath();
+        graphics_1.ctx.moveTo(x + min_t * SIDE, y);
+        graphics_1.ctx.lineTo(x + max_t * SIDE, y);
+        graphics_1.ctx.stroke();
+        graphics_1.ctx.lineWidth = 1;
+        graphics_1.ctx.beginPath();
+        for (let k = min_t; k <= max_t; k++) {
+            graphics_1.ctx.moveTo(x + k * SIDE, y - SIDE / 4);
+            graphics_1.ctx.lineTo(x + k * SIDE, y + SIDE / 4);
+        }
+        graphics_1.ctx.stroke();
+        graphics_1.ctx.fillStyle = "#a461ba";
+        graphics_1.ctx.font = "20px Georgia";
+        graphics_1.ctx.textBaseline = "middle";
+        graphics_1.ctx.textAlign = "center";
+        let numbers = [];
+        loop.effects.forEach(effect => {
+            let count = numbers.filter(x => x === effect.time).length;
+            graphics_1.ctx.fillText(hacky_cableName(effect.cable), x + (effect.time + 0.5) * SIDE, y - SIDE * (count + .5));
+            numbers.push(effect.time);
+        });
+        numbers = [];
+        loop.requires.forEach(req => {
+            let count = numbers.filter(x => x === req.time).length;
+            graphics_1.ctx.fillStyle = req.swapped ? "white" : "black";
+            graphics_1.ctx.fillText(hacky_cableName(req.cable), x + (req.time + 0.5) * SIDE, y + SIDE * (count + .5));
+            numbers.push(req.time);
+        });
+    }
+    function hacky_drawStuff() {
+        for (let k = 0; k < hacky_loopsToDraw.length; k++) {
+            let y = 50 + k * 100;
+            let x = 100;
+            while (y > graphics_1.canvas.height * 0.9) {
+                y -= graphics_1.canvas.height * 0.8;
+                x += 500;
+            }
+            hacky_drawLoop(hacky_loopsToDraw[k], x, y);
+        }
+    }
+    exports.hacky_drawStuff = hacky_drawStuff;
+    function copyCollection(collection) {
+        let res = {
+            effects: [],
+            requires: [],
+            unmet: []
+        };
+        collection.effects.forEach(x => {
+            res.effects.push({ cable: x.cable, time: x.time });
+        });
+        collection.requires.forEach(x => {
+            res.requires.push({ cable: x.cable, time: x.time, swapped: x.swapped });
+        });
+        collection.unmet.forEach(x => {
+            res.unmet.push({ cable: x.cable, time: x.time, swapped: x.swapped });
+        });
+        return res;
+    }
+    function randomSolver(raw_loops) {
+        let tentative_solution = makeLoopCollection([raw_loops[Math.floor(Math.random() * raw_loops.length)]]);
+        if (!tentative_solution)
+            return null;
+        let k = 0;
+        while (tentative_solution.unmet.length > 0 && k < 20) {
+            // find a suitable loop, and add it to the tentative_solution
+            // TODO
+        }
+    }
+    function addToCollection(collection, new_loop, offset) {
+        let new_col = copyCollection(collection);
+        // TODO: this
+    }
+    function makeLoopCollection(loops) {
         // loop.time = the second in which loop.start is started
+        let total_effects = [];
+        let total_requirements = [];
+        let total_unmet = [];
+        let valid = true;
+        // Check for conflicting requirements
+        loops.forEach(cur_loop => {
+            if (!valid)
+                return;
+            cur_loop.requires.forEach(req => {
+                if (!valid)
+                    return;
+                let req_time = req.time + cur_loop.time;
+                total_requirements.forEach(req2 => {
+                    if (!valid)
+                        return;
+                    if (req2.time === req_time && req2.cable === req.cable && req2.swapped !== req.swapped) {
+                        // incompatible
+                        valid = false;
+                    }
+                });
+                total_requirements.push({ time: req_time, cable: req.cable, swapped: req.swapped });
+            });
+        });
+        if (!valid)
+            return null;
+        // Check for conflicting requirements & effects
+        loops.forEach(cur_loop => {
+            if (!valid)
+                return;
+            cur_loop.effects.forEach(effect => {
+                if (!valid)
+                    return;
+                let effect_time = effect.time + cur_loop.time;
+                total_effects.forEach(effect2 => {
+                    if (!valid)
+                        return;
+                    if (effect2.time === effect_time && effect2.cable === effect.cable) {
+                        // collision
+                        valid = false;
+                    }
+                });
+                total_requirements.forEach(req => {
+                    if (!valid)
+                        return;
+                    if (!req.swapped && req.time === effect_time && req.cable === effect.cable) {
+                        // incompatible
+                        valid = false;
+                    }
+                });
+                total_effects.push({ time: effect_time, cable: effect.cable });
+            });
+        });
+        if (!valid)
+            return null;
+        // Check which requirements are still unmet
+        total_requirements.forEach(req => {
+            if (req.swapped) {
+                let done = false;
+                total_effects.forEach(effect => {
+                    if (done)
+                        return;
+                    if (effect.cable === req.cable && effect.time === req.time) {
+                        done = true;
+                    }
+                });
+                if (!done) {
+                    total_unmet.push({ cable: req.cable, time: req.time, swapped: req.swapped });
+                }
+            }
+        });
+        return { effects: total_effects, requires: total_requirements, unmet: total_unmet };
     }
 });

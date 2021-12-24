@@ -114,6 +114,9 @@
         if ((0, engine_1.wasKeyPressed)('e')) {
             (0, hexGame_1.hacky_printAllLoops)(time);
         }
+        if ((0, engine_1.wasKeyPressed)('y')) {
+            hacky_dontDrawMain = true;
+        }
         if ((0, engine_1.isKeyDown)('k'))
             hexGame_1.layout.origin.y -= deltaTime * 0.4;
         if ((0, engine_1.isKeyDown)('i'))
@@ -122,10 +125,13 @@
             hexGame_1.layout.origin.x -= deltaTime * 0.4;
         if ((0, engine_1.isKeyDown)('j'))
             hexGame_1.layout.origin.x += deltaTime * 0.4;
-        (0, graphics_1.drawBoard)(time + anim_t);
+        if (!hacky_dontDrawMain)
+            (0, graphics_1.drawBoard)(time + anim_t);
+        (0, hexGame_1.hacky_drawStuff)();
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
+    let hacky_dontDrawMain = false;
     initOnce();
     function lerp(a, b, t) {
         return a * (1 - t) + b * t;

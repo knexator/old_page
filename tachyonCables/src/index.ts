@@ -1,5 +1,5 @@
 import { engine_update, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
-import { layout, board, Tile, Cable, updateToNext, updateToPrev, board2str, board2str_onlyVisible, hacky_printAllPaths, hacky_printAllLoops, } from 'hexGame';
+import { layout, board, Tile, Cable, updateToNext, updateToPrev, board2str, board2str_onlyVisible, hacky_printAllPaths, hacky_printAllLoops, hacky_drawStuff, } from 'hexGame';
 import { beginFrame, ctx, drawBoard, drawGhostCable, drawGhostHex } from './graphics';
 
 let last_time = 0;
@@ -104,18 +104,22 @@ function update(curTime: number) {
   if (wasKeyPressed('e')) {
     hacky_printAllLoops(time);
   }
+  if (wasKeyPressed('y')) {
+    hacky_dontDrawMain = true;
+  }
 
   if (isKeyDown('k')) layout.origin.y -= deltaTime * 0.4;
   if (isKeyDown('i')) layout.origin.y += deltaTime * 0.4;
   if (isKeyDown('l')) layout.origin.x -= deltaTime * 0.4;
   if (isKeyDown('j')) layout.origin.x += deltaTime * 0.4;
 
-  drawBoard(time + anim_t);
+  if (!hacky_dontDrawMain) drawBoard(time + anim_t);
+  hacky_drawStuff();
 
   engine_update();
   window.requestAnimationFrame(update);
 }
-
+let hacky_dontDrawMain = false;
 initOnce()
 
 function lerp(a: number, b: number, t: number): number {
