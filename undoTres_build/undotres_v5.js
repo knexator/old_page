@@ -849,19 +849,18 @@ function drawLevel (level) {
   // drawSpr(playerSpr, pi, pj);
 
 	let player_inHole = level.player.inHole.value.at(-1);
-	let player_actually_in_hole = player_inHole < 0 && (turn_time === 0);
+	let player_actually_in_hole = player_inHole < 0 && (turn_time === 0 || level.player.inHole.value.at(-2) < 0);
 	let sprOffset = level_transition_time > 0.5 && won_cur_level ? 1 : 0
   let odd = mod(player_inHole, 2) == 1
   if (odd) sprOffset = -sprOffset
   let player_spr_n = player_inHole + sprOffset
-	if (player_inHole < 0 && (turn_time !== 0)) {
-		player_spr_n += 16;
+	if (player_inHole < 0) {
+		player_spr_n += 16
 	}
 	let player_inmune = level.player.inmune_history.at(-1)
 
 	if (player_actually_in_hole) {
 		// player is in hole
-		player_spr_n += 16
 		player_sprite = raw_player_sprites[player_spr_n]
 		if (!player_sprite) {
 			console.log("bad stuff is happening.")
@@ -885,7 +884,7 @@ function drawLevel (level) {
 	}
 
 	// this whole block is for when the player undoes into a hole
-	if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0 && player_inHole < 0) {
+	if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0 && player_inHole < 0 && !player_actually_in_hole) {
 		// player is undoing
     // let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
     // let opts = [1.0, 0.6, 0.2]
@@ -1016,7 +1015,7 @@ function drawLevel (level) {
     player_spr_n -= 8
   } */
   // if (!player_forward) {
-  if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0 && player_inHole >= 0) {
+  if (true_timeline_undos.at(-1) > player_inmune && turn_time > 0.0 && player_inHole >= 0 && !player_actually_in_hole) {
 		// player is undoing
     // let opts = [1.0, 0.8, 0.6, 0.4, 0.2]
     // let opts = [1.0, 0.6, 0.2]
