@@ -59,6 +59,10 @@
                     let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "swapper", false);
                     cur_tile.addCable(cur_cable);
                 }
+                else if ((0, engine_1.wasKeyPressed)('6')) {
+                    let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "swapperBackward", false);
+                    cur_tile.addCable(cur_cable);
+                }
             }
             else {
                 // yes cable
@@ -106,7 +110,8 @@
           board.clear();
         }*/
         if ((0, engine_1.wasKeyPressed)('w')) {
-            localStorage.setItem("level_small", (0, hexGame_1.board2str_onlyVisible)());
+            localStorage.setItem("sentient", (0, hexGame_1.board2str_onlyVisible)());
+            // localStorage.setItem("yay", board2str_onlyVisible());
         }
         if ((0, engine_1.wasKeyPressed)('q')) {
             (0, hexGame_1.hacky_printAllPaths)(time);

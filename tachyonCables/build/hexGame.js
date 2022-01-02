@@ -69,14 +69,15 @@
             cableB.target = temp;
             this.cables[cableA.target] = cableA;
             this.cables[cableB.target] = cableB;
-            if (moving_dir === "backward") {
-                let temp2 = cableA.state;
-                cableA.state = cableB.state;
-                cableB.state = temp2;
-                temp2 = cableA.nextState;
-                cableA.nextState = cableB.nextState;
-                cableB.nextState = temp2;
-            }
+            /*if (moving_dir === "backward") { //  || cableA!.type === "tachyon"
+              let temp2 = cableA!.state;
+              cableA!.state = cableB!.state;
+              cableB!.state = temp2;
+        
+              temp2 = cableA!.nextState;
+              cableA!.nextState = cableB!.nextState;
+              cableB!.nextState = temp2;
+            }*/
         }
         toSimpleObject() {
             let uniqueCables = new Set(this.cables.filter(x => x !== null));
@@ -98,8 +99,8 @@
     exports.Tile = Tile;
     exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 70, new hexLib_1.Point(0, 0));
     // export let board = new Map<FrozenHex, Tile>();
-    // export const board = str2board(localStorage.getItem("level") || "[]");
-    exports.board = str2board(localStorage.getItem("level_small") || "[]");
+    exports.board = str2board(localStorage.getItem("sentient") || "[]");
+    // export const board = str2board(localStorage.getItem("yay") || "[]");
     function applyInput(time) {
         exports.board.forEach(tile => {
             tile.cables.forEach(cable => {
@@ -107,6 +108,9 @@
                     let new_state = cable.inputReqs.get(time);
                     if (cable.type === "swapper" && cable.state !== new_state) {
                         tile.swapCables(cable, "forward");
+                    }
+                    else if (cable.type === "swapperBackward" && cable.state !== new_state) {
+                        tile.swapCables(cable, "backward");
                     }
                     cable.state = new_state;
                 }
@@ -124,7 +128,7 @@
                     return prev_cable.state && (prev_cable.type === "standard" || prev_cable.type === "bridgeForward" || prev_cable.type === "swapper");
                 }
                 else if (ball_type === "backward") {
-                    return prev_cable.state && (prev_cable.type === "tachyon" || prev_cable.type === "bridgeBackward");
+                    return prev_cable.state && (prev_cable.type === "tachyon" || prev_cable.type === "bridgeBackward" || prev_cable.type === "swapperBackward");
                 }
             }
         }
@@ -142,7 +146,7 @@
                     return next_cable.state && (next_cable.type === "standard" || next_cable.type === "bridgeBackward" || next_cable.type === "swapper");
                 }
                 else if (ball_type === "backward") {
-                    return next_cable.state && (next_cable.type === "tachyon" || next_cable.type === "bridgeForward");
+                    return next_cable.state && (next_cable.type === "tachyon" || next_cable.type === "bridgeForward" || next_cable.type === "swapperBackward");
                 }
             }
         }
@@ -151,6 +155,25 @@
     }
     function updateToNext(time) {
         //applyInput(time);
+        // perform the swaps
+        /*board.forEach(cur_tile => {
+          for (let k = 0; k < 6; k++) {
+            let cur_cable = cur_tile.cables[k];
+            if (cur_cable !== null && cur_cable.origin === k) {
+              if (cur_cable.type === "swapper" || cur_cable.type === "swapperBackward") {
+                let ball_dir: BallType = cur_cable.type === "swapper" ? "forward" : "backward";
+                let next_state = getStateFromPrev(cur_cable, ball_dir);
+                if (cur_cable.inputReqs.has(time + 1)) {
+                  next_state = cur_cable.inputReqs.get(time + 1)!;
+                }
+                if (cur_cable.state !== next_state) {
+                  cur_tile.swapCables(cur_cable, ball_dir);
+                }
+              }
+            }
+          }
+        });*/
+        // standard move
         exports.board.forEach(cur_tile => {
             for (let k = 0; k < 6; k++) {
                 let cur_cable = cur_tile.cables[k];
@@ -158,7 +181,7 @@
                     if (cur_cable.type === "standard" || cur_cable.type === "swapper") {
                         cur_cable.nextState = getStateFromPrev(cur_cable, "forward");
                     }
-                    else if (cur_cable.type === "tachyon") {
+                    else if (cur_cable.type === "tachyon" || cur_cable.type === "swapperBackward") {
                         cur_cable.nextState = getStateFromNext(cur_cable, "backward");
                     }
                     else if (cur_cable.type === "bridgeForward") {
@@ -177,6 +200,9 @@
                     if (cur_cable.type === "swapper" && cur_cable.state !== cur_cable.nextState) {
                         cur_tile.swapCables(cur_cable, "forward");
                     }
+                    else if (cur_cable.type === "swapperBackward" && cur_cable.state !== cur_cable.nextState) {
+                        cur_tile.swapCables(cur_cable, "backward");
+                    }
                     cur_cable.state = cur_cable.nextState;
                 }
             }
@@ -193,7 +219,7 @@
                     if (cur_cable.type === "standard" || cur_cable.type === "swapper") {
                         cur_cable.nextState = getStateFromNext(cur_cable, "forward");
                     }
-                    else if (cur_cable.type === "tachyon") {
+                    else if (cur_cable.type === "tachyon" || cur_cable.type === "swapperBackward") {
                         cur_cable.nextState = getStateFromPrev(cur_cable, "backward");
                     }
                     else if (cur_cable.type === "bridgeBackward") {
@@ -211,6 +237,9 @@
                 if (cur_cable !== null && cur_cable.origin === k) {
                     if (cur_cable.type === "swapper" && cur_cable.state !== cur_cable.nextState) {
                         cur_tile.swapCables(cur_cable, "backward");
+                    }
+                    else if (cur_cable.type === "swapperBackward" && cur_cable.state !== cur_cable.nextState) {
+                        cur_tile.swapCables(cur_cable, "forward");
                     }
                     cur_cable.state = cur_cable.nextState;
                 }
@@ -283,6 +312,7 @@
             "standard": 1,
             "swapper": 1,
             "tachyon": -1,
+            "swapperBackward": -1,
             "bridgeForward": 0,
             "bridgeBackward": 0,
         };
@@ -300,7 +330,7 @@
             if (!other_next) {
                 // only one path forward
                 cur_path.finish = direct_next;
-                if (cur_cable.type === "swapper") {
+                if (cur_cable.type === "swapper" || cur_cable.type === "swapperBackward") {
                     cur_path.effects.push({ cable: cur_cable, time: cur_path.time });
                 }
                 cur_path.time += deltas[cur_cable.type];
@@ -420,6 +450,7 @@ ${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_pa
             "standard": 1,
             "swapper": 1,
             "tachyon": -1,
+            "swapperBackward": -1,
             "bridgeForward": 0,
             "bridgeBackward": 0,
         };
@@ -439,7 +470,7 @@ ${hacky_cableName(cur_path.start)}-${hacky_cableName(cur_path.finish)}: ${cur_pa
             if (!other_next) {
                 // only one path forward
                 cur_path.finish = direct_next;
-                if (cur_cable.type === "swapper") {
+                if (cur_cable.type === "swapper" || cur_cable.type === "swapperBackward") {
                     cur_path.effects.push({ cable: cur_cable, time: cur_path.time });
                 }
                 cur_path.time += deltas[cur_cable.type];

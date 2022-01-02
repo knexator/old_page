@@ -51,6 +51,9 @@ function update(curTime: number) {
       } else if (wasKeyPressed('5')) {
         let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "swapper", false);
         cur_tile.addCable(cur_cable);
+      } else if (wasKeyPressed('6')) {
+        let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "swapperBackward", false);
+        cur_tile.addCable(cur_cable);
       }
     } else {
       // yes cable
@@ -96,7 +99,8 @@ function update(curTime: number) {
     board.clear();
   }*/
   if (wasKeyPressed('w')) {
-    localStorage.setItem("level_small", board2str_onlyVisible());
+    localStorage.setItem("sentient", board2str_onlyVisible());
+    // localStorage.setItem("yay", board2str_onlyVisible());
   }
   if (wasKeyPressed('q')) {
     hacky_printAllPaths(time);

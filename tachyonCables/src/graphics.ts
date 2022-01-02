@@ -47,6 +47,7 @@ function drawTile(tile: Tile, time: number) {
         bridgeForward: "#61baa8",
         bridgeBackward: "#ba6161",
         swapper: "#751c1c",
+        swapperBackward: "#4b1c75"
       }
       ctx.fillStyle = fillStyles[cur_cable.type];
       // ctx.strokeStyle = fillStyles[cur_cable.type];
@@ -64,7 +65,7 @@ function drawTile(tile: Tile, time: number) {
           ctx.arc(ballStart.x, ballStart.y, layout.size * 0.2, 0, Math.PI * 2);
           ctx.fillStyle = "orange";
           ctx.fill();
-        } else if (cur_cable.type === "tachyon") {
+        } else if (cur_cable.type === "tachyon" || cur_cable.type === "swapperBackward") {
           let ballStart = cableSample(cur_cable, 1 - mod(time, 1));
           ctx.beginPath();
           ctx.moveTo(ballStart.x, ballStart.y);

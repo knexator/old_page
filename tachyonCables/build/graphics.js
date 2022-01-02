@@ -56,6 +56,7 @@
                     bridgeForward: "#61baa8",
                     bridgeBackward: "#ba6161",
                     swapper: "#751c1c",
+                    swapperBackward: "#4b1c75"
                 };
                 exports.ctx.fillStyle = fillStyles[cur_cable.type];
                 // ctx.strokeStyle = fillStyles[cur_cable.type];
@@ -73,7 +74,7 @@
                         exports.ctx.fillStyle = "orange";
                         exports.ctx.fill();
                     }
-                    else if (cur_cable.type === "tachyon") {
+                    else if (cur_cable.type === "tachyon" || cur_cable.type === "swapperBackward") {
                         let ballStart = cableSample(cur_cable, 1 - (0, index_1.mod)(time, 1));
                         exports.ctx.beginPath();
                         exports.ctx.moveTo(ballStart.x, ballStart.y);
