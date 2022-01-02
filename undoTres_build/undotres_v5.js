@@ -284,9 +284,6 @@ PropertyHistory.prototype.add = function (value = undefined) {
   }
 }
 
-let goalSound = new Howl({
-  src: ['sounds/goal.wav']
-})
 let wallSound = new Howl({
   src: ['sounds/wall.wav']
 })
@@ -295,9 +292,6 @@ let stepSound = new Howl({
 })
 let pushSound = new Howl({
   src: ['sounds/push.wav']
-})
-let winSound = new Howl({
-  src: ['sounds/win.wav']
 })
 let holeSound = new Howl({
   src: ['sounds/hole.wav']
@@ -1936,51 +1930,6 @@ function level2str (level) {
   return res.map(x => x.map(tile2str).join('')).join('\n')
 }
 
-function level2strOld (level) {
-  let res = []
-  let [pi, pj] = level.player.history.at(-1)
-  for (let j = 0; j < level.h; j++) {
-    let row = []
-    for (let i = 0; i < level.w; i++) {
-      let over_paint = level.paintBlobs.findIndex(paintBlob => {
-        let [hi, hj] = paintBlob.position;
-        return hi == i && hj == j;
-      });
-
-      if (!(level.geo[j][i] === '.')) {
-        row.push('#')
-      } else if (openHoleAt(level, i, j)) {
-        row.push('_')
-      } else if (over_paint != -1) {
-        row.push('uiop'[level.paintBlobs[over_paint].inmune.at(-1)])
-      } else {
-        let isPlayer = i == pi && j == pj
-        let isTarget = level.targets.some(([ti, tj]) => {
-          return ti == i && tj == j
-        })
-        let cur = isPlayer ? (isTarget ? '@' : 'O') : (isTarget ? '*' : '.')
-        row.push(cur)
-      }
-    }
-    res.push(row)
-  }
-  level.machines.forEach(([i, j, l]) => {
-    res[j][i] = 'JKLMN'[l - 1]
-  })
-	level.holeCovers.forEach(cover => {
-		let [hi, hj] = cover.position;
-		res[hj][hi] = 'jkl;'[cover.inmune.at(-1)]
-	})
-
-  level.crates.forEach(crate => {
-    let [ci, cj] = crate.history.at(-1)
-    let n = crate.inmune_history.at(-1)
-    let cur = res[cj][ci]
-    res[cj][ci] = cur == '.' ? '123456789'[n] : 'ABCDEFGHI'[n]
-  })
-  return res.map(x => x.join('')).join('\n')
-}
-
 function exportToText () {
   document.getElementById('inText').value = level2str(levels[cur_level_n])
 }
@@ -2784,8 +2733,6 @@ function draw (timestamp) {
     ctx.fillRect(0, 0, canvas.width, canvas.height)
     ctx.fillStyle = 'black' */
 
-    // if (!starts_won) winSound.play()
-
     /* if (wasKeyPressed(' ') && cur_level_n < levels.length - 1) {
       // loadLevel(cur_level_n + 1);
       nextLevel()
@@ -3186,11 +3133,6 @@ function doMainTurnLogic (cur_level) {
 		}
 	}
 
-	let covered_goals_late = getCoveredGoals(cur_level)
-	if (covered_goals_late.some(n => {
-		return covered_goals.indexOf(n) == -1
-	})) goalSound.play();
-
 	// forbidden_overlap stuff
 	[pi, pj] = cur_level.player.history.at(-1)
 	let forbidden_overlap = cur_level.crates.some((crate, i) => {
@@ -3287,6 +3229,10 @@ let keyboard_prev = {}
 let keyboard_last_pressed = {}
 
 function keyMap (e) {
+	if (e.key === 'p') return 'Escape'
+	if (e.key === "Escape") return 'Escape'
+  if (e.code === 'Backquote') return 'editor'
+	if (in_menu) return '.';
 	if (e.shiftKey && e.altKey && e.code === 'Digit1') return 'D1'
   if (e.shiftKey && e.altKey && e.code === 'Digit2') return 'D2'
   if (e.shiftKey && e.altKey && e.code === 'Digit3') return 'D3'
@@ -3301,8 +3247,6 @@ function keyMap (e) {
   if (e.altKey && e.code === 'Digit4') return 'C4'
 	if (e.ctrlKey || e.altKey || e.shiftKey) return '.'
   // use key.code if key location is important
-  if (e.key === "Escape") return 'Escape'
-  if (e.code === 'Backquote') return 'editor'
   if (e.metaKey) return '.'
   // if (ALLOW_EDITOR) return e.key
   if (e.key == 'ArrowLeft') return 'a'
@@ -3310,7 +3254,6 @@ function keyMap (e) {
   if (e.key == 'ArrowDown') return 's'
   if (e.key == 'ArrowUp') return 'w'
   let key = e.key.toLowerCase();
-  if (key === 'p') return 'Escape'
   if (key == 'z') return 'z'
   if (key == 'x') return ENABLE_UNDO_2 ? 'x' : '.'
   if (key == 'c') return ENABLE_UNDO_3 ? 'c' : '.'
