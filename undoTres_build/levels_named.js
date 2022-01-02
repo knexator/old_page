@@ -279,7 +279,7 @@ levels_named = [
 #........c###
 #.#.##.##.###
 .O._.._..__*.
-#############`, [1, 0], [-1, 0], "Hatman John", `<a href="https://twitter.com/fastramdesign" target="_blank">Dom Camus</a> & Notan`],
+#############`, [1, 0], [-1, 0], "Hatman John", `<a href="https://twitter.com/fastramdesign" target="_blank">Dom Camus</a> & <a href="https://notaninart.itch.io/" target="_blank">Notan</a>`],
 [`\
 ###########
 #####..####
