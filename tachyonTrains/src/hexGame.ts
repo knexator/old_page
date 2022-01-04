@@ -117,7 +117,7 @@ export class Tile {
 export const layout = new Layout(Layout.flat, 70, new Point(0, 0));
 
 // export const board = new Map<FrozenHex, Tile>();
-export const board = str2board(localStorage.getItem("debug") || "[]");
+export const board = str2board(localStorage.getItem("level") || "[]");
 
 export let swappers: Cable[] = [];
 export let contradictions: {time: number, cable: Cable}[] = [];
@@ -207,7 +207,40 @@ function propagate(source_cable: Cable, source_t: number, direction: TimeDirecti
 
   source_cable.globalState[source_t] = true;
 
-  let next_cable = direction === "forward" ? nextCable(source_cable, source_t) : prevCable(source_cable, source_t);
+  // ASSUME that both swapped cables will have the same direction
+  let next_cable_temp = direction === "forward" ? nextCable(source_cable, source_t) : prevCable(source_cable, source_t);
+  let next_cable_dt = 0;
+
+  if (next_cable_temp) {
+    if (direction === "forward") {
+      if (source_cable.direction === "forward") {
+        if (next_cable_temp.direction === "forward") {
+          //next_cable_dt = 1
+        } else {
+          next_cable_dt = 0
+        }
+      } else {
+        if (next_cable_temp.direction === "forward") {
+          //next_cable_dt = 1
+        } else {
+          next_cable_dt = -1
+        }
+      }
+    } else {
+      if (source_cable.direction === "forward") {
+        if (next_cable_temp.direction === "forward") {
+          next_cable_dt = -1
+        } else {
+          //next_cable_dt = 0
+        }
+      } else {
+        next_cable_dt = 0
+      }
+    }
+  }
+
+
+  let next_cable = direction === "forward" ? nextCable(source_cable, source_t + next_cable_dt) : prevCable(source_cable, source_t + next_cable_dt);
   if (!next_cable) return;
 
   let dt = source_cable.direction === direction ? 1 : -1;

@@ -126,7 +126,7 @@
     exports.Tile = Tile;
     exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 70, new hexLib_1.Point(0, 0));
     // export const board = new Map<FrozenHex, Tile>();
-    exports.board = str2board(localStorage.getItem("debug") || "[]");
+    exports.board = str2board(localStorage.getItem("level") || "[]");
     exports.swappers = [];
     exports.contradictions = [];
     fixBoard();
@@ -213,7 +213,43 @@
             return;
         }
         source_cable.globalState[source_t] = true;
-        let next_cable = direction === "forward" ? nextCable(source_cable, source_t) : prevCable(source_cable, source_t);
+        // ASSUME that both swapped cables will have the same direction
+        let next_cable_temp = direction === "forward" ? nextCable(source_cable, source_t) : prevCable(source_cable, source_t);
+        let next_cable_dt = 0;
+        if (next_cable_temp) {
+            if (direction === "forward") {
+                if (source_cable.direction === "forward") {
+                    if (next_cable_temp.direction === "forward") {
+                        //next_cable_dt = 1
+                    }
+                    else {
+                        next_cable_dt = 0;
+                    }
+                }
+                else {
+                    if (next_cable_temp.direction === "forward") {
+                        //next_cable_dt = 1
+                    }
+                    else {
+                        next_cable_dt = -1;
+                    }
+                }
+            }
+            else {
+                if (source_cable.direction === "forward") {
+                    if (next_cable_temp.direction === "forward") {
+                        next_cable_dt = -1;
+                    }
+                    else {
+                        //next_cable_dt = 0
+                    }
+                }
+                else {
+                    next_cable_dt = 0;
+                }
+            }
+        }
+        let next_cable = direction === "forward" ? nextCable(source_cable, source_t + next_cable_dt) : prevCable(source_cable, source_t + next_cable_dt);
         if (!next_cable)
             return;
         let dt = source_cable.direction === direction ? 1 : -1;
