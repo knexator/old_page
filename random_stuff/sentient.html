@@ -26,8 +26,12 @@
       program = Sentient.compile(textArea.value);
     }
     function run() {
+      allResults = [];
       console.log("results: ");
-      results = Sentient.run({program: program, number: Number(solutionCount.value), callback: console.log, assignments: getAssigments()});
+      results = Sentient.run({program: program, number: Number(solutionCount.value), callback: x => {
+        console.log(x);
+        allResults.push(x);
+      }, assignments: getAssigments()});
     }
     function compileAndRun() {
       compile();
