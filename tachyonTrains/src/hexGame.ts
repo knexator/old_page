@@ -4,7 +4,7 @@ import { mod } from './index';
 
 type TimeDirection = "forward" | "backward";
 
-export const MAX_T = 18;
+export const MAX_T = 48;
 
 export class Cable {
   // inputReqs: Map<number, boolean>;
@@ -119,8 +119,9 @@ export const layout = new Layout(Layout.flat, 70, new Point(0, 0));
 // export const board = new Map<FrozenHex, Tile>();
 export const board = str2board(localStorage.getItem("level") || "[]");
 
+export type Contradiction = {time: number, cable: Cable, source_t: number, source_cable: Cable, direction: TimeDirection};
 export let swappers: Cable[] = [];
-export let contradictions: {time: number, cable: Cable}[] = [];
+export let contradictions: Contradiction[] = [];
 
 fixBoard();
 
@@ -181,8 +182,8 @@ function updateGlobalState() {
         for (let t = 0; t < MAX_T; t++) {
           if (cur_cable.inputReqs[t] && !cur_cable.globalState[t]) {
             cur_cable.globalState[t] = true;
-            propagate(cur_cable, t, "forward", true);
-            propagate(cur_cable, t, "backward", true);
+            propagate(cur_cable, t, "forward", true, cur_cable, t);
+            propagate(cur_cable, t, "backward", true, cur_cable, t);
           }
         }
       }
@@ -190,23 +191,32 @@ function updateGlobalState() {
   });
 }
 
-function propagate(source_cable: Cable, source_t: number, direction: TimeDirection, exception: boolean) {
+function propagate(source_cable: Cable, source_t: number, direction: TimeDirection, exception: boolean, original_cable: Cable, original_t: number) {
   if (source_t < 0 || source_t >= MAX_T) return;
   // contradiction!
   if (source_cable.inputReqs[source_t] === false) {
-    contradictions.push({time: source_t, cable: source_cable});
+    contradictions.push({time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction});
     return;
   }
   // don't propagate if it has already been propagated
   if (!exception && source_cable.globalState[source_t]) return;
   // swapper cables require explicit input
   if (source_cable.swapper && source_cable.inputReqs[source_t] !== true) {
-    contradictions.push({time: source_t, cable: source_cable});
+    contradictions.push({time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction});
     return;
   }
 
   source_cable.globalState[source_t] = true;
 
+  let next_cable = magicAdjacentCable(source_cable, source_t, direction);
+  if (!next_cable) return;
+
+  let dt = source_cable.direction === direction ? 1 : -1;
+  if (source_cable.direction !== next_cable.direction) dt = 0;
+  propagate(next_cable, source_t + dt, direction, false, original_cable, original_t);
+}
+
+export function magicAdjacentCable(source_cable: Cable, source_t: number, direction: TimeDirection) {
   // ASSUME that both swapped cables will have the same direction
   let next_cable_temp = direction === "forward" ? nextCable(source_cable, source_t) : prevCable(source_cable, source_t);
   let next_cable_dt = 0;
@@ -239,13 +249,11 @@ function propagate(source_cable: Cable, source_t: number, direction: TimeDirecti
     }
   }
 
+  return adjacentCable(source_cable, source_t + next_cable_dt, direction);
+}
 
-  let next_cable = direction === "forward" ? nextCable(source_cable, source_t + next_cable_dt) : prevCable(source_cable, source_t + next_cable_dt);
-  if (!next_cable) return;
-
-  let dt = source_cable.direction === direction ? 1 : -1;
-  if (source_cable.direction !== next_cable.direction) dt = 0;
-  propagate(next_cable, source_t + dt, direction, false);
+function adjacentCable(cur_cable: Cable, cur_time: number, direction: TimeDirection) {
+  return direction === "forward" ? nextCable(cur_cable, cur_time) : prevCable(cur_cable, cur_time)
 }
 
 function nextCable(cur_cable: Cable, cur_time: number) {

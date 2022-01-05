@@ -9,10 +9,10 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.board2str = exports.contradictions = exports.swappers = exports.board = exports.layout = exports.Tile = exports.Cable = exports.MAX_T = void 0;
+    exports.board2str = exports.magicAdjacentCable = exports.contradictions = exports.swappers = exports.board = exports.layout = exports.Tile = exports.Cable = exports.MAX_T = void 0;
     const hexLib_1 = require("hexLib");
     const index_1 = require("./index");
-    exports.MAX_T = 18;
+    exports.MAX_T = 48;
     class Cable {
         constructor(tile, origin, target, direction, swapper) {
             this.tile = tile;
@@ -188,20 +188,20 @@
                     for (let t = 0; t < exports.MAX_T; t++) {
                         if (cur_cable.inputReqs[t] && !cur_cable.globalState[t]) {
                             cur_cable.globalState[t] = true;
-                            propagate(cur_cable, t, "forward", true);
-                            propagate(cur_cable, t, "backward", true);
+                            propagate(cur_cable, t, "forward", true, cur_cable, t);
+                            propagate(cur_cable, t, "backward", true, cur_cable, t);
                         }
                     }
                 }
             }
         });
     }
-    function propagate(source_cable, source_t, direction, exception) {
+    function propagate(source_cable, source_t, direction, exception, original_cable, original_t) {
         if (source_t < 0 || source_t >= exports.MAX_T)
             return;
         // contradiction!
         if (source_cable.inputReqs[source_t] === false) {
-            exports.contradictions.push({ time: source_t, cable: source_cable });
+            exports.contradictions.push({ time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction });
             return;
         }
         // don't propagate if it has already been propagated
@@ -209,10 +209,19 @@
             return;
         // swapper cables require explicit input
         if (source_cable.swapper && source_cable.inputReqs[source_t] !== true) {
-            exports.contradictions.push({ time: source_t, cable: source_cable });
+            exports.contradictions.push({ time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction });
             return;
         }
         source_cable.globalState[source_t] = true;
+        let next_cable = magicAdjacentCable(source_cable, source_t, direction);
+        if (!next_cable)
+            return;
+        let dt = source_cable.direction === direction ? 1 : -1;
+        if (source_cable.direction !== next_cable.direction)
+            dt = 0;
+        propagate(next_cable, source_t + dt, direction, false, original_cable, original_t);
+    }
+    function magicAdjacentCable(source_cable, source_t, direction) {
         // ASSUME that both swapped cables will have the same direction
         let next_cable_temp = direction === "forward" ? nextCable(source_cable, source_t) : prevCable(source_cable, source_t);
         let next_cable_dt = 0;
@@ -249,13 +258,11 @@
                 }
             }
         }
-        let next_cable = direction === "forward" ? nextCable(source_cable, source_t + next_cable_dt) : prevCable(source_cable, source_t + next_cable_dt);
-        if (!next_cable)
-            return;
-        let dt = source_cable.direction === direction ? 1 : -1;
-        if (source_cable.direction !== next_cable.direction)
-            dt = 0;
-        propagate(next_cable, source_t + dt, direction, false);
+        return adjacentCable(source_cable, source_t + next_cable_dt, direction);
+    }
+    exports.magicAdjacentCable = magicAdjacentCable;
+    function adjacentCable(cur_cable, cur_time, direction) {
+        return direction === "forward" ? nextCable(cur_cable, cur_time) : prevCable(cur_cable, cur_time);
     }
     function nextCable(cur_cable, cur_time) {
         let cur_tile = cur_cable.tile;

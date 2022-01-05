@@ -15,8 +15,9 @@
     const graphics_1 = require("./graphics");
     let last_time = 0;
     let wheel_off = 0;
-    let time = Math.floor(hexGame_1.MAX_T / 2);
+    let time = Math.floor(hexGame_1.MAX_T / 2) + .5;
     let anim_t = 0;
+    let contra_anim = null;
     const BUTTON = 100;
     const MARGIN = 0.05;
     let ui_t_offset = Math.floor(hexGame_1.MAX_T / 2) * BUTTON - graphics_1.canvas.width * 3;
@@ -30,79 +31,132 @@
         last_time = curTime;
         wheel_off += engine_1.mouse.wheel;
         (0, graphics_1.beginFrame)();
-        let cur_raw = hexGame_1.layout.pixelToHex(engine_1.mouse);
-        let cur_hex = cur_raw.round();
-        let cur_frac = cur_raw.subtract(cur_hex);
-        let cur_frozen = cur_hex.freeze();
-        let exists = hexGame_1.board.has(cur_frozen);
-        let mi = Math.floor((engine_1.mouse.x + ui_t_offset) / BUTTON);
-        let mj = Math.floor((graphics_1.canvas.height - engine_1.mouse.y) / BUTTON);
-        if (hexGame_1.swappers.length > mj) {
-            if ((0, engine_1.wasButtonPressed)("left")) {
-                hexGame_1.swappers[mj].cycleInput(mi);
-            }
-        }
-        else {
-            if (exists) {
-                let cur_tile = hexGame_1.board.get(cur_frozen);
-                let cur_dir = cur_frac.mainDir();
-                let cur_cable = cur_tile.getCable(cur_dir, time);
-                if (cur_cable === null) {
-                    // no cable
-                    let cur_target_dir = mod(cur_dir + mod(wheel_off + 2, 5) + 1, 6);
-                    (0, graphics_1.drawGhostCable)(cur_hex, cur_dir, cur_target_dir);
-                    if ((0, engine_1.wasKeyPressed)('1')) {
-                        let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "forward", false);
-                        cur_tile.addCable(cur_cable);
-                    }
-                    else if ((0, engine_1.wasKeyPressed)('2')) {
-                        let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "backward", false);
-                        cur_tile.addCable(cur_cable);
-                    }
-                    else if ((0, engine_1.wasKeyPressed)('3')) {
-                        let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "forward", true);
-                        cur_tile.addCable(cur_cable);
-                    }
-                    else if ((0, engine_1.wasKeyPressed)('4')) {
-                        let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "backward", true);
-                        cur_tile.addCable(cur_cable);
-                    }
+        if (contra_anim) {
+            const SPEED = 0.001; // 0.005
+            if (contra_anim.cur_cable) {
+                let cur_cable = contra_anim.cur_cable;
+                if (cur_cable === contra_anim.contradiction.cable) {
+                    // done!
+                    contra_anim = null;
                 }
                 else {
-                    // yes cable
-                    graphics_1.ctx.strokeStyle = "white";
-                    graphics_1.ctx.lineWidth = 3;
-                    (0, graphics_1.drawGhostCable)(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
-                    graphics_1.ctx.strokeStyle = "black";
+                    graphics_1.ctx.beginPath();
+                    graphics_1.ctx.strokeStyle = "red";
+                    graphics_1.ctx.lineWidth = 5;
+                    (0, graphics_1.drawGhostCable)(cur_cable.tile.coords, cur_cable.getOrigin(time), cur_cable.getTarget(time));
                     graphics_1.ctx.lineWidth = 1;
-                    if ((0, engine_1.wasButtonPressed)("left")) {
-                        cur_cable.cycleInput(Math.floor(time));
-                    }
-                    else if ((0, engine_1.wasButtonPressed)("right")) {
-                        cur_tile.deleteCable(cur_dir);
+                    let target_anim_t = contra_anim.contradiction.direction === "forward" ? 0.5 : -.5;
+                    anim_t = moveToTarget(anim_t, SPEED * deltaTime, target_anim_t);
+                    if (anim_t === target_anim_t) {
+                        let next_cable = (0, hexGame_1.magicAdjacentCable)(cur_cable, time, contra_anim.contradiction.direction);
+                        if (next_cable.direction === contra_anim.contradiction.direction) {
+                            time += 1;
+                            anim_t -= 1;
+                        }
+                        else {
+                            time -= 1;
+                            anim_t += 1;
+                        }
+                        contra_anim.cur_cable = next_cable;
                     }
                 }
             }
             else {
-                (0, graphics_1.drawGhostHex)(cur_hex);
-                if ((0, engine_1.wasButtonPressed)("left")) {
-                    hexGame_1.board.set(cur_hex.freeze(), new hexGame_1.Tile(cur_hex));
+                // haven't yet started
+                time = moveToTarget(time, 0.005 * deltaTime, contra_anim.contradiction.source_t + .5);
+                if (time === contra_anim.contradiction.source_t + .5) {
+                    contra_anim.cur_cable = contra_anim.contradiction.source_cable;
                 }
             }
-        }
-        if (anim_t === 0) {
-            if ((0, engine_1.wasKeyPressed)('d') && time + 1 < hexGame_1.MAX_T) {
-                time += 1;
-                anim_t -= .99;
-            }
-            else if ((0, engine_1.wasKeyPressed)('a') && time > 0) {
-                time -= 1;
-                anim_t += .99;
-            }
+            // let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
+            // anim_t = new_anim_t;
         }
         else {
-            let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
-            anim_t = new_anim_t;
+            let cur_raw = hexGame_1.layout.pixelToHex(engine_1.mouse);
+            let cur_hex = cur_raw.round();
+            let cur_frac = cur_raw.subtract(cur_hex);
+            let cur_frozen = cur_hex.freeze();
+            let exists = hexGame_1.board.has(cur_frozen);
+            let mi = Math.floor((engine_1.mouse.x + ui_t_offset) / BUTTON);
+            let mj = Math.floor((graphics_1.canvas.height - engine_1.mouse.y) / BUTTON);
+            if (hexGame_1.swappers.length > mj) {
+                if ((0, engine_1.wasButtonPressed)("left")) {
+                    hexGame_1.swappers[mj].cycleInput(mi);
+                }
+                if ((0, engine_1.wasButtonPressed)("right")) {
+                    let contra = hexGame_1.contradictions.find(x => x.time === mi && x.cable === hexGame_1.swappers[mj]);
+                    if (contra) {
+                        contra_anim = {
+                            contradiction: contra,
+                            cur_cable: null,
+                        };
+                        time += anim_t;
+                        anim_t = 0;
+                    }
+                }
+            }
+            else {
+                if (exists) {
+                    let cur_tile = hexGame_1.board.get(cur_frozen);
+                    let cur_dir = cur_frac.mainDir();
+                    let cur_cable = cur_tile.getCable(cur_dir, time);
+                    if (cur_cable === null) {
+                        // no cable
+                        let cur_target_dir = mod(cur_dir + mod(wheel_off + 2, 5) + 1, 6);
+                        (0, graphics_1.drawGhostCable)(cur_hex, cur_dir, cur_target_dir);
+                        if ((0, engine_1.wasKeyPressed)('1')) {
+                            let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "forward", false);
+                            cur_tile.addCable(cur_cable);
+                        }
+                        else if ((0, engine_1.wasKeyPressed)('2')) {
+                            let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "backward", false);
+                            cur_tile.addCable(cur_cable);
+                        }
+                        else if ((0, engine_1.wasKeyPressed)('3')) {
+                            let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "forward", true);
+                            cur_tile.addCable(cur_cable);
+                        }
+                        else if ((0, engine_1.wasKeyPressed)('4')) {
+                            let cur_cable = new hexGame_1.Cable(cur_tile, cur_dir, cur_target_dir, "backward", true);
+                            cur_tile.addCable(cur_cable);
+                        }
+                    }
+                    else {
+                        // yes cable
+                        graphics_1.ctx.strokeStyle = "white";
+                        graphics_1.ctx.lineWidth = 3;
+                        (0, graphics_1.drawGhostCable)(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
+                        graphics_1.ctx.strokeStyle = "black";
+                        graphics_1.ctx.lineWidth = 1;
+                        if ((0, engine_1.wasButtonPressed)("left")) {
+                            cur_cable.cycleInput(Math.floor(time));
+                        }
+                        else if ((0, engine_1.wasButtonPressed)("right")) {
+                            cur_tile.deleteCable(cur_dir);
+                        }
+                    }
+                }
+                else {
+                    (0, graphics_1.drawGhostHex)(cur_hex);
+                    if ((0, engine_1.wasButtonPressed)("left")) {
+                        hexGame_1.board.set(cur_hex.freeze(), new hexGame_1.Tile(cur_hex));
+                    }
+                }
+            }
+            if (anim_t === 0) {
+                if ((0, engine_1.wasKeyPressed)('d') && time + 1 < hexGame_1.MAX_T) {
+                    time += 1;
+                    anim_t -= .99;
+                }
+                else if ((0, engine_1.wasKeyPressed)('a') && time >= 1) {
+                    time -= 1;
+                    anim_t += .99;
+                }
+            }
+            else {
+                let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
+                anim_t = new_anim_t;
+            }
         }
         if ((0, engine_1.wasKeyPressed)('s')) {
             localStorage.setItem("level", (0, hexGame_1.board2str)());
@@ -152,9 +206,12 @@
                 graphics_1.ctx.strokeRect(x + MARGIN * BUTTON, y + MARGIN * BUTTON, BUTTON * (1 - 2 * MARGIN), BUTTON * (1 - 2 * MARGIN));
             }
         }
+        graphics_1.ctx.beginPath();
         graphics_1.ctx.strokeStyle = "white";
         let ui_cur_t_x = (time + anim_t) * BUTTON - ui_t_offset;
-        graphics_1.ctx.strokeRect(ui_cur_t_x, graphics_1.canvas.height - hexGame_1.swappers.length * BUTTON, BUTTON, BUTTON * hexGame_1.swappers.length);
+        graphics_1.ctx.moveTo(ui_cur_t_x, graphics_1.canvas.height - hexGame_1.swappers.length * BUTTON);
+        graphics_1.ctx.lineTo(ui_cur_t_x, graphics_1.canvas.height);
+        graphics_1.ctx.stroke();
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
@@ -172,6 +229,17 @@
         }
         else if (value < 0) {
             return Math.min(0, value + speed);
+        }
+        else {
+            return value;
+        }
+    }
+    function moveToTarget(value, speed, target) {
+        if (value > target) {
+            return Math.max(target, value - speed);
+        }
+        else if (value < target) {
+            return Math.min(target, value + speed);
         }
         else {
             return value;
