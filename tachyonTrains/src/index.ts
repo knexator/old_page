@@ -1,6 +1,6 @@
 import { engine_update, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
 import { layout, board, Tile, Cable, board2str, MAX_T, swappers, contradictions, Contradiction, magicAdjacentCable } from 'hexGame';
-import { beginFrame, canvas, ctx, drawBoard, drawGhostCable, drawGhostHex } from './graphics';
+import { beginFrame, cableSample, canvas, ctx, drawBoard, drawGhostCable, drawGhostHex } from './graphics';
 
 let last_time = 0;
 
@@ -12,11 +12,14 @@ let anim_t = 0;
 let contra_anim: {
   contradiction: Contradiction,
   cur_cable: Cable | null,
+  click_t: number,
+  click_real_t: number,
+  done: boolean,
 } | null = null;
 
-const BUTTON = 100;
-const MARGIN = 0.05;
-let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON - canvas.width * 3;
+const BUTTON_W = 100;
+const BUTTON_H = 50;
+let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
 
 function initOnce() {
   window.dispatchEvent(new Event('resize'));
@@ -33,18 +36,40 @@ function update(curTime: number) {
   beginFrame();
 
   if (contra_anim) {
-    const SPEED = 0.001; // 0.005
-    if (contra_anim.cur_cable) {
+    const SPEED = 0.003; // 0.005
+    if (contra_anim.done) {
+      let cur_cable = contra_anim.cur_cable!;
+      ctx.beginPath();
+      ctx.strokeStyle = "green";
+      ctx.lineWidth = 5;
+      let cable_t = 0.5;
+      // if (cur_cable.direction === "forward") cable_t = mod(anim_t + .5, 1);
+      // if (cur_cable.direction === "backward") cable_t = 1 - mod(anim_t + .5, 1);
+      let trainCenter = cableSample(cur_cable, cable_t, time + anim_t);
+      ctx.arc(trainCenter.x, trainCenter.y, layout.size, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      anim_t = moveToZero(anim_t, SPEED * deltaTime);
+
+      if (wasKeyPressed('d') || wasKeyPressed('a')) contra_anim = null;
+    } else if (contra_anim.cur_cable) {
       let cur_cable = contra_anim.cur_cable;
 
-      if (cur_cable === contra_anim.contradiction.cable) {
+      // TODO: won't work with tachyon swappers
+      if (cur_cable === contra_anim.contradiction.cable && time - .5 === contra_anim.contradiction.time) {
         // done!
-        contra_anim = null;
+        contra_anim.done = true;
       } else {
         ctx.beginPath();
-        ctx.strokeStyle = "red";
+        ctx.strokeStyle = "green";
         ctx.lineWidth = 5;
-        drawGhostCable(cur_cable.tile.coords, cur_cable.getOrigin(time), cur_cable.getTarget(time));
+        let cable_t = 0;
+        if (cur_cable.direction === "forward") cable_t = mod(anim_t + .5, 1);
+        if (cur_cable.direction === "backward") cable_t = 1 - mod(anim_t + .5, 1);
+        let trainCenter = cableSample(cur_cable, cable_t, time + anim_t);
+        ctx.arc(trainCenter.x, trainCenter.y, layout.size, 0, Math.PI * 2);
+        ctx.stroke();
+        // drawGhostCable(cur_cable.tile.coords, cur_cable.getOrigin(time), cur_cable.getTarget(time));
         ctx.lineWidth = 1;
 
         let target_anim_t = contra_anim.contradiction.direction === "forward" ? 0.5 : -.5;
@@ -60,26 +85,32 @@ function update(curTime: number) {
           }
           contra_anim.cur_cable = next_cable;
         }
-
       }
     } else {
       // haven't yet started
-      time = moveToTarget(time, 0.005 * deltaTime, contra_anim.contradiction.source_t + .5);
+      let t = (last_time - contra_anim.click_real_t) / 1000;
+      t = easeInOutCubic(Math.min(1, Math.max(0, t)));
+      time = lerp(contra_anim.click_t, contra_anim.contradiction.source_t + .5, t)
+      // time = moveToTarget(time, 0.005 * deltaTime, contra_anim.contradiction.source_t + .5);
+      // click_t: time + anim_t,
+      // click_real_t: last_time
       if (time === contra_anim.contradiction.source_t + .5) {
         contra_anim.cur_cable = contra_anim.contradiction.source_cable;
       }
     }
     // let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
     // anim_t = new_anim_t;
-  } else {
+  }
+
+  if (!contra_anim) {
     let cur_raw = layout.pixelToHex(mouse);
     let cur_hex = cur_raw.round();
     let cur_frac = cur_raw.subtract(cur_hex);
     let cur_frozen = cur_hex.freeze();
     let exists = board.has(cur_frozen);
 
-    let mi = Math.floor((mouse.x + ui_t_offset) / BUTTON);
-    let mj = Math.floor((canvas.height - mouse.y) / BUTTON);
+    let mi = Math.floor((mouse.x + ui_t_offset) / BUTTON_W);
+    let mj = Math.floor((canvas.height - mouse.y) / BUTTON_H);
 
     if (swappers.length > mj) {
       if (wasButtonPressed("left")) {
@@ -91,6 +122,9 @@ function update(curTime: number) {
           contra_anim = {
             contradiction: contra,
             cur_cable: null,
+            click_t: time + anim_t,
+            click_real_t: last_time,
+            done: false,
           };
           time += anim_t;
           anim_t = 0;
@@ -154,7 +188,7 @@ function update(curTime: number) {
   }
 
   if (wasKeyPressed('s')) {
-    localStorage.setItem("level", board2str());
+    localStorage.setItem("simple", board2str());
   }
   if (wasKeyPressed('m')) {
     board.clear();
@@ -175,36 +209,63 @@ function update(curTime: number) {
   drawBoard(time + anim_t);
 
   // UI
-  let min_t_ui = Math.max(0, Math.ceil(ui_t_offset / BUTTON));
-  let max_t_ui = Math.min(MAX_T, Math.floor((ui_t_offset + canvas.width) / BUTTON));
+  const MARGIN = 0.1;
+  let min_t_ui = Math.max(0, Math.ceil(ui_t_offset / BUTTON_W));
+  let max_t_ui = Math.min(MAX_T, Math.floor((ui_t_offset + canvas.width) / BUTTON_W));
   ctx.strokeStyle = "black";
+  ctx.fillStyle = "red";
   for (let t=min_t_ui; t<max_t_ui; t++) {
-    let x = t * BUTTON - ui_t_offset;
+    let x = t * BUTTON_W - ui_t_offset;
     for (let k=0; k<swappers.length; k++) {
-      let y = canvas.height - (k + 1) * BUTTON;
+      let y = canvas.height - (k + 1) * BUTTON_H;
       // fillstyle input etc
       let input_val = swappers[k].inputReqs[t];
-      if (input_val !== null) {
-        ctx.fillStyle = input_val ? "white" : "black";
-        ctx.fillRect(x + MARGIN * BUTTON, y + MARGIN * BUTTON, BUTTON * (1-2*MARGIN), BUTTON * (1-2*MARGIN));
-      }
       let contradiction = contradictions.some(x => x.time === t && x.cable === swappers[k]);
-      ctx.strokeStyle = contradiction ? "red" : "black";
-      ctx.strokeRect(x + MARGIN * BUTTON, y + MARGIN * BUTTON, BUTTON * (1-2*MARGIN), BUTTON * (1-2*MARGIN));
+
+      if (input_val || contradiction) {
+        ctx.beginPath();
+        ctx.arc(x + BUTTON_W / 2, y + BUTTON_H / 2, BUTTON_H / 3, 0, Math.PI * 2);
+      }
+      if (input_val) ctx.stroke();
+      if (contradiction) ctx.fill();
+
+      /*if (input_val !== null) {
+        ctx.fillStyle = input_val ? "white" : "black";
+        ctx.fillRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1-2*MARGIN), BUTTON_H * (1-2*MARGIN));
+      }*/
+
+      // ctx.strokeStyle = contradiction ? "red" : "black";
+      // ctx.strokeRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1-2*MARGIN), BUTTON_H * (1-2*MARGIN));
     }
     let extra_contradiction = contradictions.some(x => x.time === t && swappers.indexOf(x.cable) === -1);
     if (extra_contradiction) {
       ctx.strokeStyle = "red";
-      let y = canvas.height - (swappers.length + 1) * BUTTON;
-      ctx.strokeRect(x + MARGIN * BUTTON, y + MARGIN * BUTTON, BUTTON * (1-2*MARGIN), BUTTON * (1-2*MARGIN));
+      let y = canvas.height - (swappers.length + 1) * BUTTON_H;
+      ctx.strokeRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1-2*MARGIN), BUTTON_H * (1-2*MARGIN));
     }
   }
+  ctx.strokeStyle = "black";
+  ctx.beginPath();
+  for (let t=min_t_ui; t<max_t_ui; t++) {
+    let x = t * BUTTON_W - ui_t_offset;
+    ctx.moveTo(x, canvas.height - (swappers.length) * BUTTON_H);
+    ctx.lineTo(x, canvas.height);
+  }
+  for (let k=0; k<swappers.length; k++) {
+    let y = canvas.height - (k + 1) * BUTTON_H;
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvas.width, y);
+  }
+  ctx.stroke();
+
   ctx.beginPath();
   ctx.strokeStyle = "white";
-  let ui_cur_t_x = (time + anim_t) * BUTTON - ui_t_offset;
-  ctx.moveTo(ui_cur_t_x, canvas.height - swappers.length * BUTTON);
+  ctx.lineWidth = 3;
+  let ui_cur_t_x = (time + anim_t) * BUTTON_W - ui_t_offset;
+  ctx.moveTo(ui_cur_t_x, canvas.height - swappers.length * BUTTON_W);
   ctx.lineTo(ui_cur_t_x, canvas.height);
   ctx.stroke();
+  ctx.lineWidth = 1;
 
   engine_update();
   window.requestAnimationFrame(update);
@@ -237,4 +298,8 @@ function moveToTarget(value: number, speed: number, target: number) {
   } else {
     return value
   }
+}
+
+function easeInOutCubic(x: number): number {
+  return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
 }

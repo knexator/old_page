@@ -246,7 +246,12 @@ export class Orientation
 
 export class Layout
 {
-    constructor (public orientation:Orientation, public size:number, public origin:Point) {}
+    h: number;
+    w: number;
+    constructor (public orientation:Orientation, public size:number, public origin:Point) {
+      this.w = this.size * 2;
+      this.h = this.size * Math.sqrt(3);
+    }
     public static pointy:Orientation = new Orientation(Math.sqrt(3.0), Math.sqrt(3.0) / 2.0, 0.0, 3.0 / 2.0, Math.sqrt(3.0) / 3.0, -1.0 / 3.0, 0.0, 2.0 / 3.0, 0.5);
     public static flat:Orientation = new Orientation(3.0 / 2.0, 0.0, Math.sqrt(3.0) / 2.0, Math.sqrt(3.0), 2.0 / 3.0, 0.0, -1.0 / 3.0, Math.sqrt(3.0) / 3.0, 0.0);
 

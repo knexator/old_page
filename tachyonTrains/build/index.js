@@ -18,9 +18,9 @@
     let time = Math.floor(hexGame_1.MAX_T / 2) + .5;
     let anim_t = 0;
     let contra_anim = null;
-    const BUTTON = 100;
-    const MARGIN = 0.05;
-    let ui_t_offset = Math.floor(hexGame_1.MAX_T / 2) * BUTTON - graphics_1.canvas.width * 3;
+    const BUTTON_W = 100;
+    const BUTTON_H = 50;
+    let ui_t_offset = Math.floor(hexGame_1.MAX_T / 2) * BUTTON_W - graphics_1.canvas.width * 3;
     function initOnce() {
         window.dispatchEvent(new Event('resize'));
         window.requestAnimationFrame(update);
@@ -32,18 +32,43 @@
         wheel_off += engine_1.mouse.wheel;
         (0, graphics_1.beginFrame)();
         if (contra_anim) {
-            const SPEED = 0.001; // 0.005
-            if (contra_anim.cur_cable) {
+            const SPEED = 0.003; // 0.005
+            if (contra_anim.done) {
                 let cur_cable = contra_anim.cur_cable;
-                if (cur_cable === contra_anim.contradiction.cable) {
-                    // done!
+                graphics_1.ctx.beginPath();
+                graphics_1.ctx.strokeStyle = "green";
+                graphics_1.ctx.lineWidth = 5;
+                let cable_t = 0.5;
+                // if (cur_cable.direction === "forward") cable_t = mod(anim_t + .5, 1);
+                // if (cur_cable.direction === "backward") cable_t = 1 - mod(anim_t + .5, 1);
+                let trainCenter = (0, graphics_1.cableSample)(cur_cable, cable_t, time + anim_t);
+                graphics_1.ctx.arc(trainCenter.x, trainCenter.y, hexGame_1.layout.size, 0, Math.PI * 2);
+                graphics_1.ctx.stroke();
+                graphics_1.ctx.lineWidth = 1;
+                anim_t = moveToZero(anim_t, SPEED * deltaTime);
+                if ((0, engine_1.wasKeyPressed)('d') || (0, engine_1.wasKeyPressed)('a'))
                     contra_anim = null;
+            }
+            else if (contra_anim.cur_cable) {
+                let cur_cable = contra_anim.cur_cable;
+                // TODO: won't work with tachyon swappers
+                if (cur_cable === contra_anim.contradiction.cable && time - .5 === contra_anim.contradiction.time) {
+                    // done!
+                    contra_anim.done = true;
                 }
                 else {
                     graphics_1.ctx.beginPath();
-                    graphics_1.ctx.strokeStyle = "red";
+                    graphics_1.ctx.strokeStyle = "green";
                     graphics_1.ctx.lineWidth = 5;
-                    (0, graphics_1.drawGhostCable)(cur_cable.tile.coords, cur_cable.getOrigin(time), cur_cable.getTarget(time));
+                    let cable_t = 0;
+                    if (cur_cable.direction === "forward")
+                        cable_t = mod(anim_t + .5, 1);
+                    if (cur_cable.direction === "backward")
+                        cable_t = 1 - mod(anim_t + .5, 1);
+                    let trainCenter = (0, graphics_1.cableSample)(cur_cable, cable_t, time + anim_t);
+                    graphics_1.ctx.arc(trainCenter.x, trainCenter.y, hexGame_1.layout.size, 0, Math.PI * 2);
+                    graphics_1.ctx.stroke();
+                    // drawGhostCable(cur_cable.tile.coords, cur_cable.getOrigin(time), cur_cable.getTarget(time));
                     graphics_1.ctx.lineWidth = 1;
                     let target_anim_t = contra_anim.contradiction.direction === "forward" ? 0.5 : -.5;
                     anim_t = moveToTarget(anim_t, SPEED * deltaTime, target_anim_t);
@@ -63,7 +88,12 @@
             }
             else {
                 // haven't yet started
-                time = moveToTarget(time, 0.005 * deltaTime, contra_anim.contradiction.source_t + .5);
+                let t = (last_time - contra_anim.click_real_t) / 1000;
+                t = easeInOutCubic(Math.min(1, Math.max(0, t)));
+                time = lerp(contra_anim.click_t, contra_anim.contradiction.source_t + .5, t);
+                // time = moveToTarget(time, 0.005 * deltaTime, contra_anim.contradiction.source_t + .5);
+                // click_t: time + anim_t,
+                // click_real_t: last_time
                 if (time === contra_anim.contradiction.source_t + .5) {
                     contra_anim.cur_cable = contra_anim.contradiction.source_cable;
                 }
@@ -71,14 +101,14 @@
             // let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
             // anim_t = new_anim_t;
         }
-        else {
+        if (!contra_anim) {
             let cur_raw = hexGame_1.layout.pixelToHex(engine_1.mouse);
             let cur_hex = cur_raw.round();
             let cur_frac = cur_raw.subtract(cur_hex);
             let cur_frozen = cur_hex.freeze();
             let exists = hexGame_1.board.has(cur_frozen);
-            let mi = Math.floor((engine_1.mouse.x + ui_t_offset) / BUTTON);
-            let mj = Math.floor((graphics_1.canvas.height - engine_1.mouse.y) / BUTTON);
+            let mi = Math.floor((engine_1.mouse.x + ui_t_offset) / BUTTON_W);
+            let mj = Math.floor((graphics_1.canvas.height - engine_1.mouse.y) / BUTTON_H);
             if (hexGame_1.swappers.length > mj) {
                 if ((0, engine_1.wasButtonPressed)("left")) {
                     hexGame_1.swappers[mj].cycleInput(mi);
@@ -89,6 +119,9 @@
                         contra_anim = {
                             contradiction: contra,
                             cur_cable: null,
+                            click_t: time + anim_t,
+                            click_real_t: last_time,
+                            done: false,
                         };
                         time += anim_t;
                         anim_t = 0;
@@ -159,7 +192,7 @@
             }
         }
         if ((0, engine_1.wasKeyPressed)('s')) {
-            localStorage.setItem("level", (0, hexGame_1.board2str)());
+            localStorage.setItem("simple", (0, hexGame_1.board2str)());
         }
         if ((0, engine_1.wasKeyPressed)('m')) {
             hexGame_1.board.clear();
@@ -182,36 +215,61 @@
             ui_t_offset += deltaTime * 1.0;
         (0, graphics_1.drawBoard)(time + anim_t);
         // UI
-        let min_t_ui = Math.max(0, Math.ceil(ui_t_offset / BUTTON));
-        let max_t_ui = Math.min(hexGame_1.MAX_T, Math.floor((ui_t_offset + graphics_1.canvas.width) / BUTTON));
+        const MARGIN = 0.1;
+        let min_t_ui = Math.max(0, Math.ceil(ui_t_offset / BUTTON_W));
+        let max_t_ui = Math.min(hexGame_1.MAX_T, Math.floor((ui_t_offset + graphics_1.canvas.width) / BUTTON_W));
         graphics_1.ctx.strokeStyle = "black";
+        graphics_1.ctx.fillStyle = "red";
         for (let t = min_t_ui; t < max_t_ui; t++) {
-            let x = t * BUTTON - ui_t_offset;
+            let x = t * BUTTON_W - ui_t_offset;
             for (let k = 0; k < hexGame_1.swappers.length; k++) {
-                let y = graphics_1.canvas.height - (k + 1) * BUTTON;
+                let y = graphics_1.canvas.height - (k + 1) * BUTTON_H;
                 // fillstyle input etc
                 let input_val = hexGame_1.swappers[k].inputReqs[t];
-                if (input_val !== null) {
-                    graphics_1.ctx.fillStyle = input_val ? "white" : "black";
-                    graphics_1.ctx.fillRect(x + MARGIN * BUTTON, y + MARGIN * BUTTON, BUTTON * (1 - 2 * MARGIN), BUTTON * (1 - 2 * MARGIN));
-                }
                 let contradiction = hexGame_1.contradictions.some(x => x.time === t && x.cable === hexGame_1.swappers[k]);
-                graphics_1.ctx.strokeStyle = contradiction ? "red" : "black";
-                graphics_1.ctx.strokeRect(x + MARGIN * BUTTON, y + MARGIN * BUTTON, BUTTON * (1 - 2 * MARGIN), BUTTON * (1 - 2 * MARGIN));
+                if (input_val || contradiction) {
+                    graphics_1.ctx.beginPath();
+                    graphics_1.ctx.arc(x + BUTTON_W / 2, y + BUTTON_H / 2, BUTTON_H / 3, 0, Math.PI * 2);
+                }
+                if (input_val)
+                    graphics_1.ctx.stroke();
+                if (contradiction)
+                    graphics_1.ctx.fill();
+                /*if (input_val !== null) {
+                  ctx.fillStyle = input_val ? "white" : "black";
+                  ctx.fillRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1-2*MARGIN), BUTTON_H * (1-2*MARGIN));
+                }*/
+                // ctx.strokeStyle = contradiction ? "red" : "black";
+                // ctx.strokeRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1-2*MARGIN), BUTTON_H * (1-2*MARGIN));
             }
             let extra_contradiction = hexGame_1.contradictions.some(x => x.time === t && hexGame_1.swappers.indexOf(x.cable) === -1);
             if (extra_contradiction) {
                 graphics_1.ctx.strokeStyle = "red";
-                let y = graphics_1.canvas.height - (hexGame_1.swappers.length + 1) * BUTTON;
-                graphics_1.ctx.strokeRect(x + MARGIN * BUTTON, y + MARGIN * BUTTON, BUTTON * (1 - 2 * MARGIN), BUTTON * (1 - 2 * MARGIN));
+                let y = graphics_1.canvas.height - (hexGame_1.swappers.length + 1) * BUTTON_H;
+                graphics_1.ctx.strokeRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1 - 2 * MARGIN), BUTTON_H * (1 - 2 * MARGIN));
             }
         }
+        graphics_1.ctx.strokeStyle = "black";
+        graphics_1.ctx.beginPath();
+        for (let t = min_t_ui; t < max_t_ui; t++) {
+            let x = t * BUTTON_W - ui_t_offset;
+            graphics_1.ctx.moveTo(x, graphics_1.canvas.height - (hexGame_1.swappers.length) * BUTTON_H);
+            graphics_1.ctx.lineTo(x, graphics_1.canvas.height);
+        }
+        for (let k = 0; k < hexGame_1.swappers.length; k++) {
+            let y = graphics_1.canvas.height - (k + 1) * BUTTON_H;
+            graphics_1.ctx.moveTo(0, y);
+            graphics_1.ctx.lineTo(graphics_1.canvas.width, y);
+        }
+        graphics_1.ctx.stroke();
         graphics_1.ctx.beginPath();
         graphics_1.ctx.strokeStyle = "white";
-        let ui_cur_t_x = (time + anim_t) * BUTTON - ui_t_offset;
-        graphics_1.ctx.moveTo(ui_cur_t_x, graphics_1.canvas.height - hexGame_1.swappers.length * BUTTON);
+        graphics_1.ctx.lineWidth = 3;
+        let ui_cur_t_x = (time + anim_t) * BUTTON_W - ui_t_offset;
+        graphics_1.ctx.moveTo(ui_cur_t_x, graphics_1.canvas.height - hexGame_1.swappers.length * BUTTON_W);
         graphics_1.ctx.lineTo(ui_cur_t_x, graphics_1.canvas.height);
         graphics_1.ctx.stroke();
+        graphics_1.ctx.lineWidth = 1;
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
@@ -244,5 +302,8 @@
         else {
             return value;
         }
+    }
+    function easeInOutCubic(x) {
+        return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
     }
 });

@@ -13,7 +13,11 @@ export class Cable {
   otherCable: Cable | null;
   masterSwapper: Cable | null;
   constructor(public tile: Tile, public origin: number, public target: number, public direction: TimeDirection, public swapper: boolean) {
-    this.inputReqs = Array(MAX_T).fill(null);
+    if (swapper) {
+      this.inputReqs = Array(MAX_T).fill(false);
+    } else {
+      this.inputReqs = Array(MAX_T).fill(null);
+    }
     this.globalState = Array(MAX_T).fill(false);
     this.otherCable = null;
     this.masterSwapper = null;
@@ -23,12 +27,16 @@ export class Cable {
 
   cycleInput(time: number) {
     if (time <= 0 || time + 1 >= MAX_T) return;
-    if (this.inputReqs[time] === null) {
-      this.inputReqs[time] = true;
-    } else if (this.inputReqs[time]) {
-      this.inputReqs[time] = false;
+    if (this.swapper) {
+      this.inputReqs[time] = !this.inputReqs[time];
     } else {
-      this.inputReqs[time] = null;
+      if (this.inputReqs[time] === null) {
+        this.inputReqs[time] = true;
+      } else if (this.inputReqs[time]) {
+        this.inputReqs[time] = false;
+      } else {
+        this.inputReqs[time] = null;
+      }
     }
     updateGlobalState();
     /*  let val = this.inputReqs.get(time);
@@ -69,8 +77,14 @@ export class Cable {
 
 export class Tile {
   cables: (Cable | null)[];
+  masterSwapper: Cable | null;
+  swapCable1: Cable | null;
+  swapCable2: Cable | null;
   constructor(public coords: Hex) {
     this.cables = [null, null, null, null, null, null];
+    this.masterSwapper = null;
+    this.swapCable1 = null;
+    this.swapCable2 = null;
   }
   addCable(cable: Cable) {
     this.deleteCable(cable.origin);
@@ -114,10 +128,10 @@ export class Tile {
   }
 }
 
-export const layout = new Layout(Layout.flat, 70, new Point(0, 0));
+export const layout = new Layout(Layout.flat, 85, new Point(0, 0));
 
 // export const board = new Map<FrozenHex, Tile>();
-export const board = str2board(localStorage.getItem("level") || "[]");
+export const board = str2board(localStorage.getItem("simple") || "[]");
 
 export type Contradiction = {time: number, cable: Cable, source_t: number, source_cable: Cable, direction: TimeDirection};
 export let swappers: Cable[] = [];
@@ -150,6 +164,9 @@ function fixBoard() {
             let [otherCable] = swapCables;
             cur_cable.masterSwapper = cur_swapper!;
             cur_cable.otherCable = otherCable!;
+            cur_tile.masterSwapper = cur_swapper!;
+            cur_tile.swapCable1 = cur_cable;
+            cur_tile.swapCable2 = otherCable!;
             used = true;
           }
         }

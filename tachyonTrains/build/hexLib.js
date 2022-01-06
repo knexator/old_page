@@ -203,6 +203,8 @@
             this.orientation = orientation;
             this.size = size;
             this.origin = origin;
+            this.w = this.size * 2;
+            this.h = this.size * Math.sqrt(3);
         }
         hexToPixel(h) {
             var M = this.orientation;

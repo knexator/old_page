@@ -20,7 +20,12 @@
             this.target = target;
             this.direction = direction;
             this.swapper = swapper;
-            this.inputReqs = Array(exports.MAX_T).fill(null);
+            if (swapper) {
+                this.inputReqs = Array(exports.MAX_T).fill(false);
+            }
+            else {
+                this.inputReqs = Array(exports.MAX_T).fill(null);
+            }
             this.globalState = Array(exports.MAX_T).fill(false);
             this.otherCable = null;
             this.masterSwapper = null;
@@ -30,14 +35,19 @@
         cycleInput(time) {
             if (time <= 0 || time + 1 >= exports.MAX_T)
                 return;
-            if (this.inputReqs[time] === null) {
-                this.inputReqs[time] = true;
-            }
-            else if (this.inputReqs[time]) {
-                this.inputReqs[time] = false;
+            if (this.swapper) {
+                this.inputReqs[time] = !this.inputReqs[time];
             }
             else {
-                this.inputReqs[time] = null;
+                if (this.inputReqs[time] === null) {
+                    this.inputReqs[time] = true;
+                }
+                else if (this.inputReqs[time]) {
+                    this.inputReqs[time] = false;
+                }
+                else {
+                    this.inputReqs[time] = null;
+                }
             }
             updateGlobalState();
             /*  let val = this.inputReqs.get(time);
@@ -79,6 +89,9 @@
         constructor(coords) {
             this.coords = coords;
             this.cables = [null, null, null, null, null, null];
+            this.masterSwapper = null;
+            this.swapCable1 = null;
+            this.swapCable2 = null;
         }
         addCable(cable) {
             this.deleteCable(cable.origin);
@@ -124,9 +137,9 @@
         }
     }
     exports.Tile = Tile;
-    exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 70, new hexLib_1.Point(0, 0));
+    exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 85, new hexLib_1.Point(0, 0));
     // export const board = new Map<FrozenHex, Tile>();
-    exports.board = str2board(localStorage.getItem("level") || "[]");
+    exports.board = str2board(localStorage.getItem("simple") || "[]");
     exports.swappers = [];
     exports.contradictions = [];
     fixBoard();
@@ -157,6 +170,9 @@
                             let [otherCable] = swapCables;
                             cur_cable.masterSwapper = cur_swapper;
                             cur_cable.otherCable = otherCable;
+                            cur_tile.masterSwapper = cur_swapper;
+                            cur_tile.swapCable1 = cur_cable;
+                            cur_tile.swapCable2 = otherCable;
                             used = true;
                         }
                     }
