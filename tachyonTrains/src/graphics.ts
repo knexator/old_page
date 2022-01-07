@@ -1,7 +1,7 @@
 import { layout, board, Tile, Cable, contradictions, magicAdjacentCable } from 'hexGame';
 import { mouse } from './engine';
 import { Hex, Point } from './hexLib';
-import { mod } from './index';
+import { time_dir, contra_cable_highlight, mod } from './index';
 
 export let canvas = document.querySelector("canvas") as HTMLCanvasElement;
 export let ctx = canvas.getContext("2d")!;
@@ -54,7 +54,7 @@ function drawTile(tile: Tile, time: number) {
     return;
   }
 
-  ctx.strokeStyle = "gray";
+  ctx.strokeStyle = time_dir === 0 ? "gray" : (time_dir < 0 ? "#FF9000" : "#00AEFF");
   pathHex(tile.coords);
   ctx.stroke();
   if (tile.masterSwapper) {
@@ -102,17 +102,17 @@ function drawTile(tile: Tile, time: number) {
         drawTrainEarly(cur_cable, time);
       }*/
       if (cur_cable.globalState[Math.floor(time)]) {
-        drawTrain(cur_cable, time, 0);
+        drawTrain(cur_cable, time, 0, false);
       }
       if (cur_cable.globalState[Math.floor(time + 1)]) {
-        drawTrain(cur_cable, time, -1);
+        drawTrain(cur_cable, time, -1, false);
       }
       if (cur_cable.globalState[Math.floor(time - 1)]) {
-        drawTrain(cur_cable, time, 1);
+        drawTrain(cur_cable, time, 1, false);
       }
       if (contradictions.some(x => x.cable === cur_cable && x.time === Math.floor(time))) {
         ctx.globalAlpha = 0.5;
-        drawTrain(cur_cable, time, 0);
+        drawTrain(cur_cable, time, 0, contra_cable_highlight === cur_cable);
         ctx.globalAlpha = 1.0;
       }
 
@@ -137,8 +137,8 @@ function drawTile(tile: Tile, time: number) {
   }
 }
 
-function drawTrain(cur_cable: Cable, time: number, dt: number) {
-  ctx.strokeStyle = "black";
+function drawTrain(cur_cable: Cable, time: number, dt: number, highlight: boolean) {
+  ctx.strokeStyle = highlight ? "white" : "black";
   let t = mod(time, 1) + dt;
   let times = [t - .2, t, t + .2];
   if (cur_cable.direction === "backward") {
@@ -153,7 +153,7 @@ function drawTrain(cur_cable: Cable, time: number, dt: number) {
       ctx.arc(ballStart.x, ballStart.y, layout.size * 0.2, 0, Math.PI * 2);
     }
   })
-  ctx.fillStyle = cur_cable.direction === "forward" ? "orange" : "purple";
+  ctx.fillStyle = highlight ? "white" : cur_cable.direction === "forward" ? "orange" : "purple";
   ctx.fill();
   ctx.stroke();
 }

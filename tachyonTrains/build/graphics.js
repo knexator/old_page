@@ -61,7 +61,7 @@
         if (center.x < 0 || center.x >= exports.canvas.width || center.y < 0 || center.y >= exports.canvas.height) {
             return;
         }
-        exports.ctx.strokeStyle = "gray";
+        exports.ctx.strokeStyle = index_1.time_dir === 0 ? "gray" : (index_1.time_dir < 0 ? "#FF9000" : "#00AEFF");
         pathHex(tile.coords);
         exports.ctx.stroke();
         if (tile.masterSwapper) {
@@ -106,17 +106,17 @@
                   drawTrainEarly(cur_cable, time);
                 }*/
                 if (cur_cable.globalState[Math.floor(time)]) {
-                    drawTrain(cur_cable, time, 0);
+                    drawTrain(cur_cable, time, 0, false);
                 }
                 if (cur_cable.globalState[Math.floor(time + 1)]) {
-                    drawTrain(cur_cable, time, -1);
+                    drawTrain(cur_cable, time, -1, false);
                 }
                 if (cur_cable.globalState[Math.floor(time - 1)]) {
-                    drawTrain(cur_cable, time, 1);
+                    drawTrain(cur_cable, time, 1, false);
                 }
                 if (hexGame_1.contradictions.some(x => x.cable === cur_cable && x.time === Math.floor(time))) {
                     exports.ctx.globalAlpha = 0.5;
-                    drawTrain(cur_cable, time, 0);
+                    drawTrain(cur_cable, time, 0, index_1.contra_cable_highlight === cur_cable);
                     exports.ctx.globalAlpha = 1.0;
                 }
                 // flashes of time travel
@@ -139,8 +139,8 @@
             }
         }
     }
-    function drawTrain(cur_cable, time, dt) {
-        exports.ctx.strokeStyle = "black";
+    function drawTrain(cur_cable, time, dt, highlight) {
+        exports.ctx.strokeStyle = highlight ? "white" : "black";
         let t = (0, index_1.mod)(time, 1) + dt;
         let times = [t - .2, t, t + .2];
         if (cur_cable.direction === "backward") {
@@ -154,7 +154,7 @@
                 exports.ctx.arc(ballStart.x, ballStart.y, hexGame_1.layout.size * 0.2, 0, Math.PI * 2);
             }
         });
-        exports.ctx.fillStyle = cur_cable.direction === "forward" ? "orange" : "purple";
+        exports.ctx.fillStyle = highlight ? "white" : cur_cable.direction === "forward" ? "orange" : "purple";
         exports.ctx.fill();
         exports.ctx.stroke();
     }

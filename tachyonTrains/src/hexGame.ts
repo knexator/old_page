@@ -3,7 +3,7 @@ import { canvas, ctx } from './graphics';
 import { mod } from './index';
 import { level_simple_raw } from './level_data';
 
-type TimeDirection = "forward" | "backward";
+export type TimeDirection = "forward" | "backward";
 
 export const MAX_T = 16;
 

@@ -1,15 +1,17 @@
 import { engine_update, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
-import { layout, board, Tile, Cable, board2str, MAX_T, swappers, contradictions, Contradiction, magicAdjacentCable } from 'hexGame';
+import { layout, board, Tile, Cable, board2str, MAX_T, swappers, contradictions, Contradiction, magicAdjacentCable, TimeDirection } from 'hexGame';
 import { beginFrame, cableSample, canvas, ctx, drawBoard, drawGhostCable, drawGhostHex, highlightCable } from './graphics';
 import { Hex, Point } from './hexLib';
 
 let EDITOR = false;
+let FREEHAND_INPUT = false;
 
 let last_time = 0;
 let wheel_off = 0;
 
 let time = 3.5;
 let anim_t = 0;
+export let time_dir = 0;
 
 let contra_anim: {
   contradiction: Contradiction,
@@ -17,7 +19,10 @@ let contra_anim: {
   click_t: number,
   click_real_t: number,
   done: boolean,
+  reverse: boolean,
 } | null = null;
+
+export let contra_cable_highlight: Cable | null = null;
 
 const BUTTON_W = 100;
 const BUTTON_H = 50;
@@ -35,6 +40,7 @@ function update(curTime: number) {
   last_time = curTime;
 
   wheel_off += mouse.wheel;
+  time_dir = 0;
 
   beginFrame();
 
@@ -48,13 +54,19 @@ function update(curTime: number) {
       let trainCenter = cableSample(cur_cable, cable_t, time + anim_t);
       circle_draw = trainCenter;
       anim_t = moveToZero(anim_t, SPEED * deltaTime);
+      time_dir = Math.sign(anim_t);
 
       if (wasKeyPressed('d') || wasKeyPressed('a')) contra_anim = null;
     } else if (contra_anim.cur_cable) {
       let cur_cable = contra_anim.cur_cable;
 
-      if (cur_cable === contra_anim.contradiction.cable && time - .5 === contra_anim.contradiction.time) {
-        // done!
+      let done = false;
+      if (contra_anim.reverse) {
+        done = cur_cable === contra_anim.contradiction.source_cable && time - .5 === contra_anim.contradiction.source_t;
+      } else {
+        done = cur_cable === contra_anim.contradiction.cable && time - .5 === contra_anim.contradiction.time;
+      }
+      if (done) {
         contra_anim.done = true;
       } else {
         let cable_t = 0;
@@ -62,14 +74,15 @@ function update(curTime: number) {
         if (cur_cable.direction === "backward") cable_t = 1 - mod(anim_t + .5, 1);
         let trainCenter = cableSample(cur_cable, cable_t, time + anim_t);
         circle_draw = trainCenter;
-        let target_anim_t = contra_anim.contradiction.direction === cur_cable.direction ? 0.5 : -.5;
+        let actual_dir = maybeReverseDir(contra_anim.contradiction.direction, contra_anim.reverse);
+        let target_anim_t = actual_dir === cur_cable.direction ? 0.5 : -.5;
         anim_t = moveToTarget(anim_t, SPEED * deltaTime, target_anim_t);
+        time_dir = Math.sign(anim_t - target_anim_t);
         if (anim_t === target_anim_t) {
-          let next_cable = magicAdjacentCable(cur_cable, time, contra_anim.contradiction.direction);
+          let next_cable = magicAdjacentCable(cur_cable, time, actual_dir);
           time += anim_t;
           anim_t = 0;
-
-          if (next_cable!.direction === contra_anim.contradiction.direction) {
+          if (next_cable!.direction === actual_dir) {
             time += .5;
             anim_t -= .5;
           } else {
@@ -77,18 +90,24 @@ function update(curTime: number) {
             anim_t += .5;
           }
           contra_anim.cur_cable = next_cable;
+          console.log(time);
         }
       }
     } else {
       // haven't yet started
       let t = (last_time - contra_anim.click_real_t) / 1000;
       t = easeInOutCubic(Math.min(1, Math.max(0, t)));
-      time = lerp(contra_anim.click_t, contra_anim.contradiction.source_t + .5, t)
+      let target_t = contra_anim.reverse ? contra_anim.contradiction.time : contra_anim.contradiction.source_t;
+      time = lerp(contra_anim.click_t, target_t + .5, t)
       // time = moveToTarget(time, 0.005 * deltaTime, contra_anim.contradiction.source_t + .5);
       // click_t: time + anim_t,
       // click_real_t: last_time
-      if (time === contra_anim.contradiction.source_t + .5) {
-        contra_anim.cur_cable = contra_anim.contradiction.source_cable;
+      if (time === target_t + .5) {
+        if (contra_anim.reverse) {
+          contra_anim.cur_cable = contra_anim.contradiction.cable;
+        } else {
+          contra_anim.cur_cable = contra_anim.contradiction.source_cable;
+        }
       }
     }
     // let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
@@ -103,7 +122,8 @@ function update(curTime: number) {
     let exists = board.has(cur_frozen);
 
     let mi = Math.floor((mouse.x + ui_t_offset) / BUTTON_W);
-    let mj = Math.floor((canvas.height - mouse.y) / BUTTON_H) - 1;
+    let mj = Math.floor((canvas.height - mouse.y) / BUTTON_H);
+    if (FREEHAND_INPUT) mj -= 1;
 
     if (swappers.length > mj && mj >= 0 && mi > 0 && mi + 1 < MAX_T) {
       document.body.style.cursor = 'pointer';
@@ -119,6 +139,7 @@ function update(curTime: number) {
             click_t: time + anim_t,
             click_real_t: last_time,
             done: false,
+            reverse: false,
           };
           time += anim_t;
           anim_t = 0;
@@ -156,11 +177,33 @@ function update(curTime: number) {
           drawGhostCable(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
           ctx.strokeStyle = "black";
           ctx.lineWidth = 1;*/
-          highlightCable(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
-          if (wasButtonPressed("left")) {
-            cur_cable.cycleInput(Math.floor(time));
-          } else if (wasButtonPressed("right") && EDITOR) {
-            cur_tile.deleteCable(cur_dir);
+          let contra = contradictions.find(x => Math.floor(x.time) === Math.floor(time) && x.cable === cur_cable);
+          if (contra) {
+            contra_cable_highlight = cur_cable;
+            // highlightCable(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
+            if (wasButtonPressed("right")) {
+              contra_anim = {
+                contradiction: contra,
+                cur_cable: null,
+                click_t: time + anim_t,
+                click_real_t: last_time,
+                done: false,
+                reverse: true,
+              };
+              time += anim_t;
+              anim_t = 0;
+            }
+          } else {
+            contra_cable_highlight = null;
+          }
+
+          if (FREEHAND_INPUT || EDITOR || cur_cable.swapper) {
+            highlightCable(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
+            if (wasButtonPressed("left") && (FREEHAND_INPUT || cur_cable.swapper)) {
+              cur_cable.cycleInput(Math.floor(time));
+            } else if (wasButtonPressed("right") && EDITOR) {
+              cur_tile.deleteCable(cur_dir);
+            }
           }
         }
       } else {
@@ -182,6 +225,7 @@ function update(curTime: number) {
         anim_t += .99;
       }
     } else {
+      time_dir = Math.sign(anim_t);
       let new_anim_t = moveToZero(anim_t, 0.005 * deltaTime);
       anim_t = new_anim_t;
     }
@@ -210,7 +254,7 @@ function update(curTime: number) {
 
   if (circle_draw) {
     ctx.beginPath();
-    ctx.strokeStyle = "green";
+    ctx.strokeStyle = "#42f575";
     ctx.lineWidth = 5;
     ctx.arc(circle_draw.x, circle_draw.y, layout.size, 0, Math.PI * 2);
     ctx.stroke();
@@ -230,7 +274,8 @@ function update(curTime: number) {
   for (let t=min_t_ui; t<max_t_ui; t++) {
     let x = t * BUTTON_W - ui_t_offset;
     for (let k=0; k<swappers.length; k++) {
-      let y = canvas.height - (k + 2) * BUTTON_H;
+      let y = canvas.height - (k + 1) * BUTTON_H;
+      if (FREEHAND_INPUT) y -= BUTTON_H;
       // fillstyle input etc
       let input_val = swappers[k].inputReqs[t];
       let contradiction = contradictions.some(x => x.time === t && x.cable === swappers[k]);
@@ -255,7 +300,7 @@ function update(curTime: number) {
     }
     let extra_contradiction = contradictions.some(x => x.time === t && swappers.indexOf(x.cable) === -1);
     if (extra_contradiction) {
-      let y = canvas.height - BUTTON_H;
+      let y = canvas.height - (FREEHAND_INPUT ? BUTTON_H : BUTTON_H * (swappers.length + 1));
       ctx.fillText('?', x + BUTTON_W / 2, y + BUTTON_H / 2);
     }
   }
@@ -263,10 +308,10 @@ function update(curTime: number) {
   ctx.beginPath();
   for (let t=min_t_ui; t<=max_t_ui; t++) {
     let x = t * BUTTON_W - ui_t_offset;
-    ctx.moveTo(x, canvas.height - (swappers.length + 1) * BUTTON_H);
+    ctx.moveTo(x, canvas.height - (swappers.length + (FREEHAND_INPUT ? 1 : 0)) * BUTTON_H);
     ctx.lineTo(x, canvas.height);
   }
-  for (let k=0; k<=swappers.length; k++) {
+  for (let k=0; k<swappers.length + (FREEHAND_INPUT ? 1 : 0); k++) {
     let y = canvas.height - (k + 1) * BUTTON_H;
     ctx.moveTo(BUTTON_W, y);
     ctx.lineTo(BUTTON_W * (MAX_T + 1), y);
@@ -280,21 +325,32 @@ function update(curTime: number) {
     new Hex(.25, .25, -.5),
   ]
   for (let k=0; k<swappers.length; k++) {
-    let y = canvas.height - (k + 2) * BUTTON_H;
+    let y = canvas.height - (k + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_H;
     ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
 
     let asdf = layout.hexToPixel(swappers[k].tile.coords.add(offsets[k]));
     ctx.fillText(swapper_names[k], asdf.x, asdf.y);
   }
 
-  ctx.beginPath();
+  /*ctx.beginPath();
   ctx.strokeStyle = "white";
   ctx.lineWidth = 3;
   let ui_cur_t_x = (time + anim_t) * BUTTON_W - ui_t_offset;
-  ctx.moveTo(ui_cur_t_x, canvas.height - swappers.length * BUTTON_W);
+  ctx.moveTo(ui_cur_t_x, canvas.height - swappers.length * BUTTON_H);
   ctx.lineTo(ui_cur_t_x, canvas.height);
   ctx.stroke();
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 1;*/
+
+  ctx.beginPath();
+  ctx.fillStyle = "white";
+  let x = (time + anim_t) * BUTTON_W - ui_t_offset;
+  let y = canvas.height - swappers.length * BUTTON_H;
+  if (FREEHAND_INPUT) y -= BUTTON_H;
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + BUTTON_W / 5, y - BUTTON_W / 3);
+  ctx.lineTo(x - BUTTON_W / 5, y - BUTTON_W / 3);
+  ctx.closePath();
+  ctx.fill();
 
   engine_update();
   window.requestAnimationFrame(update);
@@ -331,4 +387,13 @@ function moveToTarget(value: number, speed: number, target: number) {
 
 function easeInOutCubic(x: number): number {
   return x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+}
+
+function maybeReverseDir(direction: TimeDirection, reverse: boolean): TimeDirection {
+  if (reverse) {
+    if (direction === "backward") return "forward";
+    return "backward";
+  } else {
+    return direction;
+  }
 }
