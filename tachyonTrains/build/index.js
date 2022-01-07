@@ -50,7 +50,7 @@
                 circle_draw = trainCenter;
                 anim_t = moveToZero(anim_t, SPEED * deltaTime);
                 exports.time_dir = Math.sign(anim_t);
-                if ((0, engine_1.wasKeyPressed)('d') || (0, engine_1.wasKeyPressed)('a'))
+                if ((0, engine_1.wasKeyPressed)('d') || (0, engine_1.wasKeyPressed)('a') || (0, engine_1.wasButtonPressed)("left") || (0, engine_1.wasButtonPressed)("right"))
                     contra_anim = null;
             }
             else if (contra_anim.cur_cable) {

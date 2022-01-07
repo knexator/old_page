@@ -56,7 +56,7 @@ function update(curTime: number) {
       anim_t = moveToZero(anim_t, SPEED * deltaTime);
       time_dir = Math.sign(anim_t);
 
-      if (wasKeyPressed('d') || wasKeyPressed('a')) contra_anim = null;
+      if (wasKeyPressed('d') || wasKeyPressed('a') || wasButtonPressed("left") || wasButtonPressed("right")) contra_anim = null;
     } else if (contra_anim.cur_cable) {
       let cur_cable = contra_anim.cur_cable;
 
