@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.cableSample = exports.drawGhostCable = exports.drawGhostHex = exports.drawBoard = exports.beginFrame = exports.ctx = exports.canvas = void 0;
+    exports.cableSample = exports.highlightCable = exports.drawGhostCable = exports.drawGhostHex = exports.drawBoard = exports.beginFrame = exports.ctx = exports.canvas = void 0;
     const hexGame_1 = require("hexGame");
     const hexLib_1 = require("./hexLib");
     const index_1 = require("./index");
@@ -22,7 +22,7 @@
     });
     function beginFrame() {
         // ctx.clearRect(0,0,canvas.width,canvas.height);
-        exports.ctx.fillStyle = "#d9d9d9"; // "#4e4e4e";
+        exports.ctx.fillStyle = "#4e4e4e"; // "#4e4e4e"; d9d9d9
         exports.ctx.fillRect(0, 0, exports.canvas.width, exports.canvas.height);
     }
     exports.beginFrame = beginFrame;
@@ -208,6 +208,23 @@
         ctx.moveTo(startMarker.x, startMarker.y);
         ctx.arc(startMarker.x, startMarker.y, layout.size * 0.1, 0, Math.PI * 2);*/
     }
+    function highlightCable(hex, origin, target) {
+        let start = hexGame_1.layout.hexToPixel(hex.add(hexLib_1.Hex.directions[origin].scale(0.5)));
+        let end = hexGame_1.layout.hexToPixel(hex.add(hexLib_1.Hex.directions[target].scale(0.5)));
+        // let middle = layout.hexToPixel(hex);
+        let middle_start_hex = hex.add(hexLib_1.Hex.directions[origin].scale(0.5 * 0.303525 / 0.866025));
+        let middle_end_hex = hex.add(hexLib_1.Hex.directions[target].scale(0.5 * 0.303525 / 0.866025));
+        let middle_start = hexGame_1.layout.hexToPixel(middle_start_hex);
+        let middle_end = hexGame_1.layout.hexToPixel(middle_end_hex);
+        exports.ctx.lineWidth = hexGame_1.layout.size / 3;
+        exports.ctx.strokeStyle = "white";
+        exports.ctx.beginPath();
+        exports.ctx.moveTo(start.x, start.y);
+        exports.ctx.bezierCurveTo(middle_start.x, middle_start.y, middle_end.x, middle_end.y, end.x, end.y);
+        exports.ctx.stroke();
+        exports.ctx.lineWidth = 1;
+    }
+    exports.highlightCable = highlightCable;
     function drawCable(hex, origin, target, tachyon) {
         if (target === origin)
             throw new Error("can't draw that cable");

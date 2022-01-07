@@ -1,10 +1,11 @@
 import { Hex, FrozenHex, Layout, Point } from 'hexLib';
 import { canvas, ctx } from './graphics';
 import { mod } from './index';
+import { level_simple_raw } from './level_data';
 
 type TimeDirection = "forward" | "backward";
 
-export const MAX_T = 48;
+export const MAX_T = 16;
 
 export class Cable {
   // inputReqs: Map<number, boolean>;
@@ -131,7 +132,8 @@ export class Tile {
 export const layout = new Layout(Layout.flat, 85, new Point(0, 0));
 
 // export const board = new Map<FrozenHex, Tile>();
-export const board = str2board(localStorage.getItem("simple") || "[]");
+// export const board = str2board(localStorage.getItem("simple") || "[]");
+export const board = str2board(level_simple_raw);
 
 export type Contradiction = {time: number, cable: Cable, source_t: number, source_cable: Cable, direction: TimeDirection};
 export let swappers: Cable[] = [];
@@ -304,7 +306,9 @@ function prevCable(cur_cable: Cable, cur_time: number) {
 export function board2str() {
   let tiles: { q: number; r: number; cables: { origin: number; target: number; direction: TimeDirection; swapper: boolean; }[]; }[] = [];
   board.forEach(tile => {
-    tiles.push(tile.toSimpleObject());
+    if (tile.cables.some(x => x)) {
+      tiles.push(tile.toSimpleObject());
+    }
   })
   return JSON.stringify(tiles);
 }

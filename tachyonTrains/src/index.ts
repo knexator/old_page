@@ -1,12 +1,14 @@
 import { engine_update, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
 import { layout, board, Tile, Cable, board2str, MAX_T, swappers, contradictions, Contradiction, magicAdjacentCable } from 'hexGame';
-import { beginFrame, cableSample, canvas, ctx, drawBoard, drawGhostCable, drawGhostHex } from './graphics';
+import { beginFrame, cableSample, canvas, ctx, drawBoard, drawGhostCable, drawGhostHex, highlightCable } from './graphics';
+import { Hex, Point } from './hexLib';
+
+let EDITOR = false;
 
 let last_time = 0;
-
 let wheel_off = 0;
 
-let time = Math.floor(MAX_T / 2) + .5;
+let time = 3.5;
 let anim_t = 0;
 
 let contra_anim: {
@@ -19,7 +21,8 @@ let contra_anim: {
 
 const BUTTON_W = 100;
 const BUTTON_H = 50;
-let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
+let ui_t_offset = -BUTTON_W;
+// let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
 
 function initOnce() {
   window.dispatchEvent(new Event('resize'));
@@ -35,53 +38,43 @@ function update(curTime: number) {
 
   beginFrame();
 
+  let circle_draw: Point | null = null;
   if (contra_anim) {
     const SPEED = 0.003; // 0.005
     if (contra_anim.done) {
       let cur_cable = contra_anim.cur_cable!;
-      ctx.beginPath();
-      ctx.strokeStyle = "green";
-      ctx.lineWidth = 5;
-      let cable_t = 0.5;
-      // if (cur_cable.direction === "forward") cable_t = mod(anim_t + .5, 1);
-      // if (cur_cable.direction === "backward") cable_t = 1 - mod(anim_t + .5, 1);
+      let cable_t = mod(anim_t + .5, 1);
+      if (cur_cable.direction === "backward") cable_t = 1 - cable_t;
       let trainCenter = cableSample(cur_cable, cable_t, time + anim_t);
-      ctx.arc(trainCenter.x, trainCenter.y, layout.size, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.lineWidth = 1;
+      circle_draw = trainCenter;
       anim_t = moveToZero(anim_t, SPEED * deltaTime);
 
       if (wasKeyPressed('d') || wasKeyPressed('a')) contra_anim = null;
     } else if (contra_anim.cur_cable) {
       let cur_cable = contra_anim.cur_cable;
 
-      // TODO: won't work with tachyon swappers
       if (cur_cable === contra_anim.contradiction.cable && time - .5 === contra_anim.contradiction.time) {
         // done!
         contra_anim.done = true;
       } else {
-        ctx.beginPath();
-        ctx.strokeStyle = "green";
-        ctx.lineWidth = 5;
         let cable_t = 0;
         if (cur_cable.direction === "forward") cable_t = mod(anim_t + .5, 1);
         if (cur_cable.direction === "backward") cable_t = 1 - mod(anim_t + .5, 1);
         let trainCenter = cableSample(cur_cable, cable_t, time + anim_t);
-        ctx.arc(trainCenter.x, trainCenter.y, layout.size, 0, Math.PI * 2);
-        ctx.stroke();
-        // drawGhostCable(cur_cable.tile.coords, cur_cable.getOrigin(time), cur_cable.getTarget(time));
-        ctx.lineWidth = 1;
-
-        let target_anim_t = contra_anim.contradiction.direction === "forward" ? 0.5 : -.5;
+        circle_draw = trainCenter;
+        let target_anim_t = contra_anim.contradiction.direction === cur_cable.direction ? 0.5 : -.5;
         anim_t = moveToTarget(anim_t, SPEED * deltaTime, target_anim_t);
         if (anim_t === target_anim_t) {
           let next_cable = magicAdjacentCable(cur_cable, time, contra_anim.contradiction.direction);
+          time += anim_t;
+          anim_t = 0;
+
           if (next_cable!.direction === contra_anim.contradiction.direction) {
-            time += 1;
-            anim_t -= 1;
+            time += .5;
+            anim_t -= .5;
           } else {
-            time -= 1;
-            anim_t += 1;
+            time -= .5;
+            anim_t += .5;
           }
           contra_anim.cur_cable = next_cable;
         }
@@ -110,9 +103,10 @@ function update(curTime: number) {
     let exists = board.has(cur_frozen);
 
     let mi = Math.floor((mouse.x + ui_t_offset) / BUTTON_W);
-    let mj = Math.floor((canvas.height - mouse.y) / BUTTON_H);
+    let mj = Math.floor((canvas.height - mouse.y) / BUTTON_H) - 1;
 
-    if (swappers.length > mj) {
+    if (swappers.length > mj && mj >= 0 && mi > 0 && mi + 1 < MAX_T) {
+      document.body.style.cursor = 'pointer';
       if (wasButtonPressed("left")) {
         swappers[mj].cycleInput(mi);
       }
@@ -131,44 +125,50 @@ function update(curTime: number) {
         }
       }
     } else {
+      document.body.style.cursor = 'default';
       if (exists) {
         let cur_tile = board.get(cur_frozen)!;
         let cur_dir = cur_frac.mainDir();
         let cur_cable = cur_tile.getCable(cur_dir, time);
         if (cur_cable === null) {
-          // no cable
-          let cur_target_dir = mod(cur_dir + mod(wheel_off + 2, 5) + 1, 6);
-          drawGhostCable(cur_hex, cur_dir, cur_target_dir);
-          if (wasKeyPressed('1')) {
-            let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "forward", false);
-            cur_tile.addCable(cur_cable);
-          } else if (wasKeyPressed('2')) {
-            let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "backward", false);
-            cur_tile.addCable(cur_cable);
-          } else if (wasKeyPressed('3')) {
-            let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "forward", true);
-            cur_tile.addCable(cur_cable);
-          } else if (wasKeyPressed('4')) {
-            let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "backward", true);
-            cur_tile.addCable(cur_cable);
+          if (EDITOR) {
+            // no cable
+            let cur_target_dir = mod(cur_dir + mod(wheel_off + 2, 5) + 1, 6);
+            drawGhostCable(cur_hex, cur_dir, cur_target_dir);
+            if (wasKeyPressed('1')) {
+              let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "forward", false);
+              cur_tile.addCable(cur_cable);
+            } else if (wasKeyPressed('2')) {
+              let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "backward", false);
+              cur_tile.addCable(cur_cable);
+            } else if (wasKeyPressed('3')) {
+              let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "forward", true);
+              cur_tile.addCable(cur_cable);
+            } else if (wasKeyPressed('4')) {
+              let cur_cable = new Cable(cur_tile, cur_dir, cur_target_dir, "backward", true);
+              cur_tile.addCable(cur_cable);
+            }
           }
         } else {
           // yes cable
-          ctx.strokeStyle = "white";
+          /*ctx.strokeStyle = "white";
           ctx.lineWidth = 3;
           drawGhostCable(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
           ctx.strokeStyle = "black";
-          ctx.lineWidth = 1;
+          ctx.lineWidth = 1;*/
+          highlightCable(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
           if (wasButtonPressed("left")) {
             cur_cable.cycleInput(Math.floor(time));
-          } else if (wasButtonPressed("right")) {
+          } else if (wasButtonPressed("right") && EDITOR) {
             cur_tile.deleteCable(cur_dir);
           }
         }
       } else {
-        drawGhostHex(cur_hex);
-        if (wasButtonPressed("left")) {
-          board.set(cur_hex.freeze(), new Tile(cur_hex));
+        if (EDITOR) {
+          drawGhostHex(cur_hex);
+          if (wasButtonPressed("left")) {
+            board.set(cur_hex.freeze(), new Tile(cur_hex));
+          }
         }
       }
     }
@@ -208,26 +208,42 @@ function update(curTime: number) {
 
   drawBoard(time + anim_t);
 
+  if (circle_draw) {
+    ctx.beginPath();
+    ctx.strokeStyle = "green";
+    ctx.lineWidth = 5;
+    ctx.arc(circle_draw.x, circle_draw.y, layout.size, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.lineWidth = 1;
+  }
+
   // UI
   const MARGIN = 0.1;
   let min_t_ui = Math.max(0, Math.ceil(ui_t_offset / BUTTON_W));
   let max_t_ui = Math.min(MAX_T, Math.floor((ui_t_offset + canvas.width) / BUTTON_W));
-  ctx.strokeStyle = "black";
-  ctx.fillStyle = "red";
+  // ctx.strokeStyle = "black";
+  // ctx.fillStyle = "red";
+  ctx.fillStyle = "white";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `${BUTTON_H * .7}px Arial`;
   for (let t=min_t_ui; t<max_t_ui; t++) {
     let x = t * BUTTON_W - ui_t_offset;
     for (let k=0; k<swappers.length; k++) {
-      let y = canvas.height - (k + 1) * BUTTON_H;
+      let y = canvas.height - (k + 2) * BUTTON_H;
       // fillstyle input etc
       let input_val = swappers[k].inputReqs[t];
       let contradiction = contradictions.some(x => x.time === t && x.cable === swappers[k]);
 
-      if (input_val || contradiction) {
+      let text = contradiction ? "?" : input_val ? "✓" : "-";
+      ctx.fillText(text, x + BUTTON_W / 2, y + BUTTON_H / 2);
+
+      /*if (input_val || contradiction) {
         ctx.beginPath();
         ctx.arc(x + BUTTON_W / 2, y + BUTTON_H / 2, BUTTON_H / 3, 0, Math.PI * 2);
       }
       if (input_val) ctx.stroke();
-      if (contradiction) ctx.fill();
+      if (contradiction) ctx.fill();*/
 
       /*if (input_val !== null) {
         ctx.fillStyle = input_val ? "white" : "black";
@@ -239,24 +255,37 @@ function update(curTime: number) {
     }
     let extra_contradiction = contradictions.some(x => x.time === t && swappers.indexOf(x.cable) === -1);
     if (extra_contradiction) {
-      ctx.strokeStyle = "red";
-      let y = canvas.height - (swappers.length + 1) * BUTTON_H;
-      ctx.strokeRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1-2*MARGIN), BUTTON_H * (1-2*MARGIN));
+      let y = canvas.height - BUTTON_H;
+      ctx.fillText('?', x + BUTTON_W / 2, y + BUTTON_H / 2);
     }
   }
   ctx.strokeStyle = "black";
   ctx.beginPath();
-  for (let t=min_t_ui; t<max_t_ui; t++) {
+  for (let t=min_t_ui; t<=max_t_ui; t++) {
     let x = t * BUTTON_W - ui_t_offset;
-    ctx.moveTo(x, canvas.height - (swappers.length) * BUTTON_H);
+    ctx.moveTo(x, canvas.height - (swappers.length + 1) * BUTTON_H);
     ctx.lineTo(x, canvas.height);
   }
-  for (let k=0; k<swappers.length; k++) {
+  for (let k=0; k<=swappers.length; k++) {
     let y = canvas.height - (k + 1) * BUTTON_H;
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvas.width, y);
+    ctx.moveTo(BUTTON_W, y);
+    ctx.lineTo(BUTTON_W * (MAX_T + 1), y);
   }
   ctx.stroke();
+
+  const swapper_names = ['A', 'B', 'C'];
+  const offsets = [
+    new Hex(.25, -.5, .25),
+    new Hex(.5, -.25, -.25),
+    new Hex(.25, .25, -.5),
+  ]
+  for (let k=0; k<swappers.length; k++) {
+    let y = canvas.height - (k + 2) * BUTTON_H;
+    ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
+
+    let asdf = layout.hexToPixel(swappers[k].tile.coords.add(offsets[k]));
+    ctx.fillText(swapper_names[k], asdf.x, asdf.y);
+  }
 
   ctx.beginPath();
   ctx.strokeStyle = "white";

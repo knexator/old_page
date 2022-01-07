@@ -15,7 +15,7 @@ window.addEventListener("resize", _e => {
 
 export function beginFrame() {
   // ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = "#d9d9d9"; // "#4e4e4e";
+  ctx.fillStyle = "#4e4e4e"; // "#4e4e4e"; d9d9d9
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 }
 
@@ -210,6 +210,25 @@ function pathCable(hex: Hex, origin: number, target: number) {
   /*let startMarker = bezierSample(0.05, start, middle, middle, end);
   ctx.moveTo(startMarker.x, startMarker.y);
   ctx.arc(startMarker.x, startMarker.y, layout.size * 0.1, 0, Math.PI * 2);*/
+}
+
+export function highlightCable(hex: Hex, origin: number, target: number) {
+  let start = layout.hexToPixel(hex.add(Hex.directions[origin].scale(0.5)));
+  let end = layout.hexToPixel(hex.add(Hex.directions[target].scale(0.5)));
+  // let middle = layout.hexToPixel(hex);
+  let middle_start_hex = hex.add(Hex.directions[origin].scale(0.5 * 0.303525 / 0.866025));
+  let middle_end_hex = hex.add(Hex.directions[target].scale(0.5 * 0.303525 / 0.866025));
+  let middle_start = layout.hexToPixel(middle_start_hex);
+  let middle_end = layout.hexToPixel(middle_end_hex);
+
+
+  ctx.lineWidth = layout.size / 3;
+  ctx.strokeStyle = "white";
+  ctx.beginPath();
+  ctx.moveTo(start.x, start.y);
+  ctx.bezierCurveTo(middle_start.x, middle_start.y, middle_end.x, middle_end.y, end.x, end.y);
+  ctx.stroke();
+  ctx.lineWidth = 1;
 }
 
 function drawCable(hex: Hex, origin: number, target: number, tachyon: boolean) {
