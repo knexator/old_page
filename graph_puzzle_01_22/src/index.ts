@@ -63,6 +63,22 @@ function writeContradictions() {
     for (let j=0; j<3; j++) {
       for (let t=1; t+1<MAX_T; t++) {
         let source_val = data[i][j][t];
+        if (source_val) {
+          let [prev_mod, prev_part] = reverseConnections[i][j];
+          let prev_t = t - delays[prev_mod][prev_part];
+          if (prev_t > 0 && prev_t + 1 < MAX_T) {
+            if (prev_part !== 2 && data[prev_mod][2][prev_t]) {
+              prev_part = 1 - prev_part;
+            }
+            let prev_val = data[prev_mod][prev_part][prev_t];
+            if (!prev_val) {
+              data[prev_mod][prev_part][prev_t] = null;
+            }
+          } else {
+            data[prev_mod][prev_part][prev_t === 0 ? 0 : MAX_T - 1] = null;
+          }
+        }
+
         if (j !== 2 && data[i][2][t]) {
           source_val = data[i][1-j][t];
         }
@@ -76,17 +92,6 @@ function writeContradictions() {
             }
           } else {
             data[target_mod][target_part][target_t === 0 ? 0 : MAX_T - 1] = null;
-          }
-
-          let [prev_mod, prev_part] = reverseConnections[i][j];
-          let prev_t = t - delays[prev_mod][prev_part];
-          if (prev_t > 0 && prev_t + 1 < MAX_T) {
-            let prev_val = data[target_mod][prev_part][prev_t];
-            if (!prev_val) {
-              data[prev_mod][prev_part][prev_t] = null;
-            }
-          } else {
-            data[prev_mod][prev_part][prev_t === 0 ? 0 : MAX_T - 1] = null;
           }
         }
       }
@@ -281,12 +286,26 @@ function update(curTime: number) {
         data[m_mod][m_part][mi] = !data[m_mod][m_part][mi];
         writeContradictions();
       }
+      let x = mi * BUTTON_W - table_off_x + BUTTON_W / 2;
+      let y = mj * BUTTON_H - table_off_y + BUTTON_H / 2;
+
+      let [prev_mod, prev_part] = reverseConnections[m_mod][m_part];
+      let prev_t = mi - delays[prev_mod][prev_part];
+      prev_t = Math.max(0, Math.min(MAX_T - 1, prev_t));
+      if (prev_part !== 2 && data[prev_mod][2][prev_t]) {
+        prev_part = 1 - prev_part;
+      }
+      ctx.beginPath();
+      ctx.strokeStyle = "blue";
+      let prev_x = prev_t * BUTTON_W - table_off_x + BUTTON_W / 2;
+      let prev_y = (prev_mod * 3 + prev_part) * BUTTON_H - table_off_y + BUTTON_H / 2;
+      ctx.arc(prev_x, prev_y, BUTTON_H / 3, 0, Math.PI * 2);
+      draw_arrow(prev_x, prev_y, x, y)
+      ctx.stroke();
+
       if (m_part !== 2 && data[m_mod][2][mi]) {
         m_part = 1 - m_part;
       }
-
-      let x = mi * BUTTON_W - table_off_x + BUTTON_W / 2;
-      let y = mj * BUTTON_H - table_off_y + BUTTON_H / 2;
 
       let [target_mod, target_part] = connections[m_mod][m_part];
       let target_t = mi + delays[m_mod][m_part];
@@ -298,18 +317,6 @@ function update(curTime: number) {
       ctx.arc(target_x, target_y, BUTTON_H / 3, 0, Math.PI * 2);
       draw_arrow(x, y, target_x, target_y)
       ctx.stroke();
-
-      let [prev_mod, prev_part] = reverseConnections[m_mod][m_part];
-      let prev_t = mi - delays[prev_mod][prev_part];
-      prev_t = Math.max(0, Math.min(MAX_T - 1, prev_t));
-      ctx.beginPath();
-      ctx.strokeStyle = "blue";
-      let prev_x = prev_t * BUTTON_W - table_off_x + BUTTON_W / 2;
-      let prev_y = (prev_mod * 3 + prev_part) * BUTTON_H - table_off_y + BUTTON_H / 2;
-      ctx.arc(prev_x, prev_y, BUTTON_H / 3, 0, Math.PI * 2);
-      draw_arrow(prev_x, prev_y, x, y)
-      ctx.stroke();
-
     } else {
       document.body.style.cursor = 'default';
     }
