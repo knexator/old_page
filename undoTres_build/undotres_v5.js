@@ -285,7 +285,8 @@ PropertyHistory.prototype.add = function (value = undefined) {
 }
 
 let wallSound = new Howl({
-  src: ['sounds/wall.wav']
+  src: ['sounds/wall.wav'],
+	volume: 2
 })
 let stepSound = new Howl({
   src: ['sounds/step.wav']
@@ -2488,7 +2489,7 @@ function playTurnSounds (level) {
 	})
 	let player_fell = (level.player.inHole.value.at(-1) < 0) && (level.player.inHole.value.at(-2) >= 0);
 	if (any_crate_fell || player_fell) {
-		holeSound.play()
+		setTimeout(() => holeSound.play(), 150);
 	}
 
 	let any_crate_moved = level.crates.some(crate => {
@@ -2630,8 +2631,9 @@ function draw (timestamp) {
     // if (cur_undo == 0 && cur_di == 0 && cur_dj == 0 && !magic_stuff_input && !machine_input) {
       // nothing happened
     } else {
-			doMainTurnLogic(cur_level)
-			playTurnSounds(cur_level);
+			if (doMainTurnLogic(cur_level)) {
+				playTurnSounds(cur_level);
+			}
 		}
   }
 
@@ -3247,6 +3249,8 @@ function doMainTurnLogic (cur_level) {
 		})
 		if (flying_crates.length > 0) holeSound.play()
 	} */
+
+	return !SKIPPED_TURN;
 }
 
 canvas.addEventListener('mousemove', e => _mouseEvent(e))
