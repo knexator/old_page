@@ -318,6 +318,14 @@ let restartSound = new Howl({
 let transitionSound = new Howl({
   src: ['sounds/transition.wav']
 })
+let holeCoverTensionSound = new Howl({
+  src: ['sounds/tension.wav'],
+	volume: 0.4
+})
+let holeCoverReleaseSound = new Howl({
+  src: ['sounds/release.wav'],
+	volume: 0.4
+})
 
 // let using_machine_n_turns = 0;
 let using_machine_type = null
@@ -2290,9 +2298,13 @@ function maybeBreakHoleCovers (level, real_tick) {
 				// hole broke!
 				//console.log("broke!")
 				holeCover.value[real_tick] = false
+				holeCoverReleaseSound.play();
 			} else {
 				//console.log("didn't break!")
 				holeCover.value[real_tick] = true
+				if (!weightOnTile(level, real_tick-1, hi, hj) && weightOnTile(level, real_tick, hi, hj)) {
+					holeCoverTensionSound.play();
+				}
 			}
 		} else { // hole is already broken
 			holeCover.value[real_tick] = false
@@ -2896,8 +2908,13 @@ function doMainTurnLogic (cur_level) {
 							if (weightOnTile(cur_level, real_tick-1, hi, hj) && !weightOnTile(cur_level, real_tick, hi, hj)) {
 								// hole broke!
 								holeCover.value[real_tick] = false
+								holeCoverReleaseSound.play();
 							} else {
+								//console.log("didn't break!")
 								holeCover.value[real_tick] = true
+								if (!weightOnTile(cur_level, real_tick-1, hi, hj) && weightOnTile(cur_level, real_tick, hi, hj)) {
+									holeCoverTensionSound.play();
+								}
 							}
 						} else { // hole is already broken
 							holeCover.value[real_tick] = false
