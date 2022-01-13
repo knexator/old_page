@@ -2308,12 +2308,12 @@ function maybeBreakHoleCovers (level, real_tick) {
 				// hole broke!
 				//console.log("broke!")
 				holeCover.value[real_tick] = false
-				holeCoverReleaseSound.play();
+				//holeCoverReleaseSound.play();
 			} else {
 				//console.log("didn't break!")
 				holeCover.value[real_tick] = true
 				if (!weightOnTile(level, real_tick-1, hi, hj) && weightOnTile(level, real_tick, hi, hj)) {
-					holeCoverTensionSound.play();
+					//holeCoverTensionSound.play();
 				}
 			}
 		} else { // hole is already broken
@@ -2490,6 +2490,7 @@ function fallFlying (level, undo_level, soundless=false) {
 
 function playTurnSounds (level) {
 	let last_undo = true_timeline_undos.at(-1)
+	let real_tick = true_timeline_undos.length;
 
 	let player_moved = (last_undo <= level.player.inmune_history.at(-1)) && !eqPos(level.player.history.at(-1), level.player.history.at(-2));
 	if (player_moved) {
@@ -2509,6 +2510,21 @@ function playTurnSounds (level) {
 	});
 	if (any_crate_moved) {
 		pushSound.play();
+	}
+
+	let any_holecover_tensioned = level.holeCovers.some(holeCover => {
+		let [hi, hj] = holeCover.position
+		return holeCover.value.at(-1) && holeCover.value.at(-2) && !weightOnTile(level, real_tick-1, hi, hj) && weightOnTile(level, real_tick, hi, hj)
+	})
+	if (any_holecover_tensioned) {
+		holeCoverTensionSound.play()
+	}
+
+	let any_holecover_released = level.holeCovers.some(holeCover => {
+		return holeCover.value.at(-2) && !holeCover.value.at(-1)
+	})
+	if (any_holecover_released) {
+		holeCoverReleaseSound.play()
 	}
 
 	// let player_unmoved = (true_timeline_undos.at(-1) > 0) && !eqPos(level.player.history.at(-1), level.player.history.at(-2));
@@ -2531,6 +2547,22 @@ function playTurnSounds (level) {
 	// 	pushSound_reversed.play();
 	// }
 
+	let any_holecover_untensioned = level.holeCovers.some(holeCover => {
+		let [hi, hj] = holeCover.position
+		return holeCover.value.at(-1) && holeCover.value.at(-2) && weightOnTile(level, real_tick-1, hi, hj) && !weightOnTile(level, real_tick, hi, hj)
+	})
+	if (any_holecover_untensioned) {
+		holeCoverTensionSound.play()
+		console.log("reverse Tension sound")
+	}
+
+	let any_holecover_unreleased = level.holeCovers.some(holeCover => {
+		return holeCover.value.at(-1) && !holeCover.value.at(-2)
+	})
+	if (any_holecover_unreleased) {
+		holeCoverReleaseSound.play()
+		console.log("reverse Release sound")
+	}
 }
 
 function eqPos([i1, j1], [i2, j2]) {
@@ -2969,12 +3001,12 @@ function doMainTurnLogic (cur_level) {
 							if (weightOnTile(cur_level, real_tick-1, hi, hj) && !weightOnTile(cur_level, real_tick, hi, hj)) {
 								// hole broke!
 								holeCover.value[real_tick] = false
-								holeCoverReleaseSound.play();
+								//holeCoverReleaseSound.play();
 							} else {
 								//console.log("didn't break!")
 								holeCover.value[real_tick] = true
 								if (!weightOnTile(cur_level, real_tick-1, hi, hj) && weightOnTile(cur_level, real_tick, hi, hj)) {
-									holeCoverTensionSound.play();
+									//holeCoverTensionSound.play();
 								}
 							}
 						} else { // hole is already broken
