@@ -285,16 +285,26 @@ PropertyHistory.prototype.add = function (value = undefined) {
 }
 
 let wallSound = new Howl({
-  src: ['sounds/wall.wav']
+  src: ['sounds/wall.wav'],
+	volume: 2
 })
 let stepSound = new Howl({
   src: ['sounds/step.wav']
 })
+let stepSound_reversed = new Howl({
+  src: ['sounds/step_reversed.wav']
+})
 let pushSound = new Howl({
   src: ['sounds/push.wav']
 })
+let pushSound_reversed = new Howl({
+  src: ['sounds/push_reversed.wav']
+})
 let holeSound = new Howl({
   src: ['sounds/hole.wav']
+})
+let holeSound_reversed = new Howl({
+  src: ['sounds/hole_reversed.wav']
 })
 let undoSounds = [
   new Howl({
@@ -1669,7 +1679,7 @@ function str2level (str, enter, exit, name, author) {
   won_cur_level = false
   // true_timeline_undos = []
   input_queue = []
-	fallFlying (level, 0, true)
+	fallFlying(level, 0, true)
   return level
 }
 
@@ -2341,7 +2351,7 @@ function fixPlayerOutsideBounds (level) {
 	level.geo[pj][pi] = '.'
 }
 
-function playUndoSound(cur_undo) {
+function playUndoSound (cur_undo) {
 	if (!last_t_undo_sound || last_t - last_t_undo_sound > 220) {
 		// console.log(last_t - last_t_undo_sound)
 		if (undoSounds[cur_undo - 1]) undoSounds[cur_undo - 1].play()
@@ -2475,7 +2485,56 @@ function fallFlying (level, undo_level, soundless=false) {
 			level.player.inHole.value[level.player.inHole.value.length - 1] -= 16;
 		}
 	}
-  if ((flying_crates.length || flying_player) > 0 && !soundless) holeSound.play()
+  // if ((flying_crates.length || flying_player) > 0 && !soundless) holeSound.play()
+}
+
+function playTurnSounds (level) {
+	let last_undo = true_timeline_undos.at(-1)
+
+	let player_moved = (last_undo <= level.player.inmune_history.at(-1)) && !eqPos(level.player.history.at(-1), level.player.history.at(-2));
+	if (player_moved) {
+		stepSound.play()
+	}
+
+	let any_crate_fell = level.crates.some(crate => {
+		return crate.inHole.value.at(-1) && !crate.inHole.value.at(-2)
+	})
+	let player_fell = (level.player.inHole.value.at(-1) < 0) && (level.player.inHole.value.at(-2) >= 0);
+	if (any_crate_fell || player_fell) {
+		setTimeout(() => holeSound.play(), 150);
+	}
+
+	let any_crate_moved = level.crates.some(crate => {
+		return (last_undo <= crate.inmune_history.at(-1)) && !eqPos(crate.history.at(-1), crate.history.at(-2))
+	});
+	if (any_crate_moved) {
+		pushSound.play();
+	}
+
+	// let player_unmoved = (true_timeline_undos.at(-1) > 0) && !eqPos(level.player.history.at(-1), level.player.history.at(-2));
+	// if (player_unmoved) {
+	// 	stepSound_reversed.play()
+	// }
+
+	let any_crate_unfell = level.crates.some(crate => {
+		return !crate.inHole.value.at(-1) && crate.inHole.value.at(-2)
+	})
+	let player_unfell = (level.player.inHole.value.at(-1) >= 0) && (level.player.inHole.value.at(-2) < 0);
+	if (any_crate_unfell || player_unfell) {
+		holeSound_reversed.play()
+	}
+
+	// let any_crate_unmoved = level.crates.some(crate => {
+	// 	return (last_undo > crate.inmune_history.at(-1)) && !eqPos(crate.history.at(-1), crate.history.at(-2))
+	// });
+	// if (any_crate_unmoved) {
+	// 	pushSound_reversed.play();
+	// }
+
+}
+
+function eqPos([i1, j1], [i2, j2]) {
+	return i1 === i2 && j1 === j2;
 }
 
 function movesBackToEntrance (level, pi, pj, cur_di, cur_dj) {
@@ -2584,7 +2643,9 @@ function draw (timestamp) {
     // if (cur_undo == 0 && cur_di == 0 && cur_dj == 0 && !magic_stuff_input && !machine_input) {
       // nothing happened
     } else {
-			doMainTurnLogic(cur_level)
+			if (doMainTurnLogic(cur_level)) {
+				playTurnSounds(cur_level);
+			}
 		}
   }
 
@@ -3036,7 +3097,7 @@ function doMainTurnLogic (cur_level) {
 							let occupied_by_hole = openHoleAt(cur_level, next_space_i, next_space_j)
 
 							if (occupied_by_hole) {
-								holeSound.play()
+								// holeSound.play()
 								neutralTurn(cur_level)
 								cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
 								// let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
@@ -3086,7 +3147,7 @@ function doMainTurnLogic (cur_level) {
 										SKIPPED_TURN = true
 									}
 								} else {
-									pushSound.play()
+									// pushSound.play()
 									neutralTurn(cur_level)
 									cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
 									// let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
@@ -3125,7 +3186,7 @@ function doMainTurnLogic (cur_level) {
 							}
 						}
 					} else {
-						stepSound.play()
+						// stepSound.play()
 						neutralTurn(cur_level)
 						cur_level.player.history[real_tick] = [pi + cur_di, pj + cur_dj]
 						// let parity = 1 - cur_level.player.inHole.value[real_tick-1] % 2
@@ -3205,6 +3266,8 @@ function doMainTurnLogic (cur_level) {
 		})
 		if (flying_crates.length > 0) holeSound.play()
 	} */
+
+	return !SKIPPED_TURN;
 }
 
 canvas.addEventListener('mousemove', e => _mouseEvent(e))
