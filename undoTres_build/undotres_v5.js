@@ -332,8 +332,16 @@ let holeCoverTensionSound = new Howl({
   src: ['sounds/tension.wav'],
 	volume: 0.4
 })
+let holeCoverTensionSound_reversed = new Howl({
+  src: ['sounds/tension_reversed.wav'],
+	volume: 0.4
+})
 let holeCoverReleaseSound = new Howl({
   src: ['sounds/release.wav'],
+	volume: 0.4
+})
+let holeCoverReleaseSound_reversed = new Howl({
+  src: ['sounds/release_reversed.wav'],
 	volume: 0.4
 })
 
@@ -2552,16 +2560,14 @@ function playTurnSounds (level) {
 		return holeCover.value.at(-1) && holeCover.value.at(-2) && weightOnTile(level, real_tick-1, hi, hj) && !weightOnTile(level, real_tick, hi, hj)
 	})
 	if (any_holecover_untensioned) {
-		holeCoverTensionSound.play()
-		console.log("reverse Tension sound")
+		holeCoverTensionSound_reversed.play()
 	}
 
 	let any_holecover_unreleased = level.holeCovers.some(holeCover => {
 		return holeCover.value.at(-1) && !holeCover.value.at(-2)
 	})
 	if (any_holecover_unreleased) {
-		holeCoverReleaseSound.play()
-		console.log("reverse Release sound")
+		holeCoverReleaseSound_reversed.play()
 	}
 }
 
