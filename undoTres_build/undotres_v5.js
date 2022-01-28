@@ -81,6 +81,7 @@ function openMainPack() {
 let globalT = 0.0
 let last_t = null
 let last_t_undo_sound = null
+let last_level_loaded_at = 0.0
 
 let true_timeline_undos = []
 
@@ -509,6 +510,9 @@ let modular_texture = new PintarJS.Texture('imgs/wall_modular_margin.png', () =>
   geoModularSprite = new PintarJS.Sprite(modular_texture)
 })
 
+let title_texture = new PintarJS.Texture('imgs/title.png', () => {
+  titleSprite = new PintarJS.Sprite(title_texture);
+})
 
 // let zPicker = document.getElementById('zPicker')
 // let xPicker = document.getElementById('xPicker')
@@ -1238,6 +1242,9 @@ function drawIntroText () {
   // texto_1_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
   // texto_1_sprite.position = new PintarJS.Point(OFFX, OFFY)
   // pintar.drawSprite(texto_1_sprite)
+	let alpha = Math.max(0.0, Math.min(1.0, (globalT - last_level_loaded_at - 100) / 2000))
+	titleSprite.color = new PintarJS.Color(1, 1, 1, alpha);
+	pintar.drawSprite(titleSprite);
 }
 
 function drawSecondText () {
@@ -2261,6 +2268,7 @@ function loadLevel (n) {
   cur_level_n = n
   true_timeline_undos = []
   input_queue = []
+	last_level_loaded_at = globalT
   let cur_level = levels[cur_level_n]
   cur_level.crates.forEach(crate => {
     crate.history.splice(1)
@@ -2437,6 +2445,8 @@ function recalcTileSize (level) {
 		crate_hole_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
 		raw_player_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
 		raw_hat_sprites.forEach(spr => spr.scale = new PintarJS.Point(TILE / 16, TILE / 16))
+		titleSprite.scale = new PintarJS.Point((106 / 16) * TILE / 64, (77 / 16) * TILE / 64)
+		titleSprite.position = new PintarJS.Point(OFFX + .5 * TILE, OFFY + TILE)
   }
 }
 
