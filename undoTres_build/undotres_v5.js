@@ -1222,7 +1222,7 @@ function setExtraDisplay (n) {
   text_6.hidden = ultraHide || n !== 6
   text_7.hidden = ultraHide || n !== 7
   text_end.forEach(item => {
-    item.hidden = ultraHide || (n !== 18 && n !== 33)
+    item.hidden = ultraHide || (n !== 18 && n !== 34)
   });
 	let level = levels[n];
 	if (level && level.author !== "knexator") {
@@ -2257,7 +2257,7 @@ function loadLevel (n) {
 	let from_editor = ALLOW_EDITOR //cur_level_n === "editor"
   real_times = [0,0,0]
   won_cur_level = false
-  in_last_level = n == 18 || n == 33
+  in_last_level = n == 18 || n == 34
   cur_level_n = n
   true_timeline_undos = []
   input_queue = []
@@ -2625,7 +2625,7 @@ function draw (timestamp) {
 
   // console.log(first_undo_press)
 
-  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || (cur_level_n !== 18 && cur_level_n !== 33))) {
+  if (wasKeyPressed("editor") && (cur_level_n === 'editor' || (cur_level_n !== 18 && cur_level_n !== 34))) {
     toggleEditor()
   }
 
