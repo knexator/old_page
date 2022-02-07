@@ -235,17 +235,17 @@ levels_named = [
 #........c###
 #.#.##.##.###
 .O._.._..__*.
-#############`, [1, 0], [-1, 0], "Hatman John", `<a href="https://twitter.com/fastramdesign" target="_blank">Dom Camus</a> & <a href="https://notaninart.itch.io/" target="_blank">Notan</a>`],
+#############`, [1, 0], [1, 0], "Hatman John", `<a href="https://twitter.com/fastramdesign" target="_blank">Dom Camus</a> & <a href="https://notaninart.itch.io/" target="_blank">Notan</a>`],
 [`\
-###########
-####.###.##
-.O.2c...b.#
-####.###.##
-####.###_*.
-####.###_##
-###.a..1_##
-####.######
-###########`, [1, 0], [1, 0], "Hat Trick", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
+#############
+####.###.####
+.O2.c._.._.*.
+####.###.####
+####.###.2.##
+####.###.#b##
+###.a_1._..##
+####.###.####
+#############`, [1, 0], [1, 0], "Hat Trick", `<a href="https://menderbug.itch.io/" target="_blank">Menderbug</a>`],
 [`\
 ##.########
 ##*########

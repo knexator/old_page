@@ -1242,9 +1242,11 @@ function drawIntroText () {
   // texto_1_sprite.scale = new PintarJS.Point(TILE / 64, TILE / 64)
   // texto_1_sprite.position = new PintarJS.Point(OFFX, OFFY)
   // pintar.drawSprite(texto_1_sprite)
-	let alpha = Math.max(0.0, Math.min(1.0, (globalT - last_level_loaded_at - 100) / 2000))
-	titleSprite.color = new PintarJS.Color(1, 1, 1, alpha);
-	pintar.drawSprite(titleSprite);
+  if (cur_level_n !== 'editor') {
+    let alpha = Math.max(0.0, Math.min(1.0, (globalT - last_level_loaded_at - 100) / 2000))
+    titleSprite.color = new PintarJS.Color(1, 1, 1, alpha);
+    pintar.drawSprite(titleSprite);
+  }
 }
 
 function drawSecondText () {
