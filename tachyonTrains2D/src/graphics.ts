@@ -273,9 +273,12 @@ function drawCable(hex: Hex, origin: number, target: number, tachyon: boolean) {
 
 // from https://stackoverflow.com/questions/3793397/html5-canvas-drawimage-with-at-an-angle
 function rotateAndPaintImage (image: CanvasImageSource, angleInRad: number , positionX: number, positionY: number, axisX: number, axisY: number, sizeX: number, sizeY: number ) {
+  let scale = layout.size / 85;
   ctx.translate( positionX, positionY );
   ctx.rotate( angleInRad );
+  ctx.scale( scale, scale );
   ctx.drawImage( image, -axisX, -axisY, sizeX, sizeY );
+  ctx.scale( 1 / scale, 1 / scale );
   ctx.rotate( -angleInRad );
   ctx.translate( -positionX, -positionY );
 }

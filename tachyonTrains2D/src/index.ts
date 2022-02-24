@@ -30,6 +30,12 @@ const BUTTON_H = 50;
 let ui_t_offset = -BUTTON_H;
 // let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
 
+window.addEventListener("resize", e => {
+  canvas.width = innerWidth;
+  canvas.height = innerHeight;
+  layout.size = 85 * canvas.width / 1920;
+});
+
 function initOnce() {
   window.dispatchEvent(new Event('resize'));
   window.requestAnimationFrame(update);
@@ -138,7 +144,7 @@ function update(curTime: number) {
       }
       /*time += 1;
       anim_t -= .99;*/
-    } else if (control_tracks.length > mj && mj >= 0 && mi > 0 && mi + 1 < MAX_T) {
+    } else if (control_tracks.length > mj && mj >= 0 && mi >= 0 && mi + 1 <= MAX_T) {
       document.body.style.cursor = 'pointer';
       if (wasButtonPressed("left")) {
         control_tracks[mj].cycleInput(mi);
@@ -388,6 +394,11 @@ function update(curTime: number) {
   ctx.lineTo(ui_cur_t_x, canvas.height);
   ctx.stroke();
   ctx.lineWidth = 1;*/
+
+  ctx.fillStyle = "#AAAAAA";
+  let x_bar = canvas.width - control_tracks.length * BUTTON_W - BUTTON_W / 5;
+  let w_bar = BUTTON_W / 8;
+  ctx.fillRect(x_bar - w_bar / 2, 0, w_bar, canvas.height);
 
   ctx.beginPath();
   ctx.fillStyle = "white";

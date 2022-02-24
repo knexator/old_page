@@ -23,12 +23,12 @@ export class Cable {
     this.globalState = Array(MAX_T).fill(false);
     this.otherCable = null;
     this.masterSwapper = null;
-    this.inputReqs[0] = false;
-    this.inputReqs[MAX_T - 1] = false;
+    // this.inputReqs[0] = false;
+    // this.inputReqs[MAX_T - 1] = false;
   }
 
   cycleInput(time: number) {
-    if (time <= 0 || time + 1 >= MAX_T) return;
+    // if (time <= 0 || time + 1 >= MAX_T) return;
     if (this.inputReqs[time] === null) {
       this.inputReqs[time] = true;
     } else {

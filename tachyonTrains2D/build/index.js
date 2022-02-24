@@ -28,6 +28,11 @@
     const BUTTON_H = 50;
     let ui_t_offset = -BUTTON_H;
     // let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
+    window.addEventListener("resize", e => {
+        graphics_1.canvas.width = innerWidth;
+        graphics_1.canvas.height = innerHeight;
+        hexGame_1.layout.size = 85 * graphics_1.canvas.width / 1920;
+    });
     function initOnce() {
         window.dispatchEvent(new Event('resize'));
         window.requestAnimationFrame(update);
@@ -138,7 +143,7 @@
                 /*time += 1;
                 anim_t -= .99;*/
             }
-            else if (hexGame_1.control_tracks.length > mj && mj >= 0 && mi > 0 && mi + 1 < hexGame_1.MAX_T) {
+            else if (hexGame_1.control_tracks.length > mj && mj >= 0 && mi >= 0 && mi + 1 <= hexGame_1.MAX_T) {
                 document.body.style.cursor = 'pointer';
                 if ((0, engine_1.wasButtonPressed)("left")) {
                     hexGame_1.control_tracks[mj].cycleInput(mi);
@@ -384,6 +389,10 @@
         ctx.lineTo(ui_cur_t_x, canvas.height);
         ctx.stroke();
         ctx.lineWidth = 1;*/
+        graphics_1.ctx.fillStyle = "#AAAAAA";
+        let x_bar = graphics_1.canvas.width - hexGame_1.control_tracks.length * BUTTON_W - BUTTON_W / 5;
+        let w_bar = BUTTON_W / 8;
+        graphics_1.ctx.fillRect(x_bar - w_bar / 2, 0, w_bar, graphics_1.canvas.height);
         graphics_1.ctx.beginPath();
         graphics_1.ctx.fillStyle = "white";
         let y = (time + anim_t) * BUTTON_H - ui_t_offset;

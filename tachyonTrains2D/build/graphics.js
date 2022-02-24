@@ -258,9 +258,12 @@
     }
     // from https://stackoverflow.com/questions/3793397/html5-canvas-drawimage-with-at-an-angle
     function rotateAndPaintImage(image, angleInRad, positionX, positionY, axisX, axisY, sizeX, sizeY) {
+        let scale = hexGame_1.layout.size / 85;
         exports.ctx.translate(positionX, positionY);
         exports.ctx.rotate(angleInRad);
+        exports.ctx.scale(scale, scale);
         exports.ctx.drawImage(image, -axisX, -axisY, sizeX, sizeY);
+        exports.ctx.scale(1 / scale, 1 / scale);
         exports.ctx.rotate(-angleInRad);
         exports.ctx.translate(-positionX, -positionY);
     }
