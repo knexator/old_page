@@ -9,23 +9,24 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.mod = exports.contra_cable_highlight = exports.time_dir = void 0;
+    exports.contains = exports.mod = exports.contra_cable_highlight = exports.time_dir = void 0;
     const engine_1 = require("engine");
     const hexGame_1 = require("hexGame");
     const graphics_1 = require("./graphics");
     const hexLib_1 = require("./hexLib");
     let EDITOR = false;
-    let FREEHAND_INPUT = true;
+    let FREEHAND_INPUT = false;
     let last_time = 0;
     let wheel_off = 0;
-    let time = 3.5;
+    let grabbing_time_slider = false;
+    let time = 5.5;
     let anim_t = 0;
     exports.time_dir = 0;
     let contra_anim = null;
     exports.contra_cable_highlight = null;
-    const BUTTON_W = 50;
+    const BUTTON_W = 100;
     const BUTTON_H = 50;
-    let ui_t_offset = -BUTTON_W;
+    let ui_t_offset = -BUTTON_H;
     // let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
     function initOnce() {
         window.dispatchEvent(new Event('resize'));
@@ -38,6 +39,9 @@
         wheel_off += engine_1.mouse.wheel;
         exports.time_dir = 0;
         (0, graphics_1.beginFrame)();
+        if ((0, engine_1.wasButtonReleased)("left")) {
+            grabbing_time_slider = false;
+        }
         let circle_draw = null;
         if (contra_anim) {
             const SPEED = 0.003; // 0.005
@@ -121,17 +125,26 @@
             let cur_frac = cur_raw.subtract(cur_hex);
             let cur_frozen = cur_hex.freeze();
             let exists = hexGame_1.board.has(cur_frozen);
-            let mi = Math.floor((engine_1.mouse.x + ui_t_offset) / BUTTON_W);
-            let mj = Math.floor((graphics_1.canvas.height - engine_1.mouse.y) / BUTTON_H);
+            let mi = Math.floor((engine_1.mouse.y + ui_t_offset) / BUTTON_H);
+            let mj = Math.floor((graphics_1.canvas.width - engine_1.mouse.x) / BUTTON_W);
             if (FREEHAND_INPUT)
                 mj -= 1;
-            if (hexGame_1.swappers.length > mj && mj >= 0 && mi > 0 && mi + 1 < hexGame_1.MAX_T) {
+            if (mj === hexGame_1.control_tracks.length || grabbing_time_slider) {
+                document.body.style.cursor = 'pointer';
+                if ((0, engine_1.isButtonDown)("left")) {
+                    grabbing_time_slider = true;
+                    time = (engine_1.mouse.y + ui_t_offset) / BUTTON_H;
+                }
+                /*time += 1;
+                anim_t -= .99;*/
+            }
+            else if (hexGame_1.control_tracks.length > mj && mj >= 0 && mi > 0 && mi + 1 < hexGame_1.MAX_T) {
                 document.body.style.cursor = 'pointer';
                 if ((0, engine_1.wasButtonPressed)("left")) {
-                    hexGame_1.swappers[mj].cycleInput(mi);
+                    hexGame_1.control_tracks[mj].cycleInput(mi);
                 }
                 if ((0, engine_1.wasButtonPressed)("right")) {
-                    let contra = hexGame_1.contradictions.find(x => x.time === mi && x.cable === hexGame_1.swappers[mj]);
+                    let contra = hexGame_1.contradictions.find(x => x.time === mi && x.cable === hexGame_1.control_tracks[mj]);
                     if (contra) {
                         contra_anim = {
                             contradiction: contra,
@@ -202,7 +215,10 @@
                         else {
                             exports.contra_cable_highlight = null;
                         }
-                        if (FREEHAND_INPUT || EDITOR || cur_cable.swapper) {
+                        if ((0, engine_1.wasKeyPressed)('y')) {
+                            console.log(cur_hex, cur_cable.getOrigin(time));
+                        }
+                        if (FREEHAND_INPUT || EDITOR || contains(hexGame_1.control_tracks, cur_cable)) {
                             (0, graphics_1.highlightCable)(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
                             if ((0, engine_1.wasButtonPressed)("left") && (FREEHAND_INPUT || cur_cable.swapper)) {
                                 cur_cable.cycleInput(Math.floor(time));
@@ -238,12 +254,12 @@
                 anim_t = new_anim_t;
             }
         }
-        if ((0, engine_1.wasKeyPressed)('s')) {
-            localStorage.setItem("cool", (0, hexGame_1.board2str)());
+        /*if (wasKeyPressed('s')) {
+          localStorage.setItem("cool", board2str());
         }
-        if ((0, engine_1.wasKeyPressed)('m')) {
-            hexGame_1.board.clear();
-        }
+        if (wasKeyPressed('m')) {
+          board.clear();
+        }*/
         /*if (wasKeyPressed('w')) {
           localStorage.setItem("sentient", board2str_onlyVisible());
           // localStorage.setItem("yay", board2str_onlyVisible());
@@ -260,6 +276,7 @@
             ui_t_offset -= deltaTime * 1.0;
         if ((0, engine_1.isKeyDown)('p'))
             ui_t_offset += deltaTime * 1.0;
+        ui_t_offset += deltaTime * engine_1.mouse.wheel * 2.0;
         (0, graphics_1.drawBoard)(time + anim_t);
         if (circle_draw) {
             graphics_1.ctx.beginPath();
@@ -270,9 +287,8 @@
             graphics_1.ctx.lineWidth = 1;
         }
         // UI
-        const MARGIN = 0.1;
-        let min_t_ui = Math.max(0, Math.ceil(ui_t_offset / BUTTON_W));
-        let max_t_ui = Math.min(hexGame_1.MAX_T, Math.floor((ui_t_offset + graphics_1.canvas.width) / BUTTON_W));
+        let min_t_ui = Math.max(0, Math.ceil(ui_t_offset / BUTTON_H));
+        let max_t_ui = Math.min(hexGame_1.MAX_T, Math.floor((ui_t_offset + graphics_1.canvas.height) / BUTTON_H));
         // ctx.strokeStyle = "black";
         // ctx.fillStyle = "red";
         graphics_1.ctx.fillStyle = "white";
@@ -280,16 +296,29 @@
         graphics_1.ctx.textBaseline = "middle";
         graphics_1.ctx.font = `${BUTTON_H * .7}px Arial`;
         for (let t = min_t_ui; t < max_t_ui; t++) {
-            let x = t * BUTTON_W - ui_t_offset;
-            for (let k = 0; k < hexGame_1.swappers.length; k++) {
-                let y = graphics_1.canvas.height - (k + 1) * BUTTON_H;
+            let y = t * BUTTON_H - ui_t_offset;
+            for (let k = 0; k < hexGame_1.control_tracks.length; k++) {
+                let x = graphics_1.canvas.width - (k + 1) * BUTTON_W;
                 if (FREEHAND_INPUT)
-                    y -= BUTTON_H;
+                    x -= BUTTON_W;
                 // fillstyle input etc
-                let input_val = hexGame_1.swappers[k].inputReqs[t];
-                let contradiction = hexGame_1.contradictions.some(x => x.time === t && x.cable === hexGame_1.swappers[k]);
-                let text = contradiction ? "?" : input_val ? "✓" : "-";
-                graphics_1.ctx.fillText(text, x + BUTTON_W / 2, y + BUTTON_H / 2);
+                let input_val = hexGame_1.control_tracks[k].inputReqs[t];
+                //let contradiction = contradictions.some(x => x.time === t && x.cable === control_tracks[k]);
+                if (input_val) {
+                    graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
+                    graphics_1.ctx.fillStyle = "black";
+                    graphics_1.ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
+                    graphics_1.ctx.fillStyle = (0, hexGame_1.ValidBefore)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
+                    graphics_1.ctx.fillStyle = (0, hexGame_1.ValidAfter)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
+                    graphics_1.ctx.fillStyle = "white";
+                }
+                else {
+                    graphics_1.ctx.fillText("·", x + BUTTON_W / 2, y + BUTTON_H / 2);
+                }
+                /*let text = contradiction ? "?" : input_val ? "✓" : "-";
+                ctx.fillText(text, x + BUTTON_W / 2, y + BUTTON_H / 2);*/
                 /*if (input_val || contradiction) {
                   ctx.beginPath();
                   ctx.arc(x + BUTTON_W / 2, y + BUTTON_H / 2, BUTTON_H / 3, 0, Math.PI * 2);
@@ -303,37 +332,50 @@
                 // ctx.strokeStyle = contradiction ? "red" : "black";
                 // ctx.strokeRect(x + MARGIN * BUTTON_W, y + MARGIN * BUTTON_H, BUTTON_W * (1-2*MARGIN), BUTTON_H * (1-2*MARGIN));
             }
-            let extra_contradiction = hexGame_1.contradictions.some(x => x.time === t && hexGame_1.swappers.indexOf(x.cable) === -1);
+            /*let extra_contradiction = contradictions.some(x => x.time === t && control_tracks.indexOf(x.cable) === -1);
             if (extra_contradiction) {
-                let y = graphics_1.canvas.height - (FREEHAND_INPUT ? BUTTON_H : BUTTON_H * (hexGame_1.swappers.length + 1));
-                graphics_1.ctx.fillText('?', x + BUTTON_W / 2, y + BUTTON_H / 2);
-            }
+              let x = canvas.width - (FREEHAND_INPUT ? BUTTON_H : BUTTON_H * (control_tracks.length + 1));
+              ctx.fillText('?', x + BUTTON_W / 2, y + BUTTON_H / 2);
+            }*/
         }
         graphics_1.ctx.strokeStyle = "black";
+        graphics_1.ctx.lineWidth = 2;
         graphics_1.ctx.beginPath();
         for (let t = min_t_ui; t <= max_t_ui; t++) {
-            let x = t * BUTTON_W - ui_t_offset;
-            graphics_1.ctx.moveTo(x, graphics_1.canvas.height - (hexGame_1.swappers.length + (FREEHAND_INPUT ? 1 : 0)) * BUTTON_H);
+            let y = t * BUTTON_H - ui_t_offset;
+            graphics_1.ctx.moveTo(graphics_1.canvas.width - (hexGame_1.control_tracks.length + (FREEHAND_INPUT ? 1 : 0)) * BUTTON_W, y);
+            graphics_1.ctx.lineTo(graphics_1.canvas.width, y);
+        }
+        for (let k = 0; k < hexGame_1.control_tracks.length + (FREEHAND_INPUT ? 1 : 0); k++) {
+            let x = graphics_1.canvas.width - (k + 1) * BUTTON_W;
+            graphics_1.ctx.moveTo(x, 0);
             graphics_1.ctx.lineTo(x, graphics_1.canvas.height);
         }
-        for (let k = 0; k < hexGame_1.swappers.length + (FREEHAND_INPUT ? 1 : 0); k++) {
-            let y = graphics_1.canvas.height - (k + 1) * BUTTON_H;
-            graphics_1.ctx.moveTo(BUTTON_W, y);
-            graphics_1.ctx.lineTo(BUTTON_W * (hexGame_1.MAX_T + 1), y);
-        }
         graphics_1.ctx.stroke();
-        const swapper_names = ['A', 'B', 'C'];
-        const offsets = [
-            new hexLib_1.Hex(.25, -.5, .25),
-            new hexLib_1.Hex(.5, -.25, -.25),
-            new hexLib_1.Hex(.25, .25, -.5),
+        graphics_1.ctx.lineWidth = 1;
+        const post_names = ['A', 'B', 'C', 'D'];
+        const post_locations = [
+            new hexLib_1.Hex(5.24, 1.69, -6.93),
+            new hexLib_1.Hex(6.62, -1.61, -5.01),
+            new hexLib_1.Hex(4.64, 0.32, -4.96),
+            new hexLib_1.Hex(6.87, 0.25, -7.22),
         ];
-        for (let k = 0; k < hexGame_1.swappers.length; k++) {
-            let y = graphics_1.canvas.height - (k + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_H;
-            graphics_1.ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
-            let asdf = hexGame_1.layout.hexToPixel(hexGame_1.swappers[k].tile.coords.add(offsets[k]));
-            graphics_1.ctx.fillText(swapper_names[k], asdf.x, asdf.y);
+        for (let k = 0; k < 4; k++) {
+            let x = graphics_1.canvas.width - ((3 - k) + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_W;
+            graphics_1.ctx.fillText(post_names[k], x + BUTTON_W / 2, -ui_t_offset - BUTTON_H / 2);
+            let asdf = hexGame_1.layout.hexToPixel(post_locations[k]);
+            graphics_1.ctx.fillText(post_names[k], asdf.x, asdf.y);
         }
+        if ((0, engine_1.wasKeyPressed)('t')) {
+            console.log(hexGame_1.layout.pixelToHex(engine_1.mouse));
+        }
+        /*for (let k=0; k<swappers.length; k++) {
+          let y = canvas.height - (k + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_H;
+          ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
+      
+          let asdf = layout.hexToPixel(swappers[k].tile.coords.add(offsets[k]));
+          ctx.fillText(swapper_names[k], asdf.x, asdf.y);
+        }*/
         /*ctx.beginPath();
         ctx.strokeStyle = "white";
         ctx.lineWidth = 3;
@@ -344,13 +386,13 @@
         ctx.lineWidth = 1;*/
         graphics_1.ctx.beginPath();
         graphics_1.ctx.fillStyle = "white";
-        let x = (time + anim_t) * BUTTON_W - ui_t_offset;
-        let y = graphics_1.canvas.height - hexGame_1.swappers.length * BUTTON_H;
+        let y = (time + anim_t) * BUTTON_H - ui_t_offset;
+        let x = graphics_1.canvas.width - hexGame_1.control_tracks.length * BUTTON_W;
         if (FREEHAND_INPUT)
-            y -= BUTTON_H;
+            x -= BUTTON_W;
         graphics_1.ctx.moveTo(x, y);
-        graphics_1.ctx.lineTo(x + BUTTON_W / 5, y - BUTTON_W / 3);
-        graphics_1.ctx.lineTo(x - BUTTON_W / 5, y - BUTTON_W / 3);
+        graphics_1.ctx.lineTo(x - BUTTON_W / 3, y + BUTTON_H / 5);
+        graphics_1.ctx.lineTo(x - BUTTON_W / 3, y - BUTTON_H / 5);
         graphics_1.ctx.closePath();
         graphics_1.ctx.fill();
         (0, engine_1.engine_update)();
@@ -399,4 +441,8 @@
             return direction;
         }
     }
+    function contains(list, element) {
+        return list.indexOf(element) !== -1;
+    }
+    exports.contains = contains;
 });

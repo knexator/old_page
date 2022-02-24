@@ -16,6 +16,12 @@
     exports.canvas = document.querySelector("canvas");
     exports.ctx = exports.canvas.getContext("2d");
     let pending_flashes = [];
+    let hex_111 = new hexLib_1.Hex(4.462745098039216, 1.1512207928207872, -5.613965890860003);
+    let hex_112 = new hexLib_1.Hex(5.317647058823529, 1.1720653155641054, -6.489712374387635);
+    let hex_121 = new hexLib_1.Hex(4.6117647058823525, 0.8457708812233689, -5.457535587105721);
+    let hex_122 = new hexLib_1.Hex(5.52156862745098, 0.8459567796826422, -6.3675254071336225);
+    let hex_off = new hexLib_1.Hex(2, -2, 0);
+    let hex_zero = new hexLib_1.Hex(0, 0, 0);
     window.addEventListener("resize", _e => {
         exports.canvas.width = innerWidth;
         exports.canvas.height = innerHeight;
@@ -26,6 +32,13 @@
         exports.ctx.fillRect(0, 0, exports.canvas.width, exports.canvas.height);
     }
     exports.beginFrame = beginFrame;
+    function debugLine(hex1, hex2, offset) {
+        let a = hexGame_1.layout.hexToPixel(hex1.add(offset));
+        let b = hexGame_1.layout.hexToPixel(hex2.add(offset));
+        exports.ctx.moveTo(a.x, a.y);
+        exports.ctx.lineTo(b.x, b.y);
+        exports.ctx.stroke();
+    }
     function drawBoard(time) {
         if (allImgsLoaded) {
             pending_flashes = [];
@@ -42,6 +55,17 @@
             });
             exports.ctx.fill();
             exports.ctx.stroke();
+            exports.ctx.beginPath();
+            exports.ctx.lineWidth = 5;
+            if ((0, hexGame_1.BlockedAt)(Math.floor(time), true)) {
+                debugLine(hex_111, hex_112, hex_zero);
+                debugLine(hex_121, hex_122, hex_zero);
+            }
+            if ((0, hexGame_1.BlockedAt)(Math.floor(time), false)) {
+                debugLine(hex_111, hex_112, hex_off);
+                debugLine(hex_121, hex_122, hex_off);
+            }
+            exports.ctx.lineWidth = 1;
             /*ctx.globalAlpha = 0.5;
             contradictions.forEach(x => {
               if (Math.floor(x.time) === Math.floor(time)) {

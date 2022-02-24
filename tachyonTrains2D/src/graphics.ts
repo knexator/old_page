@@ -1,4 +1,4 @@
-import { layout, board, Tile, Cable, contradictions, magicAdjacentCable } from 'hexGame';
+import { layout, board, Tile, Cable, contradictions, magicAdjacentCable, BlockedAt } from 'hexGame';
 import { mouse } from './engine';
 import { Hex, Point } from './hexLib';
 import { time_dir, contra_cable_highlight, mod } from './index';
@@ -7,6 +7,13 @@ export let canvas = document.querySelector("canvas") as HTMLCanvasElement;
 export let ctx = canvas.getContext("2d")!;
 
 let pending_flashes: { cable: Cable; t: number; }[] = [];
+
+let hex_111 = new Hex(4.462745098039216, 1.1512207928207872, -5.613965890860003);
+let hex_112 = new Hex(5.317647058823529, 1.1720653155641054, -6.489712374387635);
+let hex_121 = new Hex(4.6117647058823525, 0.8457708812233689, -5.457535587105721);
+let hex_122 = new Hex(5.52156862745098, 0.8459567796826422, -6.3675254071336225);
+let hex_off = new Hex(2, -2, 0);
+let hex_zero = new Hex(0, 0, 0);
 
 window.addEventListener("resize", _e => {
   canvas.width = innerWidth;
@@ -17,6 +24,14 @@ export function beginFrame() {
   // ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle = "#4e4e4e"; // "#4e4e4e"; d9d9d9
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+function debugLine(hex1: Hex, hex2: Hex, offset: Hex) {
+  let a = layout.hexToPixel(hex1.add(offset));
+  let b = layout.hexToPixel(hex2.add(offset));
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
 }
 
 export function drawBoard(time: number) {
@@ -35,6 +50,19 @@ export function drawBoard(time: number) {
     });
     ctx.fill();
     ctx.stroke();
+
+    ctx.beginPath();
+    ctx.lineWidth = 5;
+    if (BlockedAt(Math.floor(time), true)) {
+      debugLine(hex_111, hex_112, hex_zero);
+      debugLine(hex_121, hex_122, hex_zero);
+    }
+    if (BlockedAt(Math.floor(time), false)) {
+      debugLine(hex_111, hex_112, hex_off);
+      debugLine(hex_121, hex_122, hex_off);
+    }
+    ctx.lineWidth = 1;
+
     /*ctx.globalAlpha = 0.5;
     contradictions.forEach(x => {
       if (Math.floor(x.time) === Math.floor(time)) {

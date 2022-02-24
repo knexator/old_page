@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.board2str = exports.magicAdjacentCable = exports.contradictions = exports.swappers = exports.board = exports.layout = exports.Tile = exports.Cable = exports.MAX_T = void 0;
+    exports.ValidAfter = exports.ValidBefore = exports.BlockedAt = exports.board2str = exports.magicAdjacentCable = exports.control_tracks = exports.contradictions = exports.swappers = exports.board = exports.layout = exports.Tile = exports.Cable = exports.MAX_T = void 0;
     const hexLib_1 = require("hexLib");
     const index_1 = require("./index");
     const level_data_1 = require("./level_data");
@@ -21,12 +21,12 @@
             this.target = target;
             this.direction = direction;
             this.swapper = swapper;
-            if (swapper) {
-                this.inputReqs = Array(exports.MAX_T).fill(false);
-            }
-            else {
-                this.inputReqs = Array(exports.MAX_T).fill(null);
-            }
+            /*if (swapper) {
+              this.inputReqs = Array(MAX_T).fill(false);
+            } else {
+              this.inputReqs = Array(MAX_T).fill(null);
+            }*/
+            this.inputReqs = Array(exports.MAX_T).fill(null);
             this.globalState = Array(exports.MAX_T).fill(false);
             this.otherCable = null;
             this.masterSwapper = null;
@@ -36,20 +36,23 @@
         cycleInput(time) {
             if (time <= 0 || time + 1 >= exports.MAX_T)
                 return;
-            if (this.swapper) {
-                this.inputReqs[time] = !this.inputReqs[time];
+            if (this.inputReqs[time] === null) {
+                this.inputReqs[time] = true;
             }
             else {
-                if (this.inputReqs[time] === null) {
-                    this.inputReqs[time] = true;
-                }
-                else if (this.inputReqs[time]) {
-                    this.inputReqs[time] = false;
-                }
-                else {
-                    this.inputReqs[time] = null;
-                }
+                this.inputReqs[time] = null;
             }
+            /*if (this.swapper) {
+              this.inputReqs[time] = !this.inputReqs[time];
+            } else {
+              if (this.inputReqs[time] === null) {
+                this.inputReqs[time] = true;
+              } else if (this.inputReqs[time]) {
+                this.inputReqs[time] = false;
+              } else {
+                this.inputReqs[time] = null;
+              }
+            }*/
             updateGlobalState();
             /*  let val = this.inputReqs.get(time);
               if (val) {
@@ -82,7 +85,8 @@
             if (!this.swapper) {
                 throw new Error("calling currentlySwapped on something that isn't a swapper!!");
             }
-            return this.inputReqs[Math.floor(time)] === true;
+            return BlockedAt(Math.floor(time), this.direction === "backward");
+            // return this.inputReqs[Math.floor(time)] === true;
         }
     }
     exports.Cable = Cable;
@@ -138,12 +142,13 @@
         }
     }
     exports.Tile = Tile;
-    exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 85, new hexLib_1.Point(0, 0));
+    exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 85, new hexLib_1.Point(-20, 100));
     // export const board = new Map<FrozenHex, Tile>();
     // export const board = str2board(localStorage.getItem("cool") || "[]");
     exports.board = str2board(level_data_1.level_cool_raw);
     exports.swappers = [];
     exports.contradictions = [];
+    exports.control_tracks = [];
     fixBoard();
     function fixBoard() {
         exports.swappers = [];
@@ -180,9 +185,20 @@
                     }
                 }
             }
-            if (used)
+            if (used) {
                 exports.swappers.push(cur_swapper);
+                // control_tracks.push(nextCable(cur_swapper!.tile!.swapCable1!, 0)!);
+                // control_tracks.push(nextCable(cur_swapper!.tile!.swapCable2!, 0)!);
+                // control_tracks.push(cur_swapper!.tile!.swapCable1!);
+                // control_tracks.push(cur_swapper!.tile!.swapCable2!);
+            }
         });
+        exports.control_tracks = [
+            exports.board.get(new hexLib_1.Hex(7, 0, -7).freeze()).getCable(2, 0),
+            exports.board.get(new hexLib_1.Hex(5, 0, -5).freeze()).getCable(5, 0),
+            exports.board.get(new hexLib_1.Hex(7, -2, -5).freeze()).getCable(5, 0),
+            exports.board.get(new hexLib_1.Hex(5, 2, -7).freeze()).getCable(2, 0),
+        ];
     }
     function updateGlobalState() {
         // reset everything
@@ -214,6 +230,19 @@
             }
         });
     }
+    function isValidBridge(original_cable, original_t, direction) {
+        let col = exports.control_tracks.indexOf(original_cable);
+        if (col == -1) {
+            throw new Error("idk");
+        }
+        col = 3 - col;
+        if (direction === "forward") {
+            return ValidAfter(col, original_t);
+        }
+        else {
+            return ValidBefore(col, original_t);
+        }
+    }
     function propagate(source_cable, source_t, direction, exception, original_cable, original_t) {
         if (source_t < 0 || source_t >= exports.MAX_T)
             return;
@@ -225,8 +254,9 @@
         // don't propagate if it has already been propagated
         if (!exception && source_cable.globalState[source_t])
             return;
-        // swapper cables require explicit input
-        if (source_cable.swapper && source_cable.inputReqs[source_t] !== true) {
+        // control cables require explicit input
+        // if (contains(control_tracks, source_cable) && source_cable.inputReqs[source_t] !== true) {
+        if ((source_cable.masterSwapper) && !isValidBridge(original_cable, original_t, direction)) {
             exports.contradictions.push({ time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction });
             return;
         }
@@ -332,5 +362,67 @@
             board_res.set(cur_hex.freeze(), cur_tile);
         });
         return board_res;
+    }
+    function BlockedAt(time, which) {
+        if (which) {
+            return getPost(3, time + 2);
+        }
+        else {
+            return getPost(2, time - 4);
+        }
+    }
+    exports.BlockedAt = BlockedAt;
+    function BlockedBefore(post, postTime) {
+        switch (post) {
+            case 0:
+            case 2:
+                return BlockedAt(postTime - 1, true);
+            case 1:
+            case 3:
+                return BlockedAt(postTime + 1, false);
+        }
+        ;
+        throw new Error("EXTREME ERROR");
+    }
+    function BlockedAfter(post, postTime) {
+        switch (post) {
+            case 0:
+                return BlockedAt(postTime - 9, true); // getPost(3, postTime - 6);
+            case 1:
+                return BlockedAt(postTime + 8, false); // getPost(2, postTime + 3);
+            case 2:
+                return BlockedAt(postTime + 8, true); // getPost(3, postTime + 11);
+            case 3:
+                return BlockedAt(postTime - 4, false); // getPost(2, postTime - 9);
+        }
+        throw new Error("EXTREME ERROR");
+    }
+    function ValidBefore(post, postTime) {
+        switch (post) {
+            case 0:
+                return BlockedBefore(post, postTime) ? getPost(0, postTime + 8) : getPost(2, postTime - 9);
+            case 1:
+                return BlockedBefore(post, postTime) ? getPost(3, postTime + 5) : getPost(1, postTime - 7);
+            case 2:
+                return BlockedBefore(post, postTime) ? getPost(2, postTime - 9) : getPost(0, postTime + 8);
+            case 3:
+                return BlockedBefore(post, postTime) ? getPost(1, postTime - 7) : getPost(3, postTime + 5);
+        }
+        throw new Error("EXTREME ERROR");
+    }
+    exports.ValidBefore = ValidBefore;
+    function ValidAfter(post, postTime) {
+        let offsets = [-8, 7, 9, -5];
+        let posts = [[2, 0], [1, 3], [0, 2], [3, 1]];
+        return BlockedAfter(post, postTime) ? getPost(posts[post][1], postTime + offsets[post]) : getPost(posts[post][0], postTime + offsets[post]);
+    }
+    exports.ValidAfter = ValidAfter;
+    function getPost(post, postTime) {
+        /*if (post % 2 == 0) {
+            postTime -= 1; // TODO: extreme bug, lol
+        }*/
+        if (postTime <= 0 || postTime >= exports.MAX_T)
+            return false;
+        return exports.control_tracks[3 - post].inputReqs[postTime] === true;
     }
 });

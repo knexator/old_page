@@ -1,6 +1,6 @@
 import { Hex, FrozenHex, Layout, Point } from 'hexLib';
 import { canvas, ctx } from './graphics';
-import { mod } from './index';
+import { contains, mod } from './index';
 import { level_simple_raw, level_cool_raw } from './level_data';
 
 export type TimeDirection = "forward" | "backward";
@@ -14,11 +14,12 @@ export class Cable {
   otherCable: Cable | null;
   masterSwapper: Cable | null;
   constructor(public tile: Tile, public origin: number, public target: number, public direction: TimeDirection, public swapper: boolean) {
-    if (swapper) {
+    /*if (swapper) {
       this.inputReqs = Array(MAX_T).fill(false);
     } else {
       this.inputReqs = Array(MAX_T).fill(null);
-    }
+    }*/
+    this.inputReqs = Array(MAX_T).fill(null);
     this.globalState = Array(MAX_T).fill(false);
     this.otherCable = null;
     this.masterSwapper = null;
@@ -28,7 +29,12 @@ export class Cable {
 
   cycleInput(time: number) {
     if (time <= 0 || time + 1 >= MAX_T) return;
-    if (this.swapper) {
+    if (this.inputReqs[time] === null) {
+      this.inputReqs[time] = true;
+    } else {
+      this.inputReqs[time] = null;
+    }
+    /*if (this.swapper) {
       this.inputReqs[time] = !this.inputReqs[time];
     } else {
       if (this.inputReqs[time] === null) {
@@ -38,7 +44,7 @@ export class Cable {
       } else {
         this.inputReqs[time] = null;
       }
-    }
+    }*/
     updateGlobalState();
     /*  let val = this.inputReqs.get(time);
       if (val) {
@@ -72,7 +78,8 @@ export class Cable {
     if (!this.swapper) {
       throw new Error("calling currentlySwapped on something that isn't a swapper!!");
     }
-    return this.inputReqs[Math.floor(time)] === true;
+    return BlockedAt(Math.floor(time), this.direction === "backward");
+    // return this.inputReqs[Math.floor(time)] === true;
   }
 }
 
@@ -129,7 +136,7 @@ export class Tile {
   }
 }
 
-export const layout = new Layout(Layout.flat, 85, new Point(0, 0));
+export const layout = new Layout(Layout.flat, 85, new Point(-20, 100));
 
 // export const board = new Map<FrozenHex, Tile>();
 // export const board = str2board(localStorage.getItem("cool") || "[]");
@@ -138,6 +145,7 @@ export const board = str2board(level_cool_raw);
 export type Contradiction = {time: number, cable: Cable, source_t: number, source_cable: Cable, direction: TimeDirection};
 export let swappers: Cable[] = [];
 export let contradictions: Contradiction[] = [];
+export let control_tracks: Cable[] = [];
 
 fixBoard();
 
@@ -174,8 +182,21 @@ function fixBoard() {
         }
       }
     }
-    if (used) swappers.push(cur_swapper!);
+    if (used) {
+      swappers.push(cur_swapper!);
+      // control_tracks.push(nextCable(cur_swapper!.tile!.swapCable1!, 0)!);
+      // control_tracks.push(nextCable(cur_swapper!.tile!.swapCable2!, 0)!);
+      // control_tracks.push(cur_swapper!.tile!.swapCable1!);
+      // control_tracks.push(cur_swapper!.tile!.swapCable2!);
+    }
   });
+
+  control_tracks = [
+    board.get(new Hex(7, 0,-7).freeze())!.getCable(2, 0)!,
+    board.get(new Hex(5, 0,-5).freeze())!.getCable(5, 0)!,
+    board.get(new Hex(7,-2,-5).freeze())!.getCable(5, 0)!,
+    board.get(new Hex(5, 2,-7).freeze())!.getCable(2, 0)!,
+  ];
 }
 
 function updateGlobalState() {
@@ -210,6 +231,19 @@ function updateGlobalState() {
   });
 }
 
+function isValidBridge(original_cable: Cable, original_t: number, direction: TimeDirection) {
+  let col = control_tracks.indexOf(original_cable);
+  if (col == -1) {
+    throw new Error("idk");
+  }
+  col = 3 - col;
+  if (direction === "forward") {
+    return ValidAfter(col, original_t);
+  } else {
+    return ValidBefore(col, original_t);
+  }
+}
+
 function propagate(source_cable: Cable, source_t: number, direction: TimeDirection, exception: boolean, original_cable: Cable, original_t: number) {
   if (source_t < 0 || source_t >= MAX_T) return;
   // contradiction!
@@ -219,8 +253,9 @@ function propagate(source_cable: Cable, source_t: number, direction: TimeDirecti
   }
   // don't propagate if it has already been propagated
   if (!exception && source_cable.globalState[source_t]) return;
-  // swapper cables require explicit input
-  if (source_cable.swapper && source_cable.inputReqs[source_t] !== true) {
+  // control cables require explicit input
+  // if (contains(control_tracks, source_cable) && source_cable.inputReqs[source_t] !== true) {
+  if ((source_cable.masterSwapper) && !isValidBridge(original_cable, original_t, direction)) {
     contradictions.push({time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction});
     return;
   }
@@ -327,4 +362,67 @@ function str2board(str: string) {
     board_res.set(cur_hex.freeze(), cur_tile);
   })
   return board_res;
+}
+
+
+export function BlockedAt(time: number, which: boolean) { // true: 0,2; false: 1,3;
+    if (which) {
+        return getPost(3, time + 2);
+    } else {
+        return getPost(2, time - 4);
+    }
+}
+
+function BlockedBefore(post: number, postTime: number) {
+    switch (post) {
+        case 0:
+        case 2:
+            return BlockedAt(postTime - 1, true);
+        case 1:
+        case 3:
+            return BlockedAt(postTime + 1, false);
+    };
+    throw new Error("EXTREME ERROR");
+}
+
+function BlockedAfter(post: number, postTime: number) {
+    switch (post) {
+        case 0:
+            return BlockedAt(postTime - 9, true); // getPost(3, postTime - 6);
+        case 1:
+            return BlockedAt(postTime + 8, false); // getPost(2, postTime + 3);
+        case 2:
+            return BlockedAt(postTime + 8, true); // getPost(3, postTime + 11);
+        case 3:
+            return BlockedAt(postTime - 4, false); // getPost(2, postTime - 9);
+    }
+    throw new Error("EXTREME ERROR");
+}
+
+export function ValidBefore(post: number, postTime: number) {
+    switch (post) {
+        case 0:
+            return BlockedBefore(post, postTime) ? getPost(0, postTime + 8) : getPost(2, postTime - 9);
+        case 1:
+            return BlockedBefore(post, postTime) ? getPost(3, postTime + 5) : getPost(1, postTime - 7);
+        case 2:
+            return BlockedBefore(post, postTime) ? getPost(2, postTime - 9) : getPost(0, postTime + 8);
+        case 3:
+            return BlockedBefore(post, postTime) ? getPost(1, postTime - 7) : getPost(3, postTime + 5);
+    }
+    throw new Error("EXTREME ERROR");
+}
+
+export function ValidAfter(post: number, postTime: number) {
+    let offsets = [ -8, 7, 9, -5];
+    let posts = [ [2, 0], [1, 3], [0, 2], [3, 1] ];
+    return BlockedAfter(post, postTime) ? getPost(posts[post][1], postTime + offsets[post]) : getPost(posts[post][0], postTime + offsets[post]);
+}
+
+function getPost(post: number, postTime: number) {
+    /*if (post % 2 == 0) {
+        postTime -= 1; // TODO: extreme bug, lol
+    }*/
+    if (postTime <= 0 || postTime >= MAX_T) return false;
+    return control_tracks[3 - post].inputReqs[postTime] === true;
 }
