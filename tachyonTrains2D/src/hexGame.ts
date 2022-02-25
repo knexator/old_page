@@ -23,16 +23,20 @@ export class Cable {
     this.globalState = Array(MAX_T).fill(false);
     this.otherCable = null;
     this.masterSwapper = null;
-    // this.inputReqs[0] = false;
-    // this.inputReqs[MAX_T - 1] = false;
+    this.inputReqs[0] = false;
+    this.inputReqs[MAX_T - 1] = false;
   }
 
   cycleInput(time: number) {
     // if (time <= 0 || time + 1 >= MAX_T) return;
-    if (this.inputReqs[time] === null) {
-      this.inputReqs[time] = true;
+    if (contains(control_tracks, this)) {
+      this.inputReqs[time] = !this.inputReqs[time];
     } else {
-      this.inputReqs[time] = null;
+      if (this.inputReqs[time] === null) {
+        this.inputReqs[time] = true;
+      } else {
+        this.inputReqs[time] = null;
+      }
     }
     /*if (this.swapper) {
       this.inputReqs[time] = !this.inputReqs[time];
@@ -197,6 +201,15 @@ function fixBoard() {
     board.get(new Hex(7,-2,-5).freeze())!.getCable(5, 0)!,
     board.get(new Hex(5, 2,-7).freeze())!.getCable(2, 0)!,
   ];
+
+  for (let k=0; k<control_tracks.length; k++) {
+    let cur_cable = control_tracks[k];
+    for (let t = 0; t < MAX_T; t++) {
+      if (cur_cable.inputReqs[t] === null) {
+        cur_cable.inputReqs[t] = false;
+      }
+    }
+  }
 }
 
 function updateGlobalState() {

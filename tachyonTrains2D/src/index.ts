@@ -144,7 +144,7 @@ function update(curTime: number) {
       }
       /*time += 1;
       anim_t -= .99;*/
-    } else if (control_tracks.length > mj && mj >= 0 && mi >= 0 && mi + 1 <= MAX_T) {
+    } else if (control_tracks.length > mj && mj >= 0 && mi > 0 && mi + 1 < MAX_T) {
       document.body.style.cursor = 'pointer';
       if (wasButtonPressed("left")) {
         control_tracks[mj].cycleInput(mi);

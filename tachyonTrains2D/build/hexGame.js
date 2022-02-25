@@ -30,16 +30,21 @@
             this.globalState = Array(exports.MAX_T).fill(false);
             this.otherCable = null;
             this.masterSwapper = null;
-            // this.inputReqs[0] = false;
-            // this.inputReqs[MAX_T - 1] = false;
+            this.inputReqs[0] = false;
+            this.inputReqs[exports.MAX_T - 1] = false;
         }
         cycleInput(time) {
             // if (time <= 0 || time + 1 >= MAX_T) return;
-            if (this.inputReqs[time] === null) {
-                this.inputReqs[time] = true;
+            if ((0, index_1.contains)(exports.control_tracks, this)) {
+                this.inputReqs[time] = !this.inputReqs[time];
             }
             else {
-                this.inputReqs[time] = null;
+                if (this.inputReqs[time] === null) {
+                    this.inputReqs[time] = true;
+                }
+                else {
+                    this.inputReqs[time] = null;
+                }
             }
             /*if (this.swapper) {
               this.inputReqs[time] = !this.inputReqs[time];
@@ -198,6 +203,14 @@
             exports.board.get(new hexLib_1.Hex(7, -2, -5).freeze()).getCable(5, 0),
             exports.board.get(new hexLib_1.Hex(5, 2, -7).freeze()).getCable(2, 0),
         ];
+        for (let k = 0; k < exports.control_tracks.length; k++) {
+            let cur_cable = exports.control_tracks[k];
+            for (let t = 0; t < exports.MAX_T; t++) {
+                if (cur_cable.inputReqs[t] === null) {
+                    cur_cable.inputReqs[t] = false;
+                }
+            }
+        }
     }
     function updateGlobalState() {
         // reset everything

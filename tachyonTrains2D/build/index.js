@@ -143,7 +143,7 @@
                 /*time += 1;
                 anim_t -= .99;*/
             }
-            else if (hexGame_1.control_tracks.length > mj && mj >= 0 && mi >= 0 && mi + 1 <= hexGame_1.MAX_T) {
+            else if (hexGame_1.control_tracks.length > mj && mj >= 0 && mi > 0 && mi + 1 < hexGame_1.MAX_T) {
                 document.body.style.cursor = 'pointer';
                 if ((0, engine_1.wasButtonPressed)("left")) {
                     hexGame_1.control_tracks[mj].cycleInput(mi);
