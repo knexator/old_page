@@ -1,5 +1,5 @@
 import { engine_update, isButtonDown, isKeyDown, mouse, wasButtonPressed, wasButtonReleased, wasKeyPressed } from 'engine';
-import { layout, board, Tile, Cable, board2str, MAX_T, swappers, control_tracks, contradictions, Contradiction, magicAdjacentCable, TimeDirection, BlockedAt, ValidBefore, ValidAfter } from 'hexGame';
+import { layout, board, Tile, Cable, board2str, MAX_T, swappers, control_tracks, contradictions, Contradiction, magicAdjacentCable, TimeDirection, BlockedAt, ValidBefore, ValidAfter, getPost, isValidBridge } from 'hexGame';
 import { beginFrame, cableSample, canvas, ctx, drawBoard, drawGhostCable, drawGhostHex, highlightCable } from './graphics';
 import { Hex, Point } from './hexLib';
 
@@ -141,15 +141,19 @@ function update(curTime: number) {
       if (isButtonDown("left")) {
         grabbing_time_slider = true;
         time = (mouse.y + ui_t_offset) / BUTTON_H;
+        time = Math.max(0.5, Math.min(MAX_T - .5, time));
       }
       /*time += 1;
       anim_t -= .99;*/
     } else if (control_tracks.length > mj && mj >= 0 && mi > 0 && mi + 1 < MAX_T) {
       document.body.style.cursor = 'pointer';
       if (wasButtonPressed("left")) {
-        control_tracks[mj].cycleInput(mi);
+        control_tracks[mj].cycleInput(mi, true);
       }
       if (wasButtonPressed("right")) {
+        control_tracks[mj].cycleInput(mi, false);
+      }
+      /*if (wasButtonPressed("right")) {
         let contra = contradictions.find(x => x.time === mi && x.cable === control_tracks[mj]);
         if (contra) {
           contra_anim = {
@@ -163,7 +167,7 @@ function update(curTime: number) {
           time += anim_t;
           anim_t = 0;
         }
-      }
+      }*/
     } else {
       document.body.style.cursor = 'default';
       if (exists) {
@@ -302,7 +306,7 @@ function update(curTime: number) {
       let input_val = control_tracks[k].inputReqs[t];
       //let contradiction = contradictions.some(x => x.time === t && x.cable === control_tracks[k]);
 
-      if (input_val) {
+      if (input_val === true) {
         ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
         ctx.fillStyle = "black";
         ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
@@ -311,6 +315,19 @@ function update(curTime: number) {
         ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
 
         ctx.fillStyle = ValidAfter(3-k, t) ? "cyan" : "red";
+        ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
+
+        ctx.fillStyle = "white";
+      } else if (input_val === false) {
+        ctx.fillStyle = "black";
+        ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
+        ctx.fillStyle = "gray";
+        ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
+
+        ctx.fillStyle = !ValidBefore(3-k, t) ? "cyan" : "red";
+        ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
+
+        ctx.fillStyle = !ValidAfter(3-k, t) ? "cyan" : "red";
         ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
 
         ctx.fillStyle = "white";

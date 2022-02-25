@@ -27,9 +27,15 @@ export class Cable {
     this.inputReqs[MAX_T - 1] = false;
   }
 
-  cycleInput(time: number) {
+  cycleInput(time: number, target: boolean) {
     // if (time <= 0 || time + 1 >= MAX_T) return;
-    if (contains(control_tracks, this)) {
+    if (this.inputReqs[time] === target) {
+      this.inputReqs[time] = null;
+    } else {
+      this.inputReqs[time] = target;
+    }
+
+    /*if (contains(control_tracks, this)) {
       this.inputReqs[time] = !this.inputReqs[time];
     } else {
       if (this.inputReqs[time] === null) {
@@ -37,7 +43,8 @@ export class Cable {
       } else {
         this.inputReqs[time] = null;
       }
-    }
+    }*/
+
     /*if (this.swapper) {
       this.inputReqs[time] = !this.inputReqs[time];
     } else {
@@ -202,14 +209,14 @@ function fixBoard() {
     board.get(new Hex(5, 2,-7).freeze())!.getCable(2, 0)!,
   ];
 
-  for (let k=0; k<control_tracks.length; k++) {
+  /*for (let k=0; k<control_tracks.length; k++) {
     let cur_cable = control_tracks[k];
     for (let t = 0; t < MAX_T; t++) {
       if (cur_cable.inputReqs[t] === null) {
         cur_cable.inputReqs[t] = false;
       }
     }
-  }
+  }*/
 }
 
 function updateGlobalState() {
@@ -235,7 +242,9 @@ function updateGlobalState() {
         for (let t = 0; t < MAX_T; t++) {
           if (cur_cable.inputReqs[t] && !cur_cable.globalState[t]) {
             cur_cable.globalState[t] = true;
+            //if (t === 3) {
             propagate(cur_cable, t, "forward", true, cur_cable, t);
+            //}
             propagate(cur_cable, t, "backward", true, cur_cable, t);
           }
         }
@@ -244,7 +253,7 @@ function updateGlobalState() {
   });
 }
 
-function isValidBridge(original_cable: Cable, original_t: number, direction: TimeDirection) {
+export function isValidBridge(original_cable: Cable, original_t: number, direction: TimeDirection) {
   let col = control_tracks.indexOf(original_cable);
   if (col == -1) {
     throw new Error("idk");
@@ -260,16 +269,19 @@ function isValidBridge(original_cable: Cable, original_t: number, direction: Tim
 function propagate(source_cable: Cable, source_t: number, direction: TimeDirection, exception: boolean, original_cable: Cable, original_t: number) {
   if (source_t < 0 || source_t >= MAX_T) return;
   // contradiction!
-  if (source_cable.inputReqs[source_t] === false) {
+  if (source_cable.inputReqs[source_t] === false || (contains(control_tracks, source_cable) && source_cable.inputReqs[source_t] === null)) {
     contradictions.push({time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction});
     return;
   }
   // don't propagate if it has already been propagated
   if (!exception && source_cable.globalState[source_t]) return;
-  // control cables require explicit input
-  // if (contains(control_tracks, source_cable) && source_cable.inputReqs[source_t] !== true) {
-  if ((source_cable.masterSwapper) && !isValidBridge(original_cable, original_t, direction)) {
-    contradictions.push({time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction});
+  // propagate only between control tracks
+  if (source_cable.masterSwapper) {
+    if (!isValidBridge(original_cable, original_t, direction)) {
+      contradictions.push({time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction});
+    } else {
+      source_cable.globalState[source_t] = true;
+    }
     return;
   }
 
@@ -432,10 +444,7 @@ export function ValidAfter(post: number, postTime: number) {
     return BlockedAfter(post, postTime) ? getPost(posts[post][1], postTime + offsets[post]) : getPost(posts[post][0], postTime + offsets[post]);
 }
 
-function getPost(post: number, postTime: number) {
-    /*if (post % 2 == 0) {
-        postTime -= 1; // TODO: extreme bug, lol
-    }*/
+export function getPost(post: number, postTime: number) {
     if (postTime <= 0 || postTime >= MAX_T) return false;
-    return control_tracks[3 - post].inputReqs[postTime] === true;
+    return (control_tracks[3 - post].inputReqs[postTime]) === true;
 }

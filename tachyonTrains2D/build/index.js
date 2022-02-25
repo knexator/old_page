@@ -139,6 +139,7 @@
                 if ((0, engine_1.isButtonDown)("left")) {
                     grabbing_time_slider = true;
                     time = (engine_1.mouse.y + ui_t_offset) / BUTTON_H;
+                    time = Math.max(0.5, Math.min(hexGame_1.MAX_T - .5, time));
                 }
                 /*time += 1;
                 anim_t -= .99;*/
@@ -146,23 +147,26 @@
             else if (hexGame_1.control_tracks.length > mj && mj >= 0 && mi > 0 && mi + 1 < hexGame_1.MAX_T) {
                 document.body.style.cursor = 'pointer';
                 if ((0, engine_1.wasButtonPressed)("left")) {
-                    hexGame_1.control_tracks[mj].cycleInput(mi);
+                    hexGame_1.control_tracks[mj].cycleInput(mi, true);
                 }
                 if ((0, engine_1.wasButtonPressed)("right")) {
-                    let contra = hexGame_1.contradictions.find(x => x.time === mi && x.cable === hexGame_1.control_tracks[mj]);
-                    if (contra) {
-                        contra_anim = {
-                            contradiction: contra,
-                            cur_cable: null,
-                            click_t: time + anim_t,
-                            click_real_t: last_time,
-                            done: false,
-                            reverse: false,
-                        };
-                        time += anim_t;
-                        anim_t = 0;
-                    }
+                    hexGame_1.control_tracks[mj].cycleInput(mi, false);
                 }
+                /*if (wasButtonPressed("right")) {
+                  let contra = contradictions.find(x => x.time === mi && x.cable === control_tracks[mj]);
+                  if (contra) {
+                    contra_anim = {
+                      contradiction: contra,
+                      cur_cable: null,
+                      click_t: time + anim_t,
+                      click_real_t: last_time,
+                      done: false,
+                      reverse: false,
+                    };
+                    time += anim_t;
+                    anim_t = 0;
+                  }
+                }*/
             }
             else {
                 document.body.style.cursor = 'default';
@@ -309,13 +313,24 @@
                 // fillstyle input etc
                 let input_val = hexGame_1.control_tracks[k].inputReqs[t];
                 //let contradiction = contradictions.some(x => x.time === t && x.cable === control_tracks[k]);
-                if (input_val) {
+                if (input_val === true) {
                     graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
                     graphics_1.ctx.fillStyle = "black";
                     graphics_1.ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
                     graphics_1.ctx.fillStyle = (0, hexGame_1.ValidBefore)(3 - k, t) ? "cyan" : "red";
                     graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
                     graphics_1.ctx.fillStyle = (0, hexGame_1.ValidAfter)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
+                    graphics_1.ctx.fillStyle = "white";
+                }
+                else if (input_val === false) {
+                    graphics_1.ctx.fillStyle = "black";
+                    graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
+                    graphics_1.ctx.fillStyle = "gray";
+                    graphics_1.ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
+                    graphics_1.ctx.fillStyle = !(0, hexGame_1.ValidBefore)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
+                    graphics_1.ctx.fillStyle = !(0, hexGame_1.ValidAfter)(3 - k, t) ? "cyan" : "red";
                     graphics_1.ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
                     graphics_1.ctx.fillStyle = "white";
                 }

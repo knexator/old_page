@@ -9,7 +9,7 @@
 })(function (require, exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ValidAfter = exports.ValidBefore = exports.BlockedAt = exports.board2str = exports.magicAdjacentCable = exports.control_tracks = exports.contradictions = exports.swappers = exports.board = exports.layout = exports.Tile = exports.Cable = exports.MAX_T = void 0;
+    exports.getPost = exports.ValidAfter = exports.ValidBefore = exports.BlockedAt = exports.board2str = exports.magicAdjacentCable = exports.isValidBridge = exports.control_tracks = exports.contradictions = exports.swappers = exports.board = exports.layout = exports.Tile = exports.Cable = exports.MAX_T = void 0;
     const hexLib_1 = require("hexLib");
     const index_1 = require("./index");
     const level_data_1 = require("./level_data");
@@ -33,19 +33,23 @@
             this.inputReqs[0] = false;
             this.inputReqs[exports.MAX_T - 1] = false;
         }
-        cycleInput(time) {
+        cycleInput(time, target) {
             // if (time <= 0 || time + 1 >= MAX_T) return;
-            if ((0, index_1.contains)(exports.control_tracks, this)) {
-                this.inputReqs[time] = !this.inputReqs[time];
+            if (this.inputReqs[time] === target) {
+                this.inputReqs[time] = null;
             }
             else {
-                if (this.inputReqs[time] === null) {
-                    this.inputReqs[time] = true;
-                }
-                else {
-                    this.inputReqs[time] = null;
-                }
+                this.inputReqs[time] = target;
             }
+            /*if (contains(control_tracks, this)) {
+              this.inputReqs[time] = !this.inputReqs[time];
+            } else {
+              if (this.inputReqs[time] === null) {
+                this.inputReqs[time] = true;
+              } else {
+                this.inputReqs[time] = null;
+              }
+            }*/
             /*if (this.swapper) {
               this.inputReqs[time] = !this.inputReqs[time];
             } else {
@@ -203,14 +207,14 @@
             exports.board.get(new hexLib_1.Hex(7, -2, -5).freeze()).getCable(5, 0),
             exports.board.get(new hexLib_1.Hex(5, 2, -7).freeze()).getCable(2, 0),
         ];
-        for (let k = 0; k < exports.control_tracks.length; k++) {
-            let cur_cable = exports.control_tracks[k];
-            for (let t = 0; t < exports.MAX_T; t++) {
-                if (cur_cable.inputReqs[t] === null) {
-                    cur_cable.inputReqs[t] = false;
-                }
+        /*for (let k=0; k<control_tracks.length; k++) {
+          let cur_cable = control_tracks[k];
+          for (let t = 0; t < MAX_T; t++) {
+            if (cur_cable.inputReqs[t] === null) {
+              cur_cable.inputReqs[t] = false;
             }
-        }
+          }
+        }*/
     }
     function updateGlobalState() {
         // reset everything
@@ -234,7 +238,9 @@
                     for (let t = 0; t < exports.MAX_T; t++) {
                         if (cur_cable.inputReqs[t] && !cur_cable.globalState[t]) {
                             cur_cable.globalState[t] = true;
+                            //if (t === 3) {
                             propagate(cur_cable, t, "forward", true, cur_cable, t);
+                            //}
                             propagate(cur_cable, t, "backward", true, cur_cable, t);
                         }
                     }
@@ -255,21 +261,26 @@
             return ValidBefore(col, original_t);
         }
     }
+    exports.isValidBridge = isValidBridge;
     function propagate(source_cable, source_t, direction, exception, original_cable, original_t) {
         if (source_t < 0 || source_t >= exports.MAX_T)
             return;
         // contradiction!
-        if (source_cable.inputReqs[source_t] === false) {
+        if (source_cable.inputReqs[source_t] === false || ((0, index_1.contains)(exports.control_tracks, source_cable) && source_cable.inputReqs[source_t] === null)) {
             exports.contradictions.push({ time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction });
             return;
         }
         // don't propagate if it has already been propagated
         if (!exception && source_cable.globalState[source_t])
             return;
-        // control cables require explicit input
-        // if (contains(control_tracks, source_cable) && source_cable.inputReqs[source_t] !== true) {
-        if ((source_cable.masterSwapper) && !isValidBridge(original_cable, original_t, direction)) {
-            exports.contradictions.push({ time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction });
+        // propagate only between control tracks
+        if (source_cable.masterSwapper) {
+            if (!isValidBridge(original_cable, original_t, direction)) {
+                exports.contradictions.push({ time: source_t, cable: source_cable, source_cable: original_cable, source_t: original_t, direction: direction });
+            }
+            else {
+                source_cable.globalState[source_t] = true;
+            }
             return;
         }
         source_cable.globalState[source_t] = true;
@@ -430,11 +441,9 @@
     }
     exports.ValidAfter = ValidAfter;
     function getPost(post, postTime) {
-        /*if (post % 2 == 0) {
-            postTime -= 1; // TODO: extreme bug, lol
-        }*/
         if (postTime <= 0 || postTime >= exports.MAX_T)
             return false;
-        return exports.control_tracks[3 - post].inputReqs[postTime] === true;
+        return (exports.control_tracks[3 - post].inputReqs[postTime]) === true;
     }
+    exports.getPost = getPost;
 });
