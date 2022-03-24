@@ -230,7 +230,7 @@
                         if (FREEHAND_INPUT || EDITOR || contains(hexGame_1.control_tracks, cur_cable)) {
                             (0, graphics_1.highlightCable)(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
                             if ((0, engine_1.wasButtonPressed)("left") && (FREEHAND_INPUT || cur_cable.swapper)) {
-                                cur_cable.cycleInput(Math.floor(time));
+                                cur_cable.cycleInput(Math.floor(time), true);
                             }
                             else if ((0, engine_1.wasButtonPressed)("right") && EDITOR) {
                                 cur_tile.deleteCable(cur_dir);
@@ -316,10 +316,10 @@
                 if (input_val === true) {
                     graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
                     graphics_1.ctx.fillStyle = "black";
-                    graphics_1.ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
-                    graphics_1.ctx.fillStyle = (0, hexGame_1.ValidBefore)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillText("FEDCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
+                    graphics_1.ctx.fillStyle = (0, hexGame_1.ValidBefore)(5 - k, t) ? "cyan" : "red";
                     graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
-                    graphics_1.ctx.fillStyle = (0, hexGame_1.ValidAfter)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillStyle = (0, hexGame_1.ValidAfter)(5 - k, t) ? "cyan" : "red";
                     graphics_1.ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
                     graphics_1.ctx.fillStyle = "white";
                 }
@@ -327,10 +327,10 @@
                     graphics_1.ctx.fillStyle = "black";
                     graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
                     graphics_1.ctx.fillStyle = "gray";
-                    graphics_1.ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
-                    graphics_1.ctx.fillStyle = !(0, hexGame_1.ValidBefore)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillText("FEDCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
+                    graphics_1.ctx.fillStyle = !(0, hexGame_1.ValidBefore)(5 - k, t) ? "cyan" : "red";
                     graphics_1.ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
-                    graphics_1.ctx.fillStyle = !(0, hexGame_1.ValidAfter)(3 - k, t) ? "cyan" : "red";
+                    graphics_1.ctx.fillStyle = !(0, hexGame_1.ValidAfter)(5 - k, t) ? "cyan" : "red";
                     graphics_1.ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
                     graphics_1.ctx.fillStyle = "white";
                 }
@@ -373,15 +373,17 @@
         }
         graphics_1.ctx.stroke();
         graphics_1.ctx.lineWidth = 1;
-        const post_names = ['A', 'B', 'C', 'D'];
+        const post_names = ['A', 'B', 'C', 'D', 'E', 'F'];
         const post_locations = [
             new hexLib_1.Hex(5.24, 1.69, -6.93),
-            new hexLib_1.Hex(6.62, -1.61, -5.01),
-            new hexLib_1.Hex(4.64, 0.32, -4.96),
-            new hexLib_1.Hex(6.87, 0.25, -7.22),
+            new hexLib_1.Hex(4.24, 1.27, -5.51),
+            new hexLib_1.Hex(2.91, 1.06, -3.97),
+            new hexLib_1.Hex(2.88, -0.02, -2.85),
+            new hexLib_1.Hex(7.04, -2.08, -4.96),
+            new hexLib_1.Hex(4.74, -0.23, -4.51)
         ];
-        for (let k = 0; k < 4; k++) {
-            let x = graphics_1.canvas.width - ((3 - k) + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_W;
+        for (let k = 0; k < 6; k++) {
+            let x = graphics_1.canvas.width - ((5 - k) + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_W;
             graphics_1.ctx.fillText(post_names[k], x + BUTTON_W / 2, -ui_t_offset - BUTTON_H / 2);
             let asdf = hexGame_1.layout.hexToPixel(post_locations[k]);
             graphics_1.ctx.fillText(post_names[k], asdf.x, asdf.y);

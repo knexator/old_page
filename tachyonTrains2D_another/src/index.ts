@@ -226,7 +226,7 @@ function update(curTime: number) {
           if (FREEHAND_INPUT || EDITOR || contains(control_tracks, cur_cable)) {
             highlightCable(cur_hex, cur_cable.getOrigin(time), cur_cable.getTarget(time));
             if (wasButtonPressed("left") && (FREEHAND_INPUT || cur_cable.swapper)) {
-              cur_cable.cycleInput(Math.floor(time));
+              cur_cable.cycleInput(Math.floor(time), true);
             } else if (wasButtonPressed("right") && EDITOR) {
               cur_tile.deleteCable(cur_dir);
             }
@@ -309,12 +309,12 @@ function update(curTime: number) {
       if (input_val === true) {
         ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
         ctx.fillStyle = "black";
-        ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
+        ctx.fillText("FEDCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
 
-        ctx.fillStyle = ValidBefore(3-k, t) ? "cyan" : "red";
+        ctx.fillStyle = ValidBefore(5-k, t) ? "cyan" : "red";
         ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
 
-        ctx.fillStyle = ValidAfter(3-k, t) ? "cyan" : "red";
+        ctx.fillStyle = ValidAfter(5-k, t) ? "cyan" : "red";
         ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
 
         ctx.fillStyle = "white";
@@ -322,12 +322,12 @@ function update(curTime: number) {
         ctx.fillStyle = "black";
         ctx.fillRect(x, y, BUTTON_W, BUTTON_H);
         ctx.fillStyle = "gray";
-        ctx.fillText("DCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
+        ctx.fillText("FEDCBA"[k], x + BUTTON_W / 2, y + BUTTON_H / 2);
 
-        ctx.fillStyle = !ValidBefore(3-k, t) ? "cyan" : "red";
+        ctx.fillStyle = !ValidBefore(5-k, t) ? "cyan" : "red";
         ctx.fillRect(x, y, BUTTON_W, BUTTON_H / 5);
 
-        ctx.fillStyle = !ValidAfter(3-k, t) ? "cyan" : "red";
+        ctx.fillStyle = !ValidAfter(5-k, t) ? "cyan" : "red";
         ctx.fillRect(x, y + 4 * BUTTON_H / 5, BUTTON_W, BUTTON_H / 5);
 
         ctx.fillStyle = "white";
@@ -375,16 +375,18 @@ function update(curTime: number) {
   ctx.stroke();
   ctx.lineWidth = 1;
 
-  const post_names = ['A', 'B', 'C', 'D'];
+  const post_names = ['A', 'B', 'C', 'D', 'E', 'F'];
   const post_locations = [
     new Hex(5.24, 1.69, -6.93),
-    new Hex(6.62, -1.61, -5.01),
-    new Hex(4.64, 0.32, -4.96),
-    new Hex(6.87, 0.25, -7.22),
+    new Hex(4.24,1.27, -5.51),
+    new Hex(2.91, 1.06, -3.97),
+    new Hex(2.88, -0.02, -2.85),
+    new Hex(7.04, -2.08, -4.96),
+    new Hex(4.74, -0.23, -4.51)
   ];
 
-  for (let k=0; k<4; k++) {
-    let x = canvas.width - ((3-k) + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_W;
+  for (let k=0; k<6; k++) {
+    let x = canvas.width - ((5-k) + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_W;
     ctx.fillText(post_names[k], x + BUTTON_W / 2, -ui_t_offset - BUTTON_H / 2);
 
     let asdf = layout.hexToPixel(post_locations[k]);

@@ -89,7 +89,7 @@ export class Cable {
     if (!this.swapper) {
       throw new Error("calling currentlySwapped on something that isn't a swapper!!");
     }
-    return BlockedAt(Math.floor(time), this.direction === "backward");
+    return BlockedAt(Math.floor(time), 1 - this.tile.coords.r);
     // return this.inputReqs[Math.floor(time)] === true;
   }
 }
@@ -151,7 +151,7 @@ export const layout = new Layout(Layout.flat, 85, new Point(-20, 100));
 
 // export const board = new Map<FrozenHex, Tile>();
 // export const board = str2board(localStorage.getItem("cool") || "[]");
-export const board = str2board(level_cool_raw);
+export const board = str2board(level_simple_raw);
 
 export type Contradiction = {time: number, cable: Cable, source_t: number, source_cable: Cable, direction: TimeDirection};
 export let swappers: Cable[] = [];
@@ -203,11 +203,13 @@ function fixBoard() {
   });
 
   control_tracks = [
-    board.get(new Hex(7, 0,-7).freeze())!.getCable(2, 0)!,
-    board.get(new Hex(5, 0,-5).freeze())!.getCable(5, 0)!,
-    board.get(new Hex(7,-2,-5).freeze())!.getCable(5, 0)!,
     board.get(new Hex(5, 2,-7).freeze())!.getCable(2, 0)!,
-  ];
+    board.get(new Hex(4, 1,-5).freeze())!.getCable(0, 0)!,
+    board.get(new Hex(3, 1,-4).freeze())!.getCable(1, 0)!,
+    board.get(new Hex(3, 0,-3).freeze())!.getCable(0, 0)!,
+    board.get(new Hex(7,-2,-5).freeze())!.getCable(4, 0)!,
+    board.get(new Hex(5, 0,-5).freeze())!.getCable(1, 0)!,
+  ].reverse();
 
   /*for (let k=0; k<control_tracks.length; k++) {
     let cur_cable = control_tracks[k];
@@ -258,7 +260,7 @@ export function isValidBridge(original_cable: Cable, original_t: number, directi
   if (col == -1) {
     throw new Error("idk");
   }
-  col = 3 - col;
+  col = 5 - col;
   if (direction === "forward") {
     return ValidAfter(col, original_t);
   } else {
@@ -390,22 +392,31 @@ function str2board(str: string) {
 }
 
 
-export function BlockedAt(time: number, which: boolean) { // true: 0,2; false: 1,3;
-    if (which) {
-        return getPost(3, time + 2);
-    } else {
-        return getPost(2, time - 4);
-    }
+export function BlockedAt(time: number, which: number) {
+  // 0: AB, 1: CD, 2: EF
+  switch (which) {
+    case 0:
+      return getPost(2, time - 1);
+    case 1:
+      return getPost(5, time - 1);
+    case 2:
+      return getPost(5, time);
+  }
+  throw new Error("EXTREME ERROR");
 }
 
 function BlockedBefore(post: number, postTime: number) {
     switch (post) {
         case 0:
-        case 2:
-            return BlockedAt(postTime - 1, true);
         case 1:
+            return BlockedAt(postTime + 1, 0);
+        case 2:
+          return BlockedAt(postTime - 1, 1);
         case 3:
-            return BlockedAt(postTime + 1, false);
+            return BlockedAt(postTime, 1);
+        case 4:
+        case 5:
+            return BlockedAt(postTime - 1, 2);
     };
     throw new Error("EXTREME ERROR");
 }
@@ -413,13 +424,17 @@ function BlockedBefore(post: number, postTime: number) {
 function BlockedAfter(post: number, postTime: number) {
     switch (post) {
         case 0:
-            return BlockedAt(postTime - 9, true); // getPost(3, postTime - 6);
+            return BlockedAt(postTime - 1, 1);
         case 1:
-            return BlockedAt(postTime + 8, false); // getPost(2, postTime + 3);
+            return BlockedAt(postTime - 2, 0);
         case 2:
-            return BlockedAt(postTime + 8, true); // getPost(3, postTime + 11);
+            return BlockedAt(postTime + 3, 2);
         case 3:
-            return BlockedAt(postTime - 4, false); // getPost(2, postTime - 9);
+            return BlockedAt(postTime - 4, 2);
+        case 4:
+            return BlockedAt(postTime - 3, 0);
+        case 5:
+            return BlockedAt(postTime + 2, 1);
     }
     throw new Error("EXTREME ERROR");
 }
@@ -427,24 +442,40 @@ function BlockedAfter(post: number, postTime: number) {
 export function ValidBefore(post: number, postTime: number) {
     switch (post) {
         case 0:
-            return BlockedBefore(post, postTime) ? getPost(0, postTime + 8) : getPost(2, postTime - 9);
+            return BlockedBefore(post, postTime) ? getPost(1, postTime + 3) : getPost(4, postTime + 4);
         case 1:
-            return BlockedBefore(post, postTime) ? getPost(3, postTime + 5) : getPost(1, postTime - 7);
+            return BlockedBefore(post, postTime) ? getPost(4, postTime + 4) : getPost(1, postTime + 3);
         case 2:
-            return BlockedBefore(post, postTime) ? getPost(2, postTime - 9) : getPost(0, postTime + 8);
+            return BlockedBefore(post, postTime) ? getPost(5, postTime - 3) : getPost(0, postTime + 0);
         case 3:
-            return BlockedBefore(post, postTime) ? getPost(1, postTime - 7) : getPost(3, postTime + 5);
+            return BlockedBefore(post, postTime) ? getPost(0, postTime + 1) : getPost(5, postTime - 2);
+        case 4:
+            return BlockedBefore(post, postTime) ? getPost(3, postTime + 3) : getPost(2, postTime - 4);
+        case 5:
+            return BlockedBefore(post, postTime) ? getPost(2, postTime - 4) : getPost(3, postTime + 3);
     }
     throw new Error("EXTREME ERROR");
 }
 
 export function ValidAfter(post: number, postTime: number) {
-    let offsets = [ -8, 7, 9, -5];
-    let posts = [ [2, 0], [1, 3], [0, 2], [3, 1] ];
-    return BlockedAfter(post, postTime) ? getPost(posts[post][1], postTime + offsets[post]) : getPost(posts[post][0], postTime + offsets[post]);
+  switch (post) {
+      case 0:
+          return BlockedAfter(post, postTime) ? getPost(3, postTime - 1) : getPost(2, postTime + 0);
+      case 1:
+          return BlockedAfter(post, postTime) ? getPost(0, postTime - 3) : getPost(1, postTime - 3);
+      case 2:
+          return BlockedAfter(post, postTime) ? getPost(5, postTime + 4) : getPost(4, postTime + 4);
+      case 3:
+          return BlockedAfter(post, postTime) ? getPost(4, postTime - 3) : getPost(5, postTime - 3);
+      case 4:
+          return BlockedAfter(post, postTime) ? getPost(1, postTime - 4) : getPost(0, postTime - 4);
+      case 5:
+          return BlockedAfter(post, postTime) ? getPost(2, postTime + 3) : getPost(3, postTime + 2);
+  }
+  throw new Error("EXTREME ERROR");
 }
 
 export function getPost(post: number, postTime: number) {
     if (postTime <= 0 || postTime >= MAX_T) return false;
-    return (control_tracks[3 - post].inputReqs[postTime]) === true;
+    return (control_tracks[5 - post].inputReqs[postTime]) === true;
 }
