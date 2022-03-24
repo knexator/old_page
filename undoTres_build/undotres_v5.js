@@ -2904,8 +2904,10 @@ function draw (timestamp) {
 }
 
 function doMainTurnLogic (cur_level) {
+	console.log("main logic")
 	let starts_won = isWon(cur_level)
 	let pressed_key = input_queue.shift()
+	console.log(pressed_key)
 	let cur_undo = 0
 	for (let i = 0; i < 4; i++) {
 		if (pressed_key == 'zxcv'[i]) cur_undo = i + 1
@@ -3060,7 +3062,7 @@ function doMainTurnLogic (cur_level) {
 				// if (KEEP_UNDOING_UNTIL_CRATE_MOVE) {
 				// if (player_resisted) {
 				if (!anyChangesLastTurn(cur_level)) {
-					input_queue.push('zxcv'[cur_undo-1])
+					input_queue.unshift('zxcv'[cur_undo-1])
 					turn_time = 0.0
 					doMainTurnLogic(cur_level)
 				}
