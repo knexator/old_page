@@ -38,43 +38,41 @@
 			}
 		</style>
 
-		
+		<script>
+			// Required:
+			//  state.nextStates -> returns a dict of input: resultingState
+			//  state.id -> returns a string, must be a bijection to the states
+			//  initialState
+
+			class State {
+				constructor(x, y) {
+					this.x = x;
+					this.y = y;
+				}
+
+				nextStates() {
+					return {
+						left:  new State(this.x - 1, this.y),
+						right: new State(this.x + 1, this.y),
+						up:    new State(this.x, this.y - 1),
+						down:  new State(this.x, this.y + 1),
+					};
+				}
+
+				id()  {
+					return `${this.x}:${this.y}`;
+				}
+			}
+			
+			var initialState = new State(0, 0);
+		</script>
 
 		<script>
-			// var initialState = [0, 1, 3, 5, "hola", {cosa: 123}];
-
-			// function nextStates(state) {
-			// 	let newState1 = JSON.parse(JSON.stringify(state));
-			// 	newState1[0] += 1;
-			// 	let newState2 = JSON.parse(JSON.stringify(state));
-			// 	newState2[0] -= 1; 
-			// 	return {up: newState1, down: newState2};
-			// }
-
-			var initialState = "5";
-
-			function nextStates(state) {
-				state = Number(state);
-				let results = {up: (state + 1).toString()};
-				if (state > 0) {
-					results.down = (state - 1).toString();
-				}
-				return results;
-			}
-
-
 			document.addEventListener('DOMContentLoaded', function(){
 				var cy = window.cy = cytoscape({
 					container: document.getElementById('cy'),
-
 					autounselectify: true,
-					
 					boxSelectionEnabled: false,
-
-					// layout: {
-					// 	name: 'cola', infinite: true, fit: false,
-					// },
-
 					style: [
 						// {
 						// 	selector: 'node',
@@ -107,7 +105,8 @@
 					  nodes: [
 					    {
 					      data: {
-					        id: initialState,
+					        id: initialState.id(),
+							state: initialState,
 							expanded: false,
 					      }
 					    },
@@ -118,48 +117,69 @@
 				});
 
 				layout = cy.layout({
-					name: 'cola', infinite: true, fit: false,
+					name: 'cola', infinite: true, // fit: false,
 				});
 				layout.run();
 
+				cy.on('mouseover', 'node', function(event) {
+					// TODO: draw the hovered state
+					// console.log("hover event: ", event);
+				});
 
                 cy.on('tap', 'node', function(event) {
-					let cur_id = event.target.id();
-                    console.log("tapped a node; event.target.id is: ", cur_id);
-					console.log("typeof id: ", typeof cur_id)
+					let cur_node = event.target;
 					if (!event.target.data("expanded")) {
-						let childStates = nextStates(cur_id);
-						for (const [key, value] of Object.entries(childStates)) {
-							console.log("next node: ", value);
-							console.log("type of next node: ", typeof value);
-							if (cy.getElementById(value).length == 0) {
-								console.log("adding node");
-								cy.add({
-									group: 'nodes',
-									data: {
-										id: value,
-										expanded: false,
-									},
-									position: JSON.parse(JSON.stringify(event.target.position())), // not working
-								});
-							}
-							cy.add({
-								data: {
-									id: `${cur_id}_${key}`,
-									source: cur_id,
-									target: value,
-								}
-							})
-						}
-						event.target.data("expanded", true);
+						cy.nodes().lock();
+
+						expandNode(cur_node);
+						
+						// Only new nodes are unlocked; use layout to give them a good initial position
 						layout.stop();
 						layout = cy.elements().layout({
-							name: 'cola', infinite: true, fit: false,
+							name: 'cola', animate: false, // convergenceThreshold: 100,
+						});
+						layout.run();
+
+						// go back to the continous layout
+						layout.stop();
+						cy.nodes().unlock();
+						layout = cy.elements().layout({
+							name: 'cola', infinite: true, // fit: false,
 						});
 						layout.run();
 					}
                 });
 
+				// add child nodes
+				function expandNode(cur_node) {
+					if (cur_node.data("expanded")) return;
+					let cur_id = cur_node.id();
+					let cur_state = cur_node.data("state");
+					let next_states = cur_state.nextStates();
+					for (const [key, value] of Object.entries(next_states)) {
+						let new_id = value.id();
+						if (cy.getElementById(new_id).length == 0) {
+							cy.add({
+								group: 'nodes',
+								data: {
+									id: new_id,
+									state: value,
+									expanded: false,
+								},
+								position: JSON.parse(JSON.stringify(cur_node.position())),
+							});
+						}
+						cy.add({
+							data: {
+								id: `${cur_id}_${key}`,
+								source: cur_id,
+								target: new_id,
+								input: key,
+							}
+						})
+					}
+					cur_node.data("expanded", true);
+				}
 			});
 		</script>
 	</head>
