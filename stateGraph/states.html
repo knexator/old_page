@@ -13,13 +13,14 @@
 		<!--<script src="../cytoscape.js/build/cytoscape.js"></script>-->
 
 		<script src="https://unpkg.com/webcola/WebCola/cola.min.js"></script>
-		<!-- <script src="cytoscape-cola.js"></script> -->
         <script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.min.js"></script>
 
 
 		<script src="https://unpkg.com/layout-base/layout-base.js"></script>
 		<script src="https://unpkg.com/cose-base/cose-base.js"></script>
-		<script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>	
+		<script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
+		
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js" integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 		<style>
 			body {
@@ -33,7 +34,7 @@
 				position: absolute;
 				left: 0;
 				top: 0;
-				z-index: 999;
+				/* z-index: 999; */
 				overflow: hidden;
 			}
 
@@ -72,7 +73,7 @@
 			var initialState = new State(0, 0);
 		</script-->
 
-		<script>
+		<!--script>
 			// Example: Bureaucratic Maze (http://www.logicmazes.com/bureau/map4.html)
 
 			class State {
@@ -124,9 +125,9 @@
 			}
 			
 			var initialState = new State("Start", "HR");
-		</script>
+		</script-->
 
-		<!-- <script>
+		<script>
 			// Example: Sokoban - Microban 1
 
 			class State {
@@ -214,155 +215,190 @@
 					{x: 2, y: 3},
 				]
 			);
-		</script> -->
+		</script>
 
 		<script>
-			document.addEventListener('DOMContentLoaded', function(){
-				var cy = window.cy = cytoscape({
-					container: document.getElementById('cy'),
-					autounselectify: true,
-					boxSelectionEnabled: false,
-					style: [
-						{
-							selector: 'node',
-							style: {
-								'label': 'data(id)'
-							}
-						},
-						{
-							selector: 'node[?expanded]',
-							css: {
-								'background-color': '#ff0000'
-							},
-						},
-						{
-							selector: 'node[!expanded]',
-							css: {
-								'background-color': '#00ff00'
-							},
-						},
-						{
-							selector: 'node[?won]',
-							css: {
-								'shape': 'star',
-							},
-						},					
-						{
-							selector: 'edge',
-							style: {
-							// 'width': 3,
-							'line-color': '#ccc',
-							'target-arrow-color': '#ccc',
-							'target-arrow-shape': 'triangle',
-							'curve-style': 'bezier'
-							}
+		document.addEventListener('DOMContentLoaded', function(){
+			var cy = window.cy = cytoscape({
+				container: document.getElementById('cy'),
+				autounselectify: true,
+				boxSelectionEnabled: false,
+				style: [
+					{
+						selector: '.labelled',
+						style: {
+							'label': 'data(id)'
 						}
+					},
+					{
+						selector: 'node[?expanded]',
+						css: {
+							'background-color': '#ff0000'
+						},
+					},
+					{
+						selector: 'node[!expanded]',
+						css: {
+							'background-color': '#00ff00'
+						},
+					},
+					{
+						selector: 'node[?won]',
+						css: {
+							'shape': 'star',
+						},
+					},					
+					{
+						selector: 'edge',
+						style: {
+						// 'width': 3,
+						'line-color': '#ccc',
+						'target-arrow-color': '#ccc',
+						'target-arrow-shape': 'triangle',
+						'curve-style': 'bezier'
+						}
+					}
+				],
+
+				elements: {
+					nodes: [
+					{
+						data: {
+						id: initialState.id(),
+						state: initialState,
+						won: initialState.isWon(),
+						expanded: false,
+						},
+						style: {
+						shape: 'pentagon'
+						}
+					},
+
 					],
-
-					elements: {
-					  nodes: [
-					    {
-					      data: {
-					        id: initialState.id(),
-							state: initialState,
-							won: initialState.isWon(),
-							expanded: false,
-					      },
-						  style: {
-							shape: 'pentagon'
-						  }
-					    },
-
-					  ],
-					  edges: []
-					}
-				});
-
-				layout = cy.layout({
-					name: 'cola', infinite: true, // fit: false,
-				});
-				layout.run();
-
-				cy.on('mouseover', 'node', function(event) {
-					// TODO: draw the hovered state
-					// console.log("hover event: ", event);
-				});
-
-                cy.on('tap', 'node', function(event) {
-					let cur_node = event.target;
-					if (!event.target.data("expanded")) {
-						cy.nodes().lock();
-
-						expandNode(cur_node);
-						
-						// Only new nodes are unlocked; use layout to give them a good initial position
-						layout.stop();
-						layout = cy.elements().layout({
-							name: 'cola', animate: false, // convergenceThreshold: 100,
-						});
-						layout.run();
-
-						// go back to the continous layout
-						layout.stop();
-						cy.nodes().unlock();
-						layout = cy.elements().layout({
-							name: 'cola', infinite: true, // fit: false,
-						});
-						layout.run();
-					}
-                });
+					edges: []
+				}
 			});
 
-			function expandAll() {
-				layout.stop();
-				let unexpanded = cy.nodes('[!expanded]')
-				while (unexpanded.length > 0) {
-					unexpanded.forEach(expandNode);
-					unexpanded = cy.nodes('[!expanded]')
+			layout = cy.layout({
+				name: 'cola', infinite: true, // fit: false,
+			});
+			layout.run();
+
+			cy.on('mouseover', 'node', function(event) {
+				// TODO: draw the hovered state
+				// console.log("hover event: ", event);
+			});
+
+			cy.on('tap', 'node', function(event) {
+				let cur_node = event.target;
+				if (!event.target.data("expanded")) {
+					cy.nodes().lock();
+
+					expandNode(cur_node);
+					
+					// Only new nodes are unlocked; use layout to give them a good initial position
+					layout.stop();
+					layout = cy.elements().layout({
+						name: 'cola', animate: false, // convergenceThreshold: 100,
+					});
+					layout.run();
+
+					// go back to the continous layout
+					layout.stop();
+					cy.nodes().unlock();
+					layout = cy.elements().layout({
+						name: 'cola', infinite: true, // fit: false,
+					});
+					layout.run();
 				}
-				// layout = cy.elements().layout({name: 'fcose', randomize: false, animate: false});
-				layout = cy.elements().layout({
-					name: 'cola', infinite: true, // fit: false,
-				});
-           		layout.run();
-			}
+			});
+		});
 
-			function expandLevel() {
-				cy.nodes('[!expanded]').forEach(expandNode);
-				layout.run();
+		function expandAll() {
+			layout.stop();
+			let unexpanded = cy.nodes('[!expanded]')
+			while (unexpanded.length > 0) {
+				unexpanded.forEach(expandNode);
+				unexpanded = cy.nodes('[!expanded]')
 			}
+			// layout = cy.elements().layout({name: 'fcose', randomize: false, animate: false});
+			layout = cy.elements().layout({
+				name: 'cola', infinite: true, // fit: false,
+			});
+			layout.run();
+		}
 
-			// add child nodes
-			function expandNode(cur_node) {
-				if (cur_node.data("expanded")) return;
-				let cur_id = cur_node.id();
-				let cur_state = cur_node.data("state");
-				let next_states = cur_state.nextStates();
-				for (const [key, value] of Object.entries(next_states)) {
-					let new_id = value.id();
-					if (cy.getElementById(new_id).length == 0) {
-						cy.add({
-							group: 'nodes',
-							data: {
-								id: new_id,
-								state: value,
-								expanded: false,
-								won: value.isWon(),
-							},
-							position: JSON.parse(JSON.stringify(cur_node.position())),
-						});
-					}
+		function expandLevel() {
+			layout.stop();
+			cy.nodes('[!expanded]').forEach(expandNode);
+			layout = cy.elements().layout({
+				name: 'cola', infinite: true, // fit: false,
+			});
+			layout.run();
+		}
+
+		// add child nodes
+		function expandNode(cur_node) {
+			if (cur_node.data("expanded")) return;
+			let cur_id = cur_node.id();
+			let cur_state = cur_node.data("state");
+			let next_states = cur_state.nextStates();
+			for (const [key, value] of Object.entries(next_states)) {
+				let new_id = value.id();
+				if (cy.getElementById(new_id).length == 0) {
 					cy.add({
+						group: 'nodes',
 						data: {
-							id: `${cur_id}_${key}`,
-							source: cur_id,
-							target: new_id,
-							input: key,
-						}
-					})
+							id: new_id,
+							state: value,
+							expanded: false,
+							won: value.isWon(),
+						},
+						position: JSON.parse(JSON.stringify(cur_node.position())),
+					});
 				}
-				cur_node.data("expanded", true);
+				cy.add({
+					data: {
+						id: `${cur_id}_${key}`,
+						source: cur_id,
+						target: new_id,
+						input: key,
+					}
+				})
 			}
+			cur_node.data("expanded", true);
+		}
+
+		function pageRank() {
+			var pr = cy.elements().pageRank();
+			cy.nodes().forEach(node => {
+				node.data("weight", pr.rank(node));
+			});
+			cy.nodes().style({
+				'width': (node) => node.data("weight") * 400,
+				'height': (node) => node.data("weight") * 400,
+				// 'width': 'data(weight)' // doesn't work for some reason
+			});
+		}
+	
+		window.onload = function() {
+			console.log("adding gui");
+			let gui = new dat.GUI();
+			let config = {
+				showLabels: false,
+				expandLevel: expandLevel,
+				expandAll: expandAll,
+			}
+			gui.add(config, "showLabels").onChange(function(newValue) {
+				if (newValue) {
+					cy.nodes().addClass('labelled');
+				} else {
+					cy.nodes().removeClass('labelled');
+				}
+			});
+			gui.add(config, "expandLevel");
+			gui.add(config, "expandAll");
+		}
 		</script>
 	</head>
 
