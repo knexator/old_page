@@ -5,7 +5,7 @@ import { level_simple_raw } from './level_data';
 
 export type TimeDirection = "forward" | "backward";
 
-export const MAX_T = 16;
+export const MAX_T = 160;
 
 export class Cable {
   // inputReqs: Map<number, boolean>;
@@ -132,8 +132,8 @@ export class Tile {
 export const layout = new Layout(Layout.flat, 85, new Point(0, 0));
 
 // export const board = new Map<FrozenHex, Tile>();
-// export const board = str2board(localStorage.getItem("simple") || "[]");
-export const board = str2board(level_simple_raw);
+export const board = str2board(localStorage.getItem("simple") || "[]");
+// export const board = str2board(level_simple_raw);
 
 export type Contradiction = {time: number, cable: Cable, source_t: number, source_cable: Cable, direction: TimeDirection};
 export let swappers: Cable[] = [];

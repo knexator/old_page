@@ -3,13 +3,13 @@ import { layout, board, Tile, Cable, board2str, MAX_T, swappers, contradictions,
 import { beginFrame, cableSample, canvas, ctx, drawBoard, drawGhostCable, drawGhostHex, highlightCable } from './graphics';
 import { Hex, Point } from './hexLib';
 
-let EDITOR = false;
-let FREEHAND_INPUT = false;
+let EDITOR = true;
+let FREEHAND_INPUT = true;
 
 let last_time = 0;
 let wheel_off = 0;
 
-let time = 3.5;
+let time = 23.5;
 let anim_t = 0;
 export let time_dir = 0;
 
@@ -24,7 +24,7 @@ let contra_anim: {
 
 export let contra_cable_highlight: Cable | null = null;
 
-const BUTTON_W = 100;
+const BUTTON_W = 50;
 const BUTTON_H = 50;
 let ui_t_offset = -BUTTON_W;
 // let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
@@ -237,6 +237,10 @@ function update(curTime: number) {
   if (wasKeyPressed('m')) {
     board.clear();
   }
+  if (wasKeyPressed(' ')) {
+    EDITOR = !EDITOR;
+    FREEHAND_INPUT = EDITOR;
+  }
   /*if (wasKeyPressed('w')) {
     localStorage.setItem("sentient", board2str_onlyVisible());
     // localStorage.setItem("yay", board2str_onlyVisible());
@@ -318,18 +322,20 @@ function update(curTime: number) {
   }
   ctx.stroke();
 
-  const swapper_names = ['A', 'B', 'C'];
-  const offsets = [
-    new Hex(.25, -.5, .25),
-    new Hex(.5, -.25, -.25),
-    new Hex(.25, .25, -.5),
-  ]
-  for (let k=0; k<swappers.length; k++) {
-    let y = canvas.height - (k + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_H;
-    ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
+  if (!EDITOR) {
+    const swapper_names = ['A', 'B', 'C'];
+    const offsets = [
+      new Hex(.25, -.5, .25),
+      new Hex(.5, -.25, -.25),
+      new Hex(.25, .25, -.5),
+    ]
+    for (let k=0; k<swappers.length; k++) {
+      let y = canvas.height - (k + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_H;
+      ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
 
-    let asdf = layout.hexToPixel(swappers[k].tile.coords.add(offsets[k]));
-    ctx.fillText(swapper_names[k], asdf.x, asdf.y);
+      let asdf = layout.hexToPixel(swappers[k].tile.coords.add(offsets[k]));
+      ctx.fillText(swapper_names[k], asdf.x, asdf.y);
+    }
   }
 
   /*ctx.beginPath();

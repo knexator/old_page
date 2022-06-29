@@ -15,16 +15,13 @@
     let last_time = 0;
     let EDITOR = false;
     let MAX_T = 100;
-    let N_MODULES = 3;
-    /*let delays = zeroDelays(N_MODULES);
-    let connections = selfConnections(N_MODULES);
-    let data = emptyData(N_MODULES, MAX_T);*/
-    let delays = [[-3, -2, 2], [2, -4, -1], [-2, 2, 2]];
-    let connections = [[[0, 0], [1, 0], [2, 0]], [[0, 2], [2, 1], [2, 2]], [[0, 1], [1, 2], [1, 1]]];
+    let N_MODULES = 2;
+    let delays = [[5, -8, -2], [-3, 7, 4]];
+    let connections = [[[1, 2], [0, 0], [1, 0]], [[0, 2], [1, 1], [0, 1]]];
     let data = emptyData(N_MODULES, MAX_T);
     let faultyConnections = findFaultyConnections();
     let reverseConnections = findReverseConnections();
-    maybeLoadProblem();
+    // maybeLoadProblem();
     const BUTTON_W = 50;
     const BUTTON_H = 50;
     let table_off_x = BUTTON_W * 10 - BUTTON_W / 2;

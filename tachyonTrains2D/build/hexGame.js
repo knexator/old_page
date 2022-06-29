@@ -13,7 +13,7 @@
     const hexLib_1 = require("hexLib");
     const index_1 = require("./index");
     const level_data_1 = require("./level_data");
-    exports.MAX_T = 50;
+    exports.MAX_T = 40;
     class Cable {
         constructor(tile, origin, target, direction, swapper) {
             this.tile = tile;

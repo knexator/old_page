@@ -5,7 +5,7 @@ import { level_simple_raw, level_cool_raw } from './level_data';
 
 export type TimeDirection = "forward" | "backward";
 
-export const MAX_T = 50;
+export const MAX_T = 40;
 
 export class Cable {
   // inputReqs: Map<number, boolean>;

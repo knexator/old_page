@@ -4,7 +4,7 @@
         if (v !== undefined) module.exports = v;
     }
     else if (typeof define === "function" && define.amd) {
-        define(["require", "exports", "hexLib", "./index", "./level_data"], factory);
+        define(["require", "exports", "hexLib", "./index"], factory);
     }
 })(function (require, exports) {
     "use strict";
@@ -12,8 +12,7 @@
     exports.board2str = exports.magicAdjacentCable = exports.contradictions = exports.swappers = exports.board = exports.layout = exports.Tile = exports.Cable = exports.MAX_T = void 0;
     const hexLib_1 = require("hexLib");
     const index_1 = require("./index");
-    const level_data_1 = require("./level_data");
-    exports.MAX_T = 16;
+    exports.MAX_T = 160;
     class Cable {
         constructor(tile, origin, target, direction, swapper) {
             this.tile = tile;
@@ -140,8 +139,7 @@
     exports.Tile = Tile;
     exports.layout = new hexLib_1.Layout(hexLib_1.Layout.flat, 85, new hexLib_1.Point(0, 0));
     // export const board = new Map<FrozenHex, Tile>();
-    // export const board = str2board(localStorage.getItem("simple") || "[]");
-    exports.board = str2board(level_data_1.level_simple_raw);
+    exports.board = str2board(localStorage.getItem("simple") || "[]");
     exports.swappers = [];
     exports.contradictions = [];
     fixBoard();

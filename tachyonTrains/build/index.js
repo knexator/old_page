@@ -14,16 +14,16 @@
     const hexGame_1 = require("hexGame");
     const graphics_1 = require("./graphics");
     const hexLib_1 = require("./hexLib");
-    let EDITOR = false;
-    let FREEHAND_INPUT = false;
+    let EDITOR = true;
+    let FREEHAND_INPUT = true;
     let last_time = 0;
     let wheel_off = 0;
-    let time = 3.5;
+    let time = 23.5;
     let anim_t = 0;
     exports.time_dir = 0;
     let contra_anim = null;
     exports.contra_cable_highlight = null;
-    const BUTTON_W = 100;
+    const BUTTON_W = 50;
     const BUTTON_H = 50;
     let ui_t_offset = -BUTTON_W;
     // let ui_t_offset = Math.floor(MAX_T / 2) * BUTTON_W - canvas.width * 3;
@@ -244,6 +244,10 @@
         if ((0, engine_1.wasKeyPressed)('m')) {
             hexGame_1.board.clear();
         }
+        if ((0, engine_1.wasKeyPressed)(' ')) {
+            EDITOR = !EDITOR;
+            FREEHAND_INPUT = EDITOR;
+        }
         /*if (wasKeyPressed('w')) {
           localStorage.setItem("sentient", board2str_onlyVisible());
           // localStorage.setItem("yay", board2str_onlyVisible());
@@ -322,17 +326,19 @@
             graphics_1.ctx.lineTo(BUTTON_W * (hexGame_1.MAX_T + 1), y);
         }
         graphics_1.ctx.stroke();
-        const swapper_names = ['A', 'B', 'C'];
-        const offsets = [
-            new hexLib_1.Hex(.25, -.5, .25),
-            new hexLib_1.Hex(.5, -.25, -.25),
-            new hexLib_1.Hex(.25, .25, -.5),
-        ];
-        for (let k = 0; k < hexGame_1.swappers.length; k++) {
-            let y = graphics_1.canvas.height - (k + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_H;
-            graphics_1.ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
-            let asdf = hexGame_1.layout.hexToPixel(hexGame_1.swappers[k].tile.coords.add(offsets[k]));
-            graphics_1.ctx.fillText(swapper_names[k], asdf.x, asdf.y);
+        if (!EDITOR) {
+            const swapper_names = ['A', 'B', 'C'];
+            const offsets = [
+                new hexLib_1.Hex(.25, -.5, .25),
+                new hexLib_1.Hex(.5, -.25, -.25),
+                new hexLib_1.Hex(.25, .25, -.5),
+            ];
+            for (let k = 0; k < hexGame_1.swappers.length; k++) {
+                let y = graphics_1.canvas.height - (k + (FREEHAND_INPUT ? 2 : 1)) * BUTTON_H;
+                graphics_1.ctx.fillText(swapper_names[k], -ui_t_offset - BUTTON_W / 2, y + BUTTON_H / 2);
+                let asdf = hexGame_1.layout.hexToPixel(hexGame_1.swappers[k].tile.coords.add(offsets[k]));
+                graphics_1.ctx.fillText(swapper_names[k], asdf.x, asdf.y);
+            }
         }
         /*ctx.beginPath();
         ctx.strokeStyle = "white";
