@@ -2,49 +2,51 @@
 
 <html>
 
-	<head>
-		<title>cytoscape-cola.js demo</title>
+<head>
+	<title>cytoscape-cola.js demo</title>
 
-		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
+	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1, maximum-scale=1">
 
-		<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+	<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 
-		<!-- for testing with local version of cytoscape.js -->
-		<!--<script src="../cytoscape.js/build/cytoscape.js"></script>-->
+	<!-- for testing with local version of cytoscape.js -->
+	<!--<script src="../cytoscape.js/build/cytoscape.js"></script>-->
 
-		<script src="https://unpkg.com/webcola/WebCola/cola.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.min.js"></script>
+	<script src="https://unpkg.com/webcola/WebCola/cola.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.min.js"></script>
 
 
-		<script src="https://unpkg.com/layout-base/layout-base.js"></script>
-		<script src="https://unpkg.com/cose-base/cose-base.js"></script>
-		<script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
-		
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js" integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+	<script src="https://unpkg.com/layout-base/layout-base.js"></script>
+	<script src="https://unpkg.com/cose-base/cose-base.js"></script>
+	<script src="https://unpkg.com/cytoscape-fcose/cytoscape-fcose.js"></script>
 
-		<style>
-			body {
-				font-family: helvetica;
-				font-size: 14px;
-			}
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"
+		integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg=="
+		crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-			#cy {
-				width: 100%;
-				height: 100%;
-				position: absolute;
-				left: 0;
-				top: 0;
-				/* z-index: 999; */
-				overflow: hidden;
-			}
+	<style>
+		body {
+			font-family: helvetica;
+			font-size: 14px;
+		}
 
-			h1 {
-				opacity: 0.5;
-				font-size: 1em;
-			}
-		</style>
+		#cy {
+			width: 100%;
+			height: 100%;
+			position: absolute;
+			left: 0;
+			top: 0;
+			/* z-index: 999; */
+			overflow: hidden;
+		}
 
-		<!--script>
+		h1 {
+			opacity: 0.5;
+			font-size: 1em;
+		}
+	</style>
+
+	<!--script>
 			// Required:
 			//  state.nextStates -> returns a dict of input: resultingState
 			//  state.id -> returns a string, must be a bijection to the states
@@ -73,152 +75,11 @@
 			var initialState = new State(0, 0);
 		</script-->
 
-		<!--script>
-			// Example: Bureaucratic Maze (http://www.logicmazes.com/bureau/map4.html)
+	<script src="statesBureauOOP.js"></script>
+	<!-- <script src="statesSokoban.js"></script> -->
 
-			class State {
-				constructor(state, position) {
-					this.state = state;
-					this.position = position;
-				}
-
-				isWon() {
-					return this.position == "Goal";
-				}
-
-				nextStates() {
-					if (this.position == "Goal") return {};
-					let raw_data = {
-						"HR": { // position
-							"Start": ["M", "CC"], // state
-							"M": ["IM", "CC"], 
-							"IM": ["Goal"],
-							"CC": ["IM", "M"],
-						},
-						"M": {
-							"HR": ["IM"], 
-							"IM": ["HR"],
-							"CC": ["CC", "HR", "IM"],
-						},
-						"CC": {
-							"HR": ["M"], 
-							"IM": ["HR", "M"],
-							"M": ["HR", "IM"],
-						},
-						"IM": {
-							"HR": ["M", "CC"], 
-							"M": ["M", "CC"],
-							"CC": ["HR", "M"],
-						},
-					}
-
-					let res = {};
-					raw_data[this.position][this.state].forEach(next => {
-						res[next] = new State(this.position, next);
-					});
-					return res;
-				}
-
-				id()  {
-					return `${this.state}:${this.position}`;
-				}
-			}
-			
-			var initialState = new State("Start", "HR");
-		</script-->
-
-		<script>
-			// Example: Sokoban - Microban 1
-
-			class State {
-				static w = 4;
-				static h = 5;
-				// notation: [x][y]
-				static walls = [
-					[false, false, false, false, false],
-					[false, false, false, false, false],
-					[true, true, false, false, true],
-					[true, true, false, false, true],
-				]
-
-				constructor(player, crates) {
-					this.player = player;
-					this.crates = crates;
-				}
-				
-				isWon() {
-					return this.crateAt({x: 0, y: 2}) && this.crateAt({x: 1, y: 0});
-				}
-
-				nextStates() {
-					let result = {
-						left:  this.nextState({x: -1, y: 0}),
-						right: this.nextState({x:  1, y: 0}),
-						up:    this.nextState({x: 0, y: -1}),
-						down:  this.nextState({x: 0, y:  1}),
-					};
-					for (let key in result) {
-						if (result[key] === false) {
-							delete result[key];
-						}
-					}
-					return result;
-				}
-
-				id()  {
-					let result = `${this.player.x}:${this.player.y}`;
-					result += '[' + this.crates.map(c => `${c.x}:${c.y}`).join(',') + ']';
-					return result;
-				}
-
-				nextState(dir) {
-					let new_p = {
-						x: this.player.x + dir.x,
-						y: this.player.y + dir.y
-					};
-					if (!State.validPos(new_p)) return false;
-					if (!this.crateAt(new_p)) {
-						return new State(new_p, this.crates);
-					}
-					let new_crate_pos = {
-						x: new_p.x + dir.x,
-						y: new_p.y + dir.y
-					}
-					if (!State.validPos(new_crate_pos) || this.crateAt(new_crate_pos)) return false;
-					let new_crates = this.crates.map(c => {
-						if (c.x == new_p.x && c.y == new_p.y) {
-							return {x: new_crate_pos.x, y: new_crate_pos.y};
-						} else {
-							return {x: c.x, y: c.y};
-						}
-					});
-					return new State(new_p, new_crates);
-				}
-
-				crateAt(pos) {
-					return this.crates.some(c => c.x == pos.x && c.y == pos.y);
-				}
-
-				// false if oob or wall
-				static validPos(pos) {
-					if (pos.x < 0 || pos.x >= State.w || pos.y < 0 || pos.y >= State.h) {
-						return false;
-					}
-					return !State.walls[pos.x][pos.y];
-				}
-			}
-			
-			var initialState = new State(
-				{x: 1, y: 2},
-				[
-					{x: 0, y: 2},
-					{x: 2, y: 3},
-				]
-			);
-		</script>
-
-		<script>
-		document.addEventListener('DOMContentLoaded', function(){
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
 			var cy = window.cy = cytoscape({
 				container: document.getElementById('cy'),
 				autounselectify: true,
@@ -247,32 +108,32 @@
 						css: {
 							'shape': 'star',
 						},
-					},					
+					},
 					{
 						selector: 'edge',
 						style: {
-						// 'width': 3,
-						'line-color': '#ccc',
-						'target-arrow-color': '#ccc',
-						'target-arrow-shape': 'triangle',
-						'curve-style': 'bezier'
+							// 'width': 3,
+							'line-color': '#ccc',
+							'target-arrow-color': '#ccc',
+							'target-arrow-shape': 'triangle',
+							'curve-style': 'bezier'
 						}
 					}
 				],
 
 				elements: {
 					nodes: [
-					{
-						data: {
-						id: initialState.id(),
-						state: initialState,
-						won: initialState.isWon(),
-						expanded: false,
+						{
+							data: {
+								id: initialState.id(),
+								state: initialState,
+								won: initialState.isWon(),
+								expanded: false,
+							},
+							style: {
+								shape: 'pentagon'
+							}
 						},
-						style: {
-						shape: 'pentagon'
-						}
-					},
 
 					],
 					edges: []
@@ -284,18 +145,18 @@
 			});
 			layout.run();
 
-			cy.on('mouseover', 'node', function(event) {
+			cy.on('mouseover', 'node', function (event) {
 				// TODO: draw the hovered state
 				// console.log("hover event: ", event);
 			});
 
-			cy.on('tap', 'node', function(event) {
+			cy.on('tap', 'node', function (event) {
 				let cur_node = event.target;
 				if (!event.target.data("expanded")) {
 					cy.nodes().lock();
 
 					expandNode(cur_node);
-					
+
 					// Only new nodes are unlocked; use layout to give them a good initial position
 					layout.stop();
 					layout = cy.elements().layout({
@@ -380,8 +241,8 @@
 				// 'width': 'data(weight)' // doesn't work for some reason
 			});
 		}
-	
-		window.onload = function() {
+
+		window.onload = function () {
 			console.log("adding gui");
 			let gui = new dat.GUI();
 			let config = {
@@ -389,7 +250,7 @@
 				expandLevel: expandLevel,
 				expandAll: expandAll,
 			}
-			gui.add(config, "showLabels").onChange(function(newValue) {
+			gui.add(config, "showLabels").onChange(function (newValue) {
 				if (newValue) {
 					cy.nodes().addClass('labelled');
 				} else {
@@ -399,14 +260,14 @@
 			gui.add(config, "expandLevel");
 			gui.add(config, "expandAll");
 		}
-		</script>
-	</head>
+	</script>
+</head>
 
-	<body>
-		<h1>cytoscape-cola demo</h1>
+<body>
+	<h1>cytoscape-cola demo</h1>
 
-		<div id="cy"></div>
+	<div id="cy"></div>
 
-	</body>
+</body>
 
 </html>

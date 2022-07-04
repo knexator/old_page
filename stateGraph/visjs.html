@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Vis Network | Other | Clustering</title>
+
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+
+    <style type="text/css">
+        #mynetwork {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            overflow: hidden;
+        }
+    </style>
+    <script src="statesMicrobanOOPless.js"></script>
+    <!-- <script src="statesBureauOOPless.js"></script> -->
+</head>
+
+<body>
+    <div id="mynetwork"></div>
+
+    <script type="text/javascript">
+        let CONFIG = {
+            showIDs: true,
+        };
+
+        // create a network
+        let nodes = new vis.DataSet();
+        let edges = new vis.DataSet();
+        let network = new vis.Network(
+            document.getElementById("mynetwork"),
+            { // data
+                nodes: nodes,
+                edges: edges,
+            },
+            { // options
+                edges: {
+                    arrows: "to",
+                    smooth: false, /*{
+                    type: "continuous",
+                },*/
+                },
+                physics: {
+                    barnesHut: {
+                        // theta: 0.5,
+                        gravitationalConstant: -20000,
+                        // centralGravity: 0.3,
+                        // springLength: 55,
+                        // springConstant: 0.04,
+                        damping: 0.25,
+                        // avoidOverlap: 0
+                    },
+                    minVelocity: 0,
+                },
+                // interaction: {
+                //     multiselect: true,
+                // },
+            }
+        );
+        addNode(State.initialState);
+
+        /*network.on("selectNode", function (params) {
+            if (params.nodes.length == 1) {
+                if (network.isCluster(params.nodes[0]) == true) {
+                    network.openCluster(params.nodes[0]);
+                }
+            }
+        });*/
+
+        /*nodes.on("add", function (event, properties, senderId) {
+            // When adding a new node, set its style
+            console.log('event:', event, 'properties:', properties, 'senderId:', senderId);
+            properties.items.forEach(node_id => {
+                let cur_node = nodes.get(node_id);
+                // console.log("curnode: ", cur_node);
+                nodes.updateOnly({
+                    id: node_id,
+                    label: CONFIG.showIDs ? node_id : "",
+                    color: cur_node.expanded ? "red" : "green",
+                    shape: cur_node.won ? "star" : "ellipse",
+                })
+            })
+        });
+
+        nodes.on("update", function (event, properties, senderId) {
+            console.log('event:', event, 'properties:', properties, 'senderId:', senderId);
+        });*/
+
+        network.on("click", function (params) {
+            let clicked_node_id = params.nodes[0];
+            // console.log(clicked_node_id);
+            // console.log(params);
+            if (clicked_node_id !== undefined) {
+                let clicked_node = nodes.get(clicked_node_id);
+                if (!clicked_node.expanded) {
+                    expandNode(clicked_node);
+                }
+            }
+        });
+
+        function expandNode(cur_node) {
+            if (cur_node.expanded) return;
+            // console.log("cur node: ", cur_node);
+            let next_states = State.nextStates(cur_node.state);
+            for (const [input, new_state] of Object.entries(next_states)) {
+                let new_id = State.id(new_state);
+                if (nodes.get(new_id) === null) {
+                    addNode(new_state, new_id);
+                    /*nodes.add({
+                        id: new_id,
+                        state: new_state,
+                        won: new_state.isWon(),
+                        expanded: false,
+                    });*/
+                }
+                edges.add({
+                    id: `${cur_node.id}_${input}`,
+                    from: cur_node.id,
+                    to: new_id,
+                    input: input,
+                });
+            }
+            nodes.updateOnly({ id: cur_node.id, expanded: true, color: "#fcba03" });
+        }
+
+        function expandLevel() {
+            nodes.forEach(expandNode);
+        }
+
+        function expandAll() {
+            while (true) {
+                if (nodes.get({ filter: x => !x.expanded }).length === 0) break;
+                expandLevel();
+            }
+        }
+
+        // Separate this to add styling
+        function addNode(state, id = undefined) {
+            if (id === undefined) id = State.id(state);
+            let won = State.isWon(state);
+            nodes.add({
+                id: id,
+                state: state,
+                won: won,
+                expanded: false,
+
+                label: CONFIG.showIDs ? id : "",
+                color: "#9803fc",
+                shape: (state === State.initialState) ? "diamond" : won ? "star" : "dot",
+            });
+        }
+
+        function clusterByPlayerX() { // just for testing
+            for (let x=0; x<4; x++) {
+                network.cluster({
+                    joinCondition: function (node) {
+                        return !network.isCluster(node.id) && node.state.player.x === x;
+                    },
+                    clusterNodeProperties: {
+                        id: "clusterPlayerX=" + x,
+                        shape: "database",
+                        label: "clusterPlayerX=" + x,
+                    },
+                })
+            }
+        }
+
+        // function clusterByCratePosition() {
+        //     // clusterNodeProperties: {
+        //     //     id: "cluster:" + color,
+        //     //         borderWidth: 3,
+        //     //             shape: "database",
+        //     //                 color: color,
+        //     //                     label: "color:" + color,
+        //     //         },
+            
+        //     network.cluster({
+        //         joinCondition: function () {
+
+        //         }
+        //     })
+        // }
+
+        /*function clusterByCid() {
+            network.setData(data);
+            var clusterOptionsByData = {
+                joinCondition: function (childOptions) {
+                    return childOptions.cid == 1;
+                },
+                clusterNodeProperties: {
+                    id: "cidCluster",
+                    borderWidth: 3,
+                    shape: "database",
+                },
+            };
+            network.cluster(clusterOptionsByData);
+        }*/
+        /*function clusterByColor() {
+            network.setData(data);
+            var colors = ["orange", "lime", "DarkViolet"];
+            var clusterOptionsByData;
+            for (var i = 0; i < colors.length; i++) {
+                var color = colors[i];
+                clusterOptionsByData = {
+                    joinCondition: function (childOptions) {
+                        return childOptions.color.background == color; // the color is fully defined in the node.
+                    },
+                    processProperties: function (
+                        clusterOptions,
+                        childNodes,
+                        childEdges
+                    ) {
+                        var totalMass = 0;
+                        for (var i = 0; i < childNodes.length; i++) {
+                            totalMass += childNodes[i].mass;
+                        }
+                        clusterOptions.mass = totalMass;
+                        return clusterOptions;
+                    },
+                    clusterNodeProperties: {
+                        id: "cluster:" + color,
+                        borderWidth: 3,
+                        shape: "database",
+                        color: color,
+                        label: "color:" + color,
+                    },
+                };
+                network.cluster(clusterOptionsByData);
+            }
+        }*/
+        /*function clusterByConnection() {
+            network.setData(data);
+            network.clusterByConnection(1);
+        }
+        function clusterOutliers() {
+            network.setData(data);
+            network.clusterOutliers();
+        }
+        function clusterByHubsize() {
+            network.setData(data);
+            var clusterOptionsByData = {
+                processProperties: function (clusterOptions, childNodes) {
+                    clusterOptions.label = "[" + childNodes.length + "]";
+                    return clusterOptions;
+                },
+                clusterNodeProperties: {
+                    borderWidth: 3,
+                    shape: "box",
+                    font: { size: 30 },
+                },
+            };
+            network.clusterByHubsize(undefined, clusterOptionsByData);
+        }*/
+    </script>
+</body>
+
+</html>
