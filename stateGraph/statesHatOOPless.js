@@ -24,15 +24,15 @@ function waveWand (hatContents) {
     const [condition, result] = rules[k]
     if (hatContents.length >= 3 && hatContents[0] == 'C') {
       let newHatContents = hatContents.slice(1)
-      let e1 = hatContents.shift()
-      let e2 = hatContents.shift()
+      let e1 = newHatContents.shift()
+      let e2 = newHatContents.shift()
       newHatContents.unshift(e1)
       return newHatContents
     }
     if (hatContents.length >= 3 && hatContents[0] == 'D') {
       let newHatContents = hatContents.slice(1)
-      let e1 = hatContents.shift()
-      let e2 = hatContents.shift()
+      let e1 = newHatContents.shift()
+      let e2 = newHatContents.shift()
       newHatContents.unshift(e1)
       newHatContents.unshift(e2)
       return newHatContents
