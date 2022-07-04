@@ -6,6 +6,10 @@
 
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"
+        integrity="sha512-WoO4Ih0CDOSLYafy22wZD/mcJ7k0ESLqtQsFa6zFKnEUrbtuGU+GkLtVhgt93xa2qewG5gKEC6CWlN8OaCTSVg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <style type="text/css">
         #mynetwork {
             width: 100%;
@@ -16,7 +20,8 @@
             overflow: hidden;
         }
     </style>
-    <script src="statesMicrobanOOPless.js"></script>
+    <script src="statesHatOOPless.js"></script>
+    <!-- <script src="statesMicrobanOOPless.js"></script> -->
     <!-- <script src="statesBureauOOPless.js"></script> -->
 </head>
 
@@ -27,6 +32,12 @@
         let CONFIG = {
             showIDs: true,
         };
+
+        let gui = new dat.GUI();
+        let BUTTONS = {
+            expandLevel: expandLevel,
+        }
+        gui.add(BUTTONS, "expandLevel");
 
         // create a network
         let nodes = new vis.DataSet();
@@ -62,6 +73,7 @@
             }
         );
         addNode(State.initialState);
+        expandNode(nodes.get()[0]);
 
         /*network.on("selectNode", function (params) {
             if (params.nodes.length == 1) {
@@ -122,6 +134,7 @@
                     from: cur_node.id,
                     to: new_id,
                     input: input,
+                    label: input,
                 });
             }
             nodes.updateOnly({ id: cur_node.id, expanded: true, color: "#fcba03" });
