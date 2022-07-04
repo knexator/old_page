@@ -113,7 +113,7 @@ State.id = function (state) {
   let resourcesID = state.resources.join(',')
   let hatsID = state.hats.map((hat, hatIndex, hatsArray) => {
     let hatName = hatsArray.length > 1 ? `${hatIndex}${hat.type}: ` : ''
-    return `${hatName}[${hat.contents.join(',')}]`
+    return `${hatName}[${hat.contents.slice().join(',')}]`
   })
   let shownID = state.shown.join(',')
   return [resourcesID, hatsID, shownID].join('\n')
