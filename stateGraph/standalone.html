@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>hat thing</title>
+
+    <style type="text/css">
+    </style>
+    <script src="statesHatOOPless.js"></script>
+</head>
+
+<body>
+    <div id="curState"></div>
+    <div id="inputOptions">
+        <br><button>asdfasdf</button><br>
+        <br><button>asdfasdf</button><br>
+        <br><button>asdfasdf</button><br>
+    </div>
+    <script type="text/javascript">
+        let activeState = null;
+        let curStateDiv = document.getElementById("curState");
+        let inputOptionsDiv = document.getElementById("inputOptions");
+
+        function setState(state) {
+            activeState = state;
+            curStateDiv.innerText = State.textRepresentation(state);
+            let nextStates = State.nextStates(state);
+            let nextStatesInputs = [];
+            for (const [input, nextState] of Object.entries(nextStates)) {
+                nextStatesInputs.push(makeInputElement(input, nextState))
+            }
+            inputOptionsDiv.replaceChildren(...nextStatesInputs);
+        }
+
+        function makeInputElement(input, nextState) {
+            let btn = document.createElement("button");
+            btn.innerHTML = input;
+            btn.onclick = function (ev) {
+                setState(nextState);
+            }
+            return btn;
+        }
+
+        /*inputOptionsDiv.replaceChildren(
+            makeInputElement("hola", "stateThingCosa"),
+            makeInputElement("hola", "stateThingCosa"),
+            makeInputElement("hola", "stateThingCosa"),
+        )*/
+
+
+
+        // container.replaceChildren(...arrayOfNewChildren);
+
+        // https://stackoverflow.com/questions/494143/creating-a-new-dom-element-from-an-html-string-using-built-in-dom-methods-or-pro
+        function htmlToElement(html) {
+            var template = document.createElement('template');
+            html = html.trim(); // Never return a text node of whitespace as the result
+            template.innerHTML = html;
+            return template.content.firstChild;
+        }
+    </script>
+    <script>
+        function solve(resources, target, limit = 1e5) {
+            let initialState = {
+                resources: resources.split(","),
+                hats: [
+                    {
+                        type: 'Hat',
+                        contents: []
+                    }
+                ],
+                shown: []
+            }
+            let targetStringified = JSON.stringify(target.split(","));
+
+            let pending = [];
+            let touchedIds = new Set();
+            let reverseMap = {};
+            let reverseInputsMap = {};
+            pending.push(initialState);
+            touchedIds.add(State.id(initialState));
+            while (pending.length > 0 && touchedIds.size < limit) {
+                let curState = pending.shift();
+
+                if (State.fakeIsWon(curState, targetStringified)) {
+                    console.log("won!");
+                    let curStateId = State.id(curState);
+                    let inputSequence = [];
+                    while (true) {
+                        let prevStateId = reverseMap[curStateId];
+                        if (prevStateId !== undefined) {
+                            inputSequence.push(reverseInputsMap[curStateId]);
+                            curStateId = prevStateId;
+                        } else {
+                            break;
+                        }
+                    }
+                    inputSequence.reverse();
+                    return inputSequence.join(",") + `; unused: ${curState.resources}`;
+                }
+
+                let stateId = State.id(curState);
+                let nextStates = State.nextStates(curState);
+                for (const [input, nextState] of Object.entries(nextStates)) {
+                    let nextStateId = State.id(nextState);
+                    if (touchedIds.has(nextStateId)) continue;
+                    touchedIds.add(nextStateId);
+                    pending.push(nextState);
+                    reverseMap[nextStateId] = stateId;
+                    reverseInputsMap[nextStateId] = input;
+                }
+            }
+            console.log("failed");
+        }
+    </script>
+    <script>setState(State.initialState);</script>
+</body>
+
+</html>
