@@ -598,9 +598,10 @@
                     spawnAnimal(100, 400, "flower");
                     spawnAnimal(150, 210, "flower");
                     spawnAnimal(120, 320, "flower");
-                    spawnAnimal(510, 210, "dove");
-                    spawnAnimal(610, 310, "elephant");
-                    setGoal(["dove", "dove", "dove", "elephant", "elephant", "elephant"]);
+                    spawnAnimal(120, 320, "flower");
+                    spawnAnimal(120, 320, "flower");
+                    spawnAnimal(120, 320, "flower");
+                    setGoal(["dove"]);
                     break;
                 default:
                     break;
@@ -911,7 +912,7 @@
                         let newestElement = hatContents.pop();
                         let newestElementType = newestElement.dataset.type;
                         dissolveInHat(newestElement);
-                        spawnAnimalInHat(newestElementType, false, true);
+                        spawnAnimalInHat(newestElementType, hatContents.length === 0, true);
                     }
                     return true;
                     break;

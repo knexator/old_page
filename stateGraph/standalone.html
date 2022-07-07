@@ -112,6 +112,178 @@
             }
             console.log("failed");
         }
+
+        // Rabbit: triplicate second argument (in code)
+        // Flower: apply mapping (in code)
+        // Dove: rotate up (in code)
+        // Elephant: rotate down (in code)
+        // Joker: swap next two (in code)
+        // Mirror: apply pair mapping
+        State.flowerMap = {
+            "R": "J",
+            "J": "D",
+            "D": "E",
+            "E": "F",
+            "F": "M",
+            "M": "R",
+        }
+        function generateAllStacks(resources, lowestCoolScore = 7, maxConsideredStack = 11, limit = 1e5) {
+            let initialState = {
+                resources: resources.split(","),
+                hats: [
+                    {
+                        type: 'Hat',
+                        contents: []
+                    }
+                ],
+                shown: []
+            }
+
+            let pending = [];
+            let touchedIds = new Set();
+            let reverseMap = {};
+            let reverseInputsMap = {};
+            let costMap = {};
+            let minCostMap = {};
+            let stackSizeMap = {};
+            let fake2trueMap = {};
+            pending.push(initialState);
+            touchedIds.add(State.id(initialState));
+            costMap[State.id(initialState)] = 0;
+
+            stackSizeMap[State.fakeId(initialState)] = 0;
+            minCostMap[State.fakeId(initialState)] = 0;
+            fake2trueMap[State.fakeId(initialState)] = State.id(initialState);
+
+            while (pending.length > 0 && touchedIds.size < limit) {
+                let curState = pending.shift();
+                let curStateId = State.id(curState);
+                let nextStates = State.nextStates(curState);
+                for (const [input, nextState] of Object.entries(nextStates)) {
+                    // console.log(nextState);
+                    if (nextState.hats[0].contents.length > maxConsideredStack) continue;
+                    nextState.shown = [];
+                    let nextStateId = State.id(nextState);
+                    if (touchedIds.has(nextStateId)) continue;
+                    touchedIds.add(nextStateId);
+                    pending.push(nextState);
+                    reverseMap[nextStateId] = curStateId;
+                    reverseInputsMap[nextStateId] = input;
+                    costMap[nextStateId] = costMap[curStateId] + 1;
+
+                    let nextStateFakeId = State.fakeId(nextState);
+                    if (minCostMap[nextStateFakeId] === undefined || minCostMap[nextStateFakeId] > costMap[curStateId] + 1) {
+                        minCostMap[nextStateFakeId] = costMap[curStateId] + 1;
+                        stackSizeMap[nextStateFakeId] = nextState.hats[0].contents.length;
+                        fake2trueMap[nextStateFakeId] = nextStateId;
+                    }
+                }
+            }
+            if (pending.length > 0) console.log("stopping search early, with remaining elements: ", pending.length);
+
+            // let nStates = 0;
+            // let nCoolStates = 0;
+            let coolestStateFakeId = null;
+            let coolestStateScore = -Infinity;
+            let nStates = 0;
+            let nCoolStates = 0;
+            let totalCoolScore = 0;
+            for (const [fakeId, cost] of Object.entries(minCostMap)) {
+                nStates += 1;
+                let score = cost - (stackSizeMap[fakeId] * stackSizeMap[fakeId]) * .1;
+                if (score > coolestStateScore) {
+                    // console.log(score, fakeId);
+                    coolestStateScore = score;
+                    coolestStateFakeId = fakeId;
+                }
+                if (score >= lowestCoolScore) {
+                    nCoolStates += 1;
+                    totalCoolScore += score;
+                }
+                /*if (stackSizeMap[fakeId] <= maxStack && cost > minCostMap) {
+                    nCoolStates += 1;
+                }*/
+            }
+
+            /*let curStateId = fake2trueMap[coolestStateFakeId];
+            console.log("here's to get to ", curStateId);
+            let inputSequence = [];
+            while (true) {
+                let prevStateId = reverseMap[curStateId];
+                if (prevStateId !== undefined) {
+                    inputSequence.push(reverseInputsMap[curStateId]);
+                    curStateId = prevStateId;
+                } else {
+                    break;
+                }
+            }
+            inputSequence.reverse();
+            console.log(inputSequence.join(","));
+
+
+            console.log("coolest state: ", coolestStateFakeId);*/
+            return [nCoolStates / nStates, totalCoolScore / nCoolStates, coolestStateScore];
+            // return nCoolStates / nStates;
+        }
+
+        /*State.flowerMap = {
+            "R": "J",
+            "J": "D",
+            "D": "E",
+            "E": "F",
+            "F": "M",
+            "M": "R",
+        } [0.05282085347137916, 6.453686036427361, 8.4]
+standalone.html:240 (3) [0.5152173913043478, 7.309704641350208, 11.6]
+standalone.html:241 (3) [0.336740488358887, 7.803878583473886, 13.6]*/
+        /*State.flowerMap = {
+            "E": "R",
+            "D": "F",
+            "F": "J",
+            "M": "E",
+            "R": "D",
+            "J": "M",
+        }[0.4112625830092521, 7.650039258526607, 24.9]
+standalone.html:251 (3) [0.4273972602739726, 7.01410256410256, 11.6]
+standalone.html:252 (3) [0.31952662721893493, 7.7690235690235845, 14.5]*/
+        /*State.flowerMap = {
+            "E": "F",
+            "D": "R",
+            "F": "J",
+            "M": "E",
+            "R": "D",
+            "J": "M",
+        }[0.3969515657072979, 7.585517291965298, 24.9]
+standalone.html:263 (3) [0.4273972602739726, 7.01410256410256, 11.6]
+standalone.html:264 (3) [0.31535756154747946, 7.746840148698898, 14.5]*/
+
+        /*State.flowerMap = {
+            "E": "F",
+            "D": "R",
+            "F": "J",
+            "M": "D",
+            "R": "E",
+            "J": "M",
+        }[0.40557381735029296, 7.4527168933688, 22.9]
+standalone.html:272 (3) [0.4273972602739726, 7.01410256410256, 11.6]
+standalone.html:273 (3) [0.30027173913043476, 7.78936651583712, 13.6]*/
+
+        State.flowerMap = {
+            "E": "R",
+            "D": "F",
+            "F": "J",
+            "M": "E",
+            "R": "D",
+            "J": "M",
+        }
+        function evaluateFlowerMaps() {
+
+            console.log("scores:")
+            console.log(generateAllStacks("D,E,R,R,F,F,M", 6, 11, 2e5))
+            console.log(generateAllStacks("F,F,F,M,M,M", 6, 11, 2e5))
+            console.log(generateAllStacks("F,R,R,E,E,E", 6, 11, 2e5))
+        }
+
     </script>
     <script>setState(State.initialState);</script>
 </body>
