@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>hat thing, with graphics</title>
+
+    <style>
+        /* body {} */
+
+        #fakeBody {
+            background: url("img/background.png") no-repeat center center fixed;
+            /* background-size: contain; */
+            user-select: none;
+            margin: 0;
+            padding: 0;
+
+
+            /* fake body stuff: */
+            position: absolute;
+            margin: auto;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            width: 800px;
+            height: 600px;
+        }
+
+        #leftCurtain {
+            position: absolute;
+            z-index: -10;
+        }
+
+        #rightCurtain {
+            position: absolute;
+            z-index: -10;
+        }
+
+        #audience {
+            position: absolute;
+            z-index: -20;
+        }
+
+        .openLeftCurtain {
+            animation: openLeftCurtainAnim 2s both;
+        }
+
+        .closeLeftCurtain {
+            animation: openLeftCurtainAnim 2s both;
+            animation-direction: reverse;
+        }
+
+        .openRightCurtain {
+            animation: openRightCurtainAnim 2s both;
+        }
+
+        .closeRightCurtain {
+            animation: openRightCurtainAnim 2s both;
+            animation-direction: reverse;
+        }
+
+        @keyframes openLeftCurtainAnim {
+            from {
+                left: 0px;
+            }
+
+            to {
+                left: -300px;
+            }
+        }
+
+        @keyframes openRightCurtainAnim {
+            from {
+                left: 0px;
+            }
+
+            to {
+                left: 300px;
+            }
+        }
+
+        .moveOffscreenLeft {
+            animation: moveOffscreenLeftAnim 2s both;
+        }
+
+        .moveOffscreenRight {
+            animation: moveOffscreenRightAnim 2s both;
+        }
+
+        @keyframes moveOffscreenLeftAnim {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(-500px);
+            }
+        }
+
+        @keyframes moveOffscreenRightAnim {
+            from {
+                transform: translateX(0);
+            }
+
+            to {
+                transform: translateX(500px);
+            }
+        }
+
+        .disabledWand {
+            pointer-events: none;
+            filter: saturate(0%);
+            cursor: default !important;
+        }
+
+        .draggable {
+            cursor: grab;
+            position: absolute;
+            /* top: attr(data-y px);
+            left: attr(data-x px); */
+            /* top: 100;
+            left: 400; */
+            /* transform: translate(100px); */
+            /* translate: (200px, 10px); */
+        }
+
+        #buttonArea {
+            position: absolute;
+            margin-top: 500px;
+            margin-left: 300px;
+            text-align: center;
+        }
+
+        #goButton {
+            position: absolute;
+            height: 75px;
+            width: 100px;
+            margin: 180px 0 0 -40px;
+            top: 50%;
+            left: 50%;
+            font-size: 48px;
+            z-index: 1;
+        }
+
+        /*.item {
+            height: 100%;
+        }
+
+        .dropzone {
+            background: rgb(200, 74, 74);
+        }
+
+        .draggable-dropzone--occupied {
+            background: lightgreen;
+        }
+
+        .draggable-container--is-dragging {
+            user-select: none;
+        }
+
+        .draggable-source--placed {
+            background-color: bisque;
+        }
+
+        .draggable-source--is-dragging {
+            background-color: white;
+        }*/
+
+        .animal {
+            width: 96px;
+            height: 96px;
+            position: absolute;
+        }
+
+        .goalIndicator {
+            width: 32px;
+            height: 32px;
+            position: absolute;
+            z-index: 30;
+        }
+
+        /*#buttonArea {
+            left: 0;
+            right: 0;
+            text-align: center;
+        }*/
+
+        #goalArea {
+            user-select: none;
+            pointer-events: none;
+            left: 0;
+            right: 0;
+            /* position: absolute; */
+            /* display: inline-block; */
+            text-align: center;
+        }
+
+        .goalNeutral {
+            width: 64px;
+            height: 64px;
+            filter: saturate(0%);
+        }
+
+        .goalRight {
+            width: 64px;
+            height: 64px;
+            filter: saturate(0%);
+            /* background: greenyellow; */
+        }
+
+        .goalRight:after {
+            display: block;
+            content: "";
+            width: 3px;
+            height: 5px;
+            background: transparent url('img/gem.svg') no-repeat;
+
+        }
+
+        .goalWrong {
+            width: 64px;
+            height: 64px;
+            filter: saturate(0%);
+            /* filter: brightness(1000%); */
+            /* background: red; */
+        }
+
+        /* left: 300px + 60;  - 40 */
+        /* top: 500px; - 150 */
+        #hat {
+            position: absolute;
+            width: 96px;
+            height: 96px;
+            left: 320px;
+            top: 350px;
+            z-index: 20;
+            /* pointer-events: none; */
+            user-select: none;
+            transform: scaleY(-1);
+            /* translate(-50%, -50%); */
+            cursor: pointer;
+        }
+
+        .toHat {
+            animation: toHatAnim .5s both;
+            z-index: 5;
+        }
+
+        .toDepths {
+            animation: toDepthsAnim .5s both;
+            z-index: 3;
+        }
+
+        .fromDepths {
+            animation: toDepthsAnim .5s both;
+            animation-direction: reverse;
+            z-index: 3;
+            /* animation-delay: .25s; */
+        }
+
+        .inDepths {
+            left: 335px;
+            top: 375px;
+            width: 32px;
+            height: 32px;
+        }
+
+        .toDissolve {
+            /* todo better animation (go to opacity 0) */
+            animation: toDissolveAnim .5s forwards;
+        }
+
+        .popOut {
+            animation: popOutAnim .5s forwards;
+            animation-timing-function: linear;
+        }
+
+        @keyframes toHatAnim {
+            to {
+                left: 335px;
+                top: 325px;
+                width: 64px;
+                height: 64px;
+            }
+        }
+
+        @keyframes toDepthsAnim {
+            from {
+                left: 335px;
+                top: 325px;
+                width: 64px;
+                height: 64px;
+            }
+
+            to {
+                left: 335px;
+                top: 375px;
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        @keyframes toDissolveAnim {
+            from {
+                opacity: 1;
+                /*left: 375px;
+                top: 325px;
+                width: 64px;
+                height: 64px;*/
+            }
+
+            to {
+                opacity: 0;
+                /*left: 375px;
+                top: 375px;
+                width: 32px;
+                height: 32px;*/
+            }
+        }
+
+        @keyframes popOutAnim {
+            from {
+                left: 335px;
+                top: 325px;
+                width: 64px;
+                height: 64px;
+            }
+
+            to {
+                left: 400px;
+                top: -150px;
+                width: 128px;
+                height: 128px;
+                transform: rotate(360deg);
+            }
+        }
+
+        #wand {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            /* background: rebeccapurple; */
+            /* left: 500px; */
+            /* top: 300px; */
+            left: 420px;
+            top: 350px;
+            z-index: 20;
+            /* pointer-events: none; */
+            user-select: none;
+            transform: scaleX(-1);
+            cursor: pointer;
+        }
+
+        .activateWand {
+            animation: activateWandAnim .5s;
+        }
+
+        .failWand {
+            animation: failWandAnim .5s;
+        }
+
+        @keyframes activateWandAnim {
+            from {
+                transform: rotate(0deg) scaleX(-1);
+            }
+
+            to {
+                transform: rotate(-360deg) scaleX(-1);
+            }
+        }
+
+        @keyframes failWandAnim {
+            0% {
+                transform: rotate(0deg) scaleX(-1);
+            }
+
+            25% {
+                transform: rotate(-20deg) scaleX(-1);
+            }
+
+            75% {
+                transform: rotate(20deg) scaleX(-1);
+            }
+
+            100% {
+                transform: rotate(0deg) scaleX(-1);
+            }
+        }
+
+        #sfx {
+            position: absolute;
+            width: 96px;
+            height: 96px;
+            left: 320px;
+            top: 285px;
+            z-index: 10;
+            pointer-events: none;
+            user-select: none;
+            opacity: 0;
+        }
+
+        .activateSfx {
+            animation: activateSfxAnim .5s;
+        }
+
+        @keyframes activateSfxAnim {
+            0% {
+                opacity: 0;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0;
+            }
+        }
+
+        #clap {
+            position: absolute;
+            left: 550px;
+            top: 400px;
+            width: 96px;
+            height: 96px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .showClaps {
+            animation: showClapsAnim .7s;
+            animation-timing-function: linear;
+        }
+
+        @keyframes showClapsAnim {
+            0% {
+                top: 400px;
+                opacity: 0;
+            }
+
+            20% {
+                opacity: 1;
+            }
+
+            80% {
+                opacity: 1;
+            }
+
+            100% {
+                top: 250px;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="fakeBody">
+        <img src="img/leftCurtain.png" id="leftCurtain">
+        <img src="img/rightCurtain.png" id="rightCurtain">
+        <img src="img/audience.png" id="audience">
+        <img src="img/clapping.svg" id="clap">
+        <!-- <img id="testRabbit" class="animal draggable" draggable="false" src="img/rabbit.svg" alt="rabbit"> -->
+
+        <!-- <div class="item">
+            <img class="animal draggable" draggable="false" src="img/rabbit.svg" alt="rabbit">
+        </div> -->
+
+        <img src="img/hat.svg" id="hat" onclick="popElementFromHat()" draggable="false">
+        <img src="img/wand.svg" id="wand" onclick="activateWand()" draggable="false">
+        <img src="img/sfx.svg" id="sfx" draggable="false">
+        <!-- <div id="hat" onmousedown="console.log('hat says mouse down')" onmouseup="console.log('hat says mouse up')">
+        </div> -->
+
+        <div id="goalArea">
+            <img src="img/rabbit.svg" class="goalRight">
+            <img src="img/dove.svg" class="goalNeutral">
+            <img src="img/rabbit.svg" class="goalWrong">
+        </div>
+
+        <div id="buttonArea">
+            <!-- <div><button>prev</button><button>Level 1</button><button>next</button></div> -->
+            <button onclick="prevLevel()" id="prevLevel">prev</button><button onclick="resetLevel()"
+                id="startShow">Reset the
+                1st show</button><button id="nextLevel" onclick="nextLevel()">next</button>
+        </div>
+        <button onclick="startTheShow()" id="goButton">Go!</button>
+    </div>
+
+    <script type="text/javascript">
+        let selectedElement = null;
+        let offset = null;
+        // let onHat = false;
+        // let pendingNull = false;
+
+        let bodyElement = document.getElementById("fakeBody");
+        let hatElement = document.getElementById("hat");
+        let wandElement = document.getElementById("wand");
+        let sfxElement = document.getElementById("sfx");
+        let goalAreaElement = document.getElementById("goalArea");
+        let leftCurtainElement = document.getElementById("leftCurtain");
+        let rightCurtainElement = document.getElementById("rightCurtain");
+        let clapElement = document.getElementById("clap");
+        clapElement.addEventListener('animationend', () => {
+            clapElement.classList.remove("showClaps");
+        });
+
+        let hatContents = [];
+        let showStarted = false;
+        let curGoalIndex = 0;
+        let goalElements = [];
+        let currentlyWinning = true;
+
+        let goalIndicators = [];
+        // let spawnedAnimals = [];
+
+        let hatX = 360;
+        let hatY = 340;
+
+        let curLevel = 0;
+        let MAX_LEVEL = 4;
+        loadLevel(curLevel);
+
+        function prevLevel() {
+            if (curLevel > 0) {
+                curLevel -= 1;
+                loadLevel(curLevel);
+            }
+        }
+
+        function nextLevel() {
+            if (curLevel < MAX_LEVEL) {
+                curLevel += 1;
+                loadLevel(curLevel);
+            }
+        }
+
+        function ordinal_suffix_of(i) {
+            var j = i % 10,
+                k = i % 100;
+            if (j == 1 && k != 11) {
+                return i + "st";
+            }
+            if (j == 2 && k != 12) {
+                return i + "nd";
+            }
+            if (j == 3 && k != 13) {
+                return i + "rd";
+            }
+            return i + "th";
+        }
+
+        function loadLevel(n) {
+            leftCurtainElement.classList.remove("openLeftCurtain");
+            rightCurtainElement.classList.remove("openRightCurtain");
+            currentlyWinning = true;
+            showStarted = false;
+            document.getElementById("startShow").disabled = false;
+            goalIndicators.forEach(x => x.remove());
+            document.querySelectorAll(".animal").forEach(x => x.remove())
+            document.getElementById("prevLevel").disabled = (n === 0);
+            document.getElementById("nextLevel").disabled = (n === MAX_LEVEL);
+            document.getElementById("startShow").innerText = `Reset the ${ordinal_suffix_of(n + 1)} show`;
+            document.getElementById("goButton").hidden = false;
+            hatContents = [];
+            if (n === 0) {
+                wandElement.classList.add("disabledWand");
+            } else {
+                wandElement.classList.remove("disabledWand");
+            }
+            switch (n) {
+                case 0: // basic mechanics
+                    spawnAnimal(100, 400, "rabbit");
+                    spawnAnimal(150, 210, "dove");
+                    spawnAnimal(510, 210, "flower");
+                    spawnAnimal(610, 310, "elephant");
+                    setGoal(["elephant", "rabbit", "dove", "flower"]);
+                    break;
+                case 1: // rabbit multiplies
+                    spawnAnimal(120, 200, "rabbit");
+                    spawnAnimal(140, 320, "rabbit");
+                    spawnAnimal(520, 400, "dove");
+                    spawnAnimal(580, 250, "elephant");
+                    setGoal(["dove", "dove", "dove", "elephant", "elephant", "elephant"]);
+                    break;
+                case 2: // joker mechanics
+                    spawnAnimal(100, 400, "rabbit");
+                    spawnAnimal(150, 210, "joker");
+                    spawnAnimal(510, 210, "dove");
+                    spawnAnimal(650, 340, "elephant");
+                    setGoal(["dove", "elephant", "dove", "dove"]);
+                    break;
+                case 3: // flower rule
+                    spawnAnimal(100, 400, "flower");
+                    spawnAnimal(150, 210, "flower");
+                    spawnAnimal(120, 320, "flower");
+                    spawnAnimal(510, 210, "dove");
+                    spawnAnimal(610, 310, "elephant");
+                    setGoal(["dove", "dove", "dove", "elephant", "elephant", "elephant"]);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+
+        function setGoal(types) {
+            goalElements = types.map(type => {
+                let element = new Image();
+                element.src = `img/${type}.svg`;
+                element.classList.add('goalNeutral');
+                element.setAttribute('draggable', false);
+                element.setAttribute('data-type', type);
+                return element;
+            });
+            curGoalIndex = 0;
+            goalAreaElement.replaceChildren(...goalElements);
+        }
+
+        function spawnAnimalInHat(type, endUpShowing = false, fromBelow = false) {
+            let element = new Image();
+            element.src = `img/${type}.svg`;
+            element.classList.add('animal');
+            element.setAttribute('draggable', false);
+            element.setAttribute('data-type', type);
+            element.classList.add('animal');
+            if (endUpShowing) {
+                element.classList.add('fromDepths');
+            } else {
+                element.classList.add('inDepths');
+            }
+            element.addEventListener('animationend', () => {
+                console.log('spawnAnimalInHat Anim ended');
+            }, { once: true });
+
+            bodyElement.appendChild(element);
+
+            if (fromBelow) {
+                hatContents.unshift(element);
+            } else {
+                hatContents.push(element);
+            }
+        }
+
+        function spawnAnimal(x, y, type) {
+            let element = new Image();
+            element.src = `img/${type}.svg`;
+            element.classList.add('draggable');
+            element.classList.add('animal');
+            element.setAttribute('draggable', false);
+            element.setAttribute('data-x', x);
+            element.setAttribute('data-y', y);
+            element.setAttribute('data-type', type);
+            // element.setAttribute('data-hat', false);
+            element.style.left = x + "px";
+            element.style.top = y + "px";
+            bodyElement.appendChild(element);
+
+            element.addEventListener('mousedown', startDrag);
+            return element;
+        }
+
+        function startDrag(event) {
+            let element = event.target;
+            selectedElement = element;
+
+            offset = {
+                x: element.dataset.x - event.clientX,
+                y: element.dataset.y - event.clientY,
+            };
+            bodyElement.addEventListener('mousemove', continueDrag);
+            // element.addEventListener('mousemove', continueDrag);
+            element.addEventListener('mouseup', endDrag);
+            element.style.zIndex = "10";
+
+            hatElement.style.pointerEvents = "none";
+            wandElement.style.pointerEvents = "none";
+            // event.preventDefault();
+        }
+
+        function continueDrag(event) {
+            // let element = event.target;
+            let element = selectedElement;
+
+            let x = event.clientX + offset.x;
+            let y = event.clientY + offset.y;
+
+            element.setAttribute('data-x', x);
+            element.setAttribute('data-y', y);
+            element.style.left = x + "px";
+            element.style.top = y + "px";
+
+            let distanceToHat = (x - hatX) * (x - hatX) + (y - hatY) * (y - hatY);
+            if (distanceToHat < 10000) {
+                dropElementIntoHat(element);
+            }
+
+            // event.preventDefault();
+        }
+
+        function endDrag(event) {
+            console.log("endDrag");
+            let element = event.target;
+
+            selectedElement = null;
+            offset = null;
+
+            bodyElement.removeEventListener('mousemove', continueDrag);
+            // element.removeEventListener('mousemove', continueDrag);
+            element.removeEventListener('mouseup', endDrag);
+            // element.removeEventListener('mouseleave', endDrag);
+            element.style.zIndex = "0";
+
+            hatElement.style.pointerEvents = "auto";
+            wandElement.style.pointerEvents = "auto";
+
+            // event.preventDefault();
+        }
+
+        function dropElementIntoHat(element) {
+            if (hatContents.length > 0) {
+                hatContents[hatContents.length - 1].classList.remove("fromDepths");
+                hatContents[hatContents.length - 1].classList.add("toDepths");
+            }
+            endDrag({ target: element });
+            element.classList.remove("draggable");
+            element.classList.add("toHat");
+            hatContents.push(element);
+            element.addEventListener('animationend', () => {
+                console.log('dropElementIntoHat anim ended');
+            }, { once: true });
+            // element.setAttribute('data-hat', true);
+
+            element.removeEventListener('mousedown', startDrag);
+            // element.addEventListener('mousedown', popElementFromHat);
+        }
+
+        function popDuringShow() {
+            console.log("popping!");
+            if (hatContents.length == 0) return;
+            let element = hatContents.pop();
+
+            var mainRect = fakeBody.getBoundingClientRect();
+            var rect = goalElements[0].getBoundingClientRect();
+            console.log(rect.top, rect.right, rect.bottom, rect.left);
+
+            // element.classList.add("popOut");
+
+            if (curGoalIndex < goalElements.length) {
+                let curGoalElement = goalElements[curGoalIndex];
+                curGoalElement.classList.remove("goalNeutral")
+                if (curGoalElement.dataset.type === element.dataset.type) {
+                    // yay
+                    curGoalElement.classList.add("goalRight")
+                } else {
+                    // nay
+                    curGoalElement.classList.add("goalWrong")
+                    currentlyWinning = false;
+                }
+            }
+            curGoalIndex += 1;
+
+            element.animate([
+                // fotogramas clave
+                {
+                    left: '335px',
+                    top: '325px',
+                    width: '64px',
+                    height: '64px',
+                },
+                {
+                    left: `${rect.left + curGoalIndex * 64 - mainRect.left - 64}px`,
+                    top: '90px',
+                    width: '64px',
+                    height: '64px',
+                }
+            ], {
+                // opciones de sincronización
+                duration: 500,
+                fill: 'forwards',
+                easing: "ease-in-out",
+                // iterations: Infinity
+            });
+
+            if (hatContents.length > 0) {
+                hatContents[hatContents.length - 1].classList.remove("toDepths");
+                hatContents[hatContents.length - 1].classList.add("fromDepths");
+            }
+
+            let wasThisRight = (curGoalIndex - 1) < goalElements.length && goalElements[curGoalIndex - 1].dataset.type === element.dataset.type
+            let wasX = rect.left + curGoalIndex * 64 - mainRect.left - 32;
+            let wasThisLast = hatContents.length === 0;
+            setTimeout(() => {
+                console.log("hola");
+                let indicatorElement = new Image();
+                if (wasThisRight) {
+                    indicatorElement.src = `img/right.svg`;
+                } else {
+                    indicatorElement.src = `img/wrong.svg`;
+                }
+                indicatorElement.classList.add('goalIndicator');
+                indicatorElement.setAttribute('draggable', false);
+                indicatorElement.style.left = `${wasX}px`,
+                    indicatorElement.style.top = '130px';
+                bodyElement.appendChild(indicatorElement);
+                goalIndicators.push(indicatorElement);
+
+                if (wasThisLast && currentlyWinning) {
+                    clapElement.classList.add("showClaps")
+                }
+            }, 500);
+
+
+            /*if (hatContents.length > 0) {
+                setTimeout(popDuringShow, 750);
+            }*/
+        }
+
+        function popElementFromHat() {
+            if (showStarted) {
+                popDuringShow();
+                return;
+            }
+            console.log("popping!");
+            if (hatContents.length == 0) return;
+            let element = hatContents.pop();
+            element.classList.add("popOut");
+
+            if (hatContents.length > 0) {
+                hatContents[hatContents.length - 1].classList.remove("toDepths");
+                hatContents[hatContents.length - 1].classList.add("fromDepths");
+            }
+
+            element.addEventListener('animationend', () => {
+                element.remove();
+            }, { once: true });
+        }
+
+        function activateWand() {
+            if (showStarted) {
+                popDuringShow();
+                return;
+            }
+            if (curLevel == 0) return;
+            let wandSuccess = doWandLogic();
+
+            if (wandSuccess) {
+                wandElement.classList.add("activateWand");
+                sfxElement.classList.add("activateSfx");
+                wandElement.addEventListener('animationend', () => {
+                    console.log('wand Anim ended');
+                    wandElement.classList.remove("activateWand");
+                    sfxElement.classList.remove("activateSfx");
+                }, { once: true });
+            } else {
+                wandElement.classList.add("failWand");
+                wandElement.addEventListener('animationend', () => {
+                    console.log('wand fail Anim ended');
+                    wandElement.classList.remove("failWand");
+                }, { once: true });
+            }
+        }
+
+        const flowerMapping = {
+            "mirror": "elephant",
+            "elephant": "rabbit",
+            "rabbit": "dove",
+            "dove": "flower",
+            "flower": "joker",
+            "joker": "mirror"
+        }
+        const mirrorMapping = {
+            "dove": "elephant",
+            "elephant": "dove",
+            "mirror": "flower",
+            "flower": "mirror",
+            "rabbit": "joker",
+            "joker": "rabbit",
+        }
+        function doWandLogic() {
+            if (hatContents.length == 0) return false;
+            switch (hatContents[hatContents.length - 1].dataset.type) {
+                case "rabbit":
+                    // triplicate next thing
+                    if (hatContents.length < 2) return false;
+                    dissolveInHat(hatContents.pop());
+                    let nextType = hatContents[hatContents.length - 1].dataset.type;
+                    spawnAnimalInHat(nextType)
+                    spawnAnimalInHat(nextType, true)
+                    return true;
+                    break;
+                case "dove":
+                    // move bottom thing up
+                    dissolveInHat(hatContents.pop());
+                    if (hatContents.length >= 1) {
+                        let oldestElement = hatContents.shift();
+                        let oldestElementType = oldestElement.dataset.type;
+                        dissolveInHat(oldestElement);
+                        spawnAnimalInHat(oldestElementType, true);
+                    }
+                    return true;
+                    break;
+                case "elephant":
+                    // move top thing to the bottom
+                    dissolveInHat(hatContents.pop());
+                    if (hatContents.length >= 1) {
+                        let newestElement = hatContents.pop();
+                        let newestElementType = newestElement.dataset.type;
+                        dissolveInHat(newestElement);
+                        spawnAnimalInHat(newestElementType, false, true);
+                    }
+                    return true;
+                    break;
+                case "joker":
+                    //shuffle next two
+                    if (hatContents.length < 3) return false;
+                    dissolveInHat(hatContents.pop());
+                    let e1 = hatContents.pop();
+                    let e2 = hatContents.pop();
+                    let e1Type = e1.dataset.type;
+                    let e2Type = e2.dataset.type;
+                    dissolveInHat(e1);
+                    dissolveInHat(e2);
+                    spawnAnimalInHat(e1Type);
+                    spawnAnimalInHat(e2Type, true);
+                    return true;
+                    break;
+                case "flower":
+                    // transform the next card
+                    if (hatContents.length < 2) return false;
+                    dissolveInHat(hatContents.pop());
+                    let element = hatContents.pop();
+                    let elementType = element.dataset.type;
+                    dissolveInHat(element);
+                    spawnAnimalInHat(flowerMapping[elementType], true);
+                    return true;
+                    break;
+                case "mirror":
+                    // transform the next card
+                    if (hatContents.length < 2) return false;
+                    dissolveInHat(hatContents.pop());
+                    let elementM = hatContents.pop();
+                    let elementMType = elementM.dataset.type;
+                    dissolveInHat(elementM);
+                    spawnAnimalInHat(flowerMapping[elementMType], true);
+                    return true;
+                    break;
+                /*case "bouquet":
+                    // transform the next 2 cards
+                    if (hatContents.length < 3) return false;
+                    dissolveInHat(hatContents.pop());
+                    let element1 = hatContents.pop();
+                    let element1Type = element.dataset.type;
+                    let element2 = hatContents.pop();
+                    let element2Type = element.dataset.type;
+
+                    dissolveInHat(element);*/
+                default:
+                    break;
+            }
+        }
+
+        function dissolveInHat(element) {
+            // element.classList.add("toDissolve");
+            // element.addEventListener('animationend', () => {
+            //     element.remove();
+            // }, { once: true });
+            setTimeout(() => element.remove(), 250);
+        }
+
+        function resetLevel() {
+            loadLevel(curLevel);
+        }
+
+        function startTheShow() {
+            if (!showStarted) {
+                leftCurtainElement.classList.add("openLeftCurtain");
+                rightCurtainElement.classList.add("openRightCurtain");
+                var mainRect = fakeBody.getBoundingClientRect();
+                document.querySelectorAll(".animal").forEach(x => {
+                    if (!hatContents.includes(x)) {
+                        var rect = x.getBoundingClientRect();
+                        console.log(rect.left - mainRect.left)
+                        if (rect.left - mainRect.left < 400) {
+                            x.classList.add("moveOffscreenLeft");
+                        } else {
+                            x.classList.add("moveOffscreenRight");
+                        }
+                    }
+                })
+
+                showStarted = true;
+                document.getElementById("goButton").hidden = true;
+                // document.getElementById("startShow").innerHTML = `Reset the ${ordinal_suffix_of(curLevel + 1)} show!`;
+                // document.getElementById("startShow").disabled = true;
+                // popDuringShow();
+            } else {
+                loadLevel(curLevel);
+            }
+        }
+
+    </script>
+</body>
+
+</html>
