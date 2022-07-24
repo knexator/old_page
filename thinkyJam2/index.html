@@ -522,7 +522,7 @@
         let hatY = 340;
 
         let curLevel = 0;
-        let MAX_LEVEL = 4;
+        let MAX_LEVEL = 6;
         loadLevel(curLevel);
 
         function prevLevel() {
@@ -598,12 +598,37 @@
                     spawnAnimal(100, 400, "flower");
                     spawnAnimal(150, 210, "flower");
                     spawnAnimal(120, 320, "flower");
-                    spawnAnimal(120, 320, "flower");
-                    spawnAnimal(120, 320, "flower");
-                    spawnAnimal(120, 320, "flower");
+                    spawnAnimal(530, 320, "flower");
+                    spawnAnimal(640, 220, "flower");
+                    spawnAnimal(550, 120, "flower");
                     setGoal(["dove"]);
                     break;
+                case 4: // elephant rule
+                    spawnAnimal(100, 400, "elephant");
+                    spawnAnimal(150, 210, "rabbit");
+                    spawnAnimal(510, 210, "dove");
+                    spawnAnimal(650, 340, "elephant");
+                    setGoal(["dove", "dove", "elephant", "dove"]);
+                    break;
+                case 5: // dove rule
+                    spawnAnimal(100, 400, "flower");
+                    spawnAnimal(150, 210, "dove");
+                    spawnAnimal(520, 420, "rabbit");
+                    spawnAnimal(530, 320, "flower");
+                    spawnAnimal(560, 260, "elephant");
+                    setGoal(["rabbit", "flower", "rabbit", "rabbit"]);
+                    break;
+                case 6: // dove + elephant to save/retrieve
+                    spawnAnimal(100, 400, "flower");
+                    spawnAnimal(120, 300, "rabbit");
+                    spawnAnimal(150, 210, "elephant");
+                    spawnAnimal(510, 210, "dove");
+                    spawnAnimal(650, 340, "elephant");
+                    setGoal(["joker", "elephant", "flower"]);
+                    // setGoal(["joker", "rabbit", "flower"]);
+                    break;
                 default:
+                    console.error("cant find that level");
                     break;
             }
         }
@@ -810,7 +835,7 @@
                 bodyElement.appendChild(indicatorElement);
                 goalIndicators.push(indicatorElement);
 
-                if (wasThisLast && currentlyWinning) {
+                if (wasThisLast && currentlyWinning && curGoalIndex === goalElements.length) {
                     clapElement.classList.add("showClaps")
                 }
             }, 500);
@@ -912,7 +937,11 @@
                         let newestElement = hatContents.pop();
                         let newestElementType = newestElement.dataset.type;
                         dissolveInHat(newestElement);
-                        spawnAnimalInHat(newestElementType, hatContents.length === 0, true);
+                        spawnAnimalInHat(newestElementType, false, true);
+                        if (hatContents.length > 0) {
+                            hatContents[hatContents.length - 1].classList.remove("toDepths");
+                            hatContents[hatContents.length - 1].classList.add("fromDepths");
+                        }
                     }
                     return true;
                     break;
