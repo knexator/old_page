@@ -61,6 +61,14 @@
     exports.keyboard_prev = {};
     function keyMap(e) {
         // use key.code if key location is important
+        if (e.key === "ArrowLeft")
+            return "a";
+        if (e.key === "ArrowRight")
+            return "d";
+        if (e.key === "ArrowUp")
+            return "w";
+        if (e.key === "ArrowDown")
+            return "s";
         return e.key.toLowerCase();
     }
     exports.keyMap = keyMap;
