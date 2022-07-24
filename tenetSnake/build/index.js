@@ -92,6 +92,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
             restart();
         }
         if ((0, engine_1.wasKeyPressed)("d") || (0, engine_1.wasKeyPressed)("a") || (0, engine_1.wasKeyPressed)("s") || (0, engine_1.wasKeyPressed)("w")) {
+            if (game_state === "lost")
+                restart();
             input_queue.push({
                 di: ((0, engine_1.wasKeyPressed)("d") ? 1 : 0) - ((0, engine_1.wasKeyPressed)("a") ? 1 : 0),
                 dj: ((0, engine_1.wasKeyPressed)("s") ? 1 : 0) - ((0, engine_1.wasKeyPressed)("w") ? 1 : 0)
@@ -135,6 +137,11 @@ var __importStar = (this && this.__importStar) || function (mod) {
                     (di === -last_head.di && dj === -last_head.dj)) {
                     di = last_head.di;
                     dj = last_head.dj;
+                }
+                // special case: very first input is invalid
+                if (Math.abs(di) + Math.abs(dj) !== 1) {
+                    di = 1;
+                    dj = 0;
                 }
                 // assert: turn == last_head.t + time_direction
                 let new_head = { i: mod(last_head.i + di, W), j: mod(last_head.j + dj, H), di: di, dj: dj, t: turn, dt: time_direction };
@@ -326,6 +333,16 @@ var __importStar = (this && this.__importStar) || function (mod) {
         });*/
         ctx.fillStyle = "red";
         ctx.fillRect(cur_apple.i * S, cur_apple.j * S, S, S);
+        ctx.font = '30px sans-serif';
+        ctx.textAlign = "center";
+        ctx.fillStyle = "white";
+        if (game_state === "waiting") {
+            ctx.fillText("WASD or Arrow Keys to move", canvas.width / 2, canvas.height / 2);
+        }
+        else if (game_state === "lost") {
+            ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2);
+            // ctx.fillText("", canvas.width / 2, canvas.height / 2);
+        }
         (0, engine_1.engine_update)();
         window.requestAnimationFrame(update);
     }
