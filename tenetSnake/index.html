@@ -24,6 +24,49 @@
 <body oncontextmenu="return false">
   <canvas class="centered" width=512 height=512></canvas>
   <!--script src="https://cdn.jsdelivr.net/npm/pintar@2.1.5/dist/pintar.min.js"></script-->
+  <script src="howler.core.min.js"></script>
+  <script>
+    let musicSound = new Howl({
+      src: ['sounds/music.mp3'],
+      autoplay: true,
+      loop: true,
+      volume: 0.25,
+    })
+    let stepSound = new Howl({
+      src: ['sounds/step1.wav'],
+      // autoplay: true,
+      volume: 0.25,
+    })
+    /*let step2Sound = new Howl({
+      src: ['sounds/step4.wav'],
+      // autoplay: true,
+      volume: 0.25,
+    })
+    let step3Sound = new Howl({
+      src: ['sounds/step3.wav'],
+      // autoplay: true,
+      volume: 0.25,
+    })
+    let stepSound = {
+      play: () => {
+        [step1Sound, step2Sound, step3Sound][Math.floor(Math.random() * 3)].play()
+      }
+    }*/
+    let appleSound = new Howl({
+      src: ['sounds/apple.wav'],
+      volume: 1.0,
+    })
+    let crashSound = new Howl({
+      src: ['sounds/crash.wav'],
+      volume: 1.0,
+    })
+    let alarmSound = new Howl({
+      src: ['sounds/alarm.wav'],
+      autoplay: true,
+      loop: true,
+      volume: 0.0,
+    })
+  </script>
   <script data-main="./build/index.js" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js"
     integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg=="
     crossorigin="anonymous" referrerpolicy="no-referrer"></script>

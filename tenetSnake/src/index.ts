@@ -24,9 +24,66 @@ let CHEAT_INMORTAL = false;
 
 let cur_turn_duration = TURN_DURATION
 
+/*let stepSound = new Howl({
+  src: ['sounds/step.wav']
+})
+let stepSound_reversed = new Howl({
+  src: ['sounds/step_reversed.wav']
+})*/
+
+/*
+let COLOR_BACKGROUND = "#000000"
+let COLOR_APPLE = "#ff0000"
+let COLOR_CLOCK = "#111111"
+let COLOR_CLOCK_DANGER = "#331111"
+let COLOR_CLOCK_ACTIVE = "#ffffff"
+let COLOR_CLOCK_DANGER_ACTIVE = "#ff0000"
+let COLOR_APPLE_WARNING = "#553333"
+
 let SNAKE_PASIVE_COLORS = generateColor('#888888','#ffffff',SNAKE_LENGTH);
 let SNAKE_ACTIVE_COLORS = generateColor('#888888','#88FF88',SNAKE_LENGTH);
 let SNAKE_LOST_COLORS   = generateColor('#888888','#FF8888',SNAKE_LENGTH);
+*/
+
+/*
+let COLOR_BACKGROUND = "#1f244b"
+let COLOR_APPLE = "#a8605d"
+let COLOR_CLOCK = "#3c6b64"
+let COLOR_CLOCK_DANGER = "#654053"
+let COLOR_CLOCK_ACTIVE = "#3c6b64"
+let COLOR_CLOCK_DANGER_ACTIVE = "#a8605d"
+let COLOR_APPLE_WARNING = "#d1a67e"
+
+let SNAKE_PASIVE_COLORS = generateColor('#654053','#a8605d',SNAKE_LENGTH);
+let SNAKE_ACTIVE_COLORS = generateColor('#60ae7b','#b6cf8e',SNAKE_LENGTH);
+*/
+
+/*
+let COLOR_BACKGROUND = "#24222e"
+let COLOR_APPLE = "#ff6973"
+let COLOR_CLOCK = "#46425e"
+let COLOR_CLOCK_DANGER = "#ffb0a3"
+let COLOR_CLOCK_ACTIVE = "#3c6b64"
+let COLOR_CLOCK_DANGER_ACTIVE = "#ff4e33"
+let COLOR_APPLE_WARNING = "#ffb0a3"
+
+let SNAKE_PASIVE_COLORS = generateColor('#8c8c8c','#bfbfbf',SNAKE_LENGTH);
+let SNAKE_ACTIVE_COLORS = generateColor('#15788c','#00b9be',SNAKE_LENGTH);
+*/
+
+// https://lospec.com/palette-list/sweetie-16
+let COLOR_BACKGROUND = "#1a1c2c"
+let COLOR_APPLE = "#a7f070"
+let COLOR_CLOCK = "#333c57"
+let COLOR_CLOCK_DANGER = "#29366f"
+let COLOR_CLOCK_ACTIVE = "#5d275d"
+let COLOR_CLOCK_DANGER_ACTIVE = "#b13e53" 
+let COLOR_APPLE_WARNING = "#38b764"
+let COLOR_TEXT = "#f4f4f4"
+
+let SNAKE_PASIVE_COLORS = generateColor('#566c86','#94b0c2',SNAKE_LENGTH);
+let SNAKE_ACTIVE_COLORS = generateColor('#3b5dc9','#41a6f6',SNAKE_LENGTH);
+
 
 let cam_noise = noise.makeNoise3D(0);
 
@@ -38,7 +95,6 @@ let score = 0
 
 let GRID = */
 
-let cur_apple = applePlace()
 
 let turn = -16; // always int
 let turn_offset = 0.99; // always between -1..1
@@ -51,6 +107,7 @@ let head = [
   {i: 8, j:8, t:turn, di: 0, dj: 0, dt: 1},
 ];
 
+let cur_apple = applePlace()
 let changes: {i: number, j: number, t: number, dt: number}[] = []
 
 let remaining_skip_turns = 0;
@@ -62,9 +119,9 @@ let game_state: "waiting" | "main" | "lost" = "waiting"
 function restart() {
   game_state = "waiting"
   input_queue = []
-  cur_apple = applePlace()
   turn = -16; // always int
   head = [{i: 8, j:8, t:turn, di: 0, dj: 0, dt: 1}]
+  cur_apple = applePlace()
   turn_offset = 0.99; // always between -1..1
   time_direction = 1;
   score = 0
@@ -75,6 +132,7 @@ function restart() {
 }
 
 function initOnce() {
+  // musicSound.play();
   window.requestAnimationFrame(update);
 }
 
@@ -104,6 +162,7 @@ function update(curTime: number) {
     turn_offset -= time_direction
     turn += time_direction
     turn = mod(turn, T);
+    stepSound.play();
 
     // if (turn === 0) console.log(head);
 
@@ -161,6 +220,7 @@ function update(curTime: number) {
         }
       }
       if (!CHEAT_INMORTAL && collision) {
+        crashSound.play();
         lose()
       }
       /*let collision = head.some(({i, j, t, dt}) => {
@@ -178,6 +238,7 @@ function update(curTime: number) {
         changes.push({i: new_head.i, j: new_head.j, t: turn, dt: time_direction})
         cur_screen_shake.actualMag = 100.0;
         score += 1;
+        appleSound.play();
         // time_direction *= -1;
       }
     } else {      
@@ -192,7 +253,7 @@ function update(curTime: number) {
     }
   }
 
-  ctx.fillStyle = "black";
+  ctx.fillStyle = COLOR_BACKGROUND;
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -205,7 +266,7 @@ function update(curTime: number) {
   cur_screen_shake.actualMag = towards(cur_screen_shake.actualMag, cur_screen_shake.targetMag, deltaTime * 1)
   // cur_screen_shake.actualMag = lerp(cur_screen_shake.actualMag, cur_screen_shake.targetMag, .1);
 
-  ctx.fillStyle = "black";
+  ctx.fillStyle = COLOR_BACKGROUND;
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
   let danger_size = .2;
@@ -216,13 +277,18 @@ function update(curTime: number) {
   // if (!getting_closer_to_danger) cur_screen_shake.actualMag = 0;
 
   if (distance_to_danger > .9) {
-    ctx.fillStyle = "#331111";
+    ctx.fillStyle = COLOR_CLOCK_DANGER;
     cur_screen_shake.targetMag = 0;
+    alarmSound.volume(0)
   } else {
+    /*let val = lerp(1, 3/16, distance_to_danger / .9) * 255;
+    ctx.fillStyle = convertToHex([val, val / 3, val / 3])*/
+    ctx.fillStyle = lerpHex(COLOR_CLOCK_DANGER_ACTIVE, COLOR_CLOCK_DANGER, distance_to_danger / .9)
+
     let val = lerp(1, 3/16, distance_to_danger / .9) * 255;
-    ctx.fillStyle = convertToHex([val, val / 3, val / 3])
     if (!getting_closer_to_danger) val *= .5
     cur_screen_shake.targetMag = val * .05;
+    alarmSound.volume((1. - distance_to_danger / .9) * .5)
   }
   
   ctx.beginPath();
@@ -231,19 +297,23 @@ function update(curTime: number) {
   ctx.fill();
 
   
-  ctx.strokeStyle = "#111111";
+  
+  if (distance_to_danger > .7) {
+    ctx.fillStyle = COLOR_CLOCK;    
+  } else {
+    // let val = lerp(1, 1/16, distance_to_danger / .7) * 255;
+    let val = distance_to_danger / .7;
+    if (!getting_closer_to_danger) val *= .5
+    ctx.fillStyle = lerpHex(COLOR_CLOCK_ACTIVE, COLOR_CLOCK, val);
+    // ctx.fillStyle = convertToHex([val, val, val])
+  }
+  ctx.strokeStyle = ctx.fillStyle
   ctx.lineWidth = 48;
   ctx.beginPath();
   ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2 - 48, 0, 2 * Math.PI);
   ctx.stroke();
 
-  if (distance_to_danger > .7) {
-    ctx.fillStyle = "#111111";
-  } else {
-    let val = lerp(1, 1/16, distance_to_danger / .7) * 255;
-    if (!getting_closer_to_danger) val *= .5
-    ctx.fillStyle = convertToHex([val, val, val])
-  }
+
   // ctx.fillStyle = "#111111";
   let hand_dist = canvas.width / 2 - 48*2;
   let inner_dist = 48;
@@ -254,7 +324,7 @@ function update(curTime: number) {
   ctx.arc(canvas.width / 2, canvas.height / 2, inner_dist, cur_angle + inner_angle, cur_angle - inner_angle);
   ctx.fill();
 
-  if (!CHEAT_INMORTAL && distance_to_danger <= 0) {
+  if (!CHEAT_INMORTAL && distance_to_danger <= 0 && game_state === "main") {
     // ran out of time!
     lose()
   }
@@ -264,8 +334,7 @@ function update(curTime: number) {
   // ctx.fillStyle = "#333399";
   // ctx.fillRect(0, canvas.height-S, ((turn + turn_offset) / MAX_TURNS + .5) * canvas.width, S);
   
-  ctx.strokeStyle = "#883333";
-  ctx.fillStyle = "#883333";
+  ctx.fillStyle = COLOR_APPLE_WARNING;
   ctx.lineWidth = 4;
   changes.forEach(({i, j, t, dt}) => {
     let normalized_t = (turn - t) * dt
@@ -311,44 +380,16 @@ function update(curTime: number) {
     }
   }
 
-  /*ctx.fillStyle = "white";
-  head.forEach(({i, j, t}) => {
-    if (t !== turn) return;
-    // if (t < turn ) {
-    ctx.fillRect(i * S, j * S, S, S)
-    // }
-  });
-  ctx.fillStyle = "#AAAAAA";
-  head.forEach(({i, j, t, dt}) => {
-    if (t !== mod(turn - 1*dt, T)) return;
-    ctx.fillRect(i * S, j * S, S, S)
-  });
-  ctx.fillStyle = "#888888";
-  head.forEach(({i, j, t, dt}) => {
-    if (t !== mod(turn - 2*dt, T)) return;
-    ctx.fillRect(i * S, j * S, S, S)
-  });
-  ctx.fillStyle = "#555555";
-  head.forEach(({i, j, t, dt}) => {
-    if (t !== mod(turn - 3*dt, T)) return;
-    ctx.fillRect(i * S, j * S, S, S)
-  });
-  ctx.fillStyle = "#222222";
-  head.forEach(({i, j, t, dt}) => {
-    if (t !== mod(turn - 4*dt, T)) return;
-    ctx.fillRect(i * S, j * S, S, S)
-  });*/
-
-  ctx.fillStyle = "red";
+  ctx.fillStyle = COLOR_APPLE;
   ctx.fillRect(cur_apple.i * S, cur_apple.j * S, S, S)
 
   ctx.font = '30px sans-serif';
   ctx.textAlign = "center";
-  ctx.fillStyle = "white";
+  ctx.fillStyle = COLOR_TEXT;
   if (game_state === "waiting") {
-    ctx.fillText("WASD or Arrow Keys to move", canvas.width / 2, canvas.height / 2);
+    ctx.fillText("WASD or Arrow Keys to move", canvas.width / 2, canvas.height / 4);
   } else if (game_state === "lost") {
-    ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 2);
+    ctx.fillText(`Score: ${score}`, canvas.width / 2, canvas.height / 4);
     // ctx.fillText("", canvas.width / 2, canvas.height / 2);
   }
 
@@ -358,6 +399,7 @@ function update(curTime: number) {
 
 function lose() {
   game_state = "lost";
+  
 }
 
 initOnce()
@@ -381,7 +423,25 @@ function towards(a: number, b: number, v: number) {
 }
 
 function applePlace() {
-  return {i: Math.floor(Math.random()*W), j: Math.floor(Math.random()*H)}
+  let i, j, valid;
+  do {
+    i = Math.floor(Math.random()*W)
+    j = Math.floor(Math.random()*H)
+    let last_head = head[head.length - 1]
+    valid = !(i === last_head.i && j === last_head.j) && !(i === last_head.i + last_head.di && j === last_head.j + last_head.dj)
+  } while (!valid);
+  return {i: i, j: j}
+}
+
+function lerpHex(s1: string, s2: string, t: number) {
+  let rgb1 = convertToRGB (s1);    
+	let rgb2 = convertToRGB (s2);
+  // console.log(t)
+  return convertToHex([
+    lerp(rgb1[0], rgb2[0], t),
+    lerp(rgb1[1], rgb2[1], t),
+    lerp(rgb1[2], rgb2[2], t),
+  ])
 }
 
 // https://stackoverflow.com/questions/3080421/javascript-color-gradient

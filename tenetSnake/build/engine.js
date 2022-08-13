@@ -75,6 +75,9 @@
     window.addEventListener('keydown', e => {
         let k = keyMap(e);
         exports.keyboard[k] = true;
+        if (e.key.includes("Arrow")) {
+            e.preventDefault();
+        }
     });
     window.addEventListener('keyup', e => {
         let k = keyMap(e);
