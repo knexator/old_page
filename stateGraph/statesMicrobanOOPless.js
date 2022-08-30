@@ -1,6 +1,6 @@
 // Example: Sokoban - Microban 1
 
-State = {
+export let State = {
   w: 4,
   h: 5,
   walls: [
@@ -80,4 +80,14 @@ State.validPos = function (pos) {
     return false
   }
   return !State.walls[pos.x][pos.y]
+}
+
+State.isClearlyLost = function (state) {
+  return (
+    state.crates[0].y === 0 ||
+    state.crates[0].y === 4 ||
+    state.crates[1].x === 0 ||
+    state.crates[1].x === 3 ||
+    state.crates[1].y === 4
+  )
 }

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">    
+    <title>group thingy</title>
+    <style>
+
+html, body { 
+  font-size: 80%;  
+  margin: 0;
+  padding: 0;
+  width: 100%; 
+  height: 100%;
+}
+
+#top {
+  font-size:2em;
+  height: 5%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#top span {
+  flex-grow: 1;
+  text-align: center;
+}
+
+#top button {
+  height: 100%;
+  font-size:1em;
+  margin: 0;
+}
+
+#chain {
+  font-size:4em;
+  height: 15%;
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  resize: none;
+}
+
+#rules {
+  font-size:1em;
+  overflow: auto;
+  /* overflow: hidden; */
+  height: 70%;
+  display: block;
+  white-space: nowrap;
+}
+
+#footer {
+  height: 10%;
+  display: block;
+}
+
+#footer button {
+  height: 100%;
+  width: 33.333333%;
+  font-size:2em;
+  margin: 0;
+  padding: 0;
+}
+
+.rule {
+  opacity: 50%;
+  font-size: 3em;
+}
+.rule:hover {
+  background-color: lightcyan;
+}
+
+/* button {
+  //font-size:4em;
+}
+
+p {
+  //font-size:4em;
+} */
+
+input {
+  font-family: inherit;
+}
+
+    </style>
+  </head>
+  <body>
+  <div id="top"><span>A game by <a href="https://twitter.com/knexator">knexator</a></span><button onclick="menu()">Menu</button></div>
+  <!-- source: https://twitter.com/CihanPostsThms/status/1563140124623265792 -->
+  <textarea id="chain" readonly>#AAA#</textarea>
+  <div id="rules">
+    <div class="rule">#AAA#⇒Win!</div>
+    <br><br><br>
+    <div class="rule">AC⇒CA</div>
+    <div class="rule">CA⇒AC</div>
+    <div class="rule">AD⇒DA</div>
+    <div class="rule">DA⇒AD</div>
+    <div class="rule">BC⇒CB</div>
+    <div class="rule">CB⇒BC</div>
+    <div class="rule">BD⇒DB</div>
+    <div class="rule">DB⇒BD</div>
+    <div class="rule">ECA⇒CE</div>
+    <div class="rule">CE⇒ECA</div>
+    <div class="rule">EDB⇒DE</div>
+    <div class="rule">DE⇒EDB</div>
+    <div class="rule">CDCA⇒CDCAE</div>
+    <div class="rule">CDCAE⇒CDCA</div>
+    <div class="rule">CAAA⇒AAA</div>
+    <div class="rule">AAA⇒CAAA</div>
+    <div class="rule">DAAA⇒AAA</div>
+    <div class="rule">AAA⇒DAAA</div>
+  </div>
+  <div id="footer">
+    <button onclick="reset()">Reset</button><button onclick="apply()">Apply</button><button onclick="undo()">Undo</button>
+  </div>
+  <script>
+let chainArea = document.getElementById("chain");
+ruleDivs = document.getElementsByClassName("rule");
+leftRules = [];
+rightRules = [];
+let selectedRule = -1;
+document.addEventListener("click", function (event) {
+  if (event.target.className != "rule") selectedRule = -1;
+}, false);
+for (let k=0; k<ruleDivs.length; k++) {
+  let [left, right] = ruleDivs[k].textContent.split("⇒");
+  leftRules.push(left);
+  rightRules.push(right);
+  ruleDivs[k].oncontextmenu = function (event) {
+    let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+    let selected = chainArea.value.slice(from, to);
+    if (selected == leftRules[k]) {
+      chainArea.value = chainArea.value.slice(0, from) + rightRules[k] + chainArea.value.slice(to);
+      chainArea.selectionStart = from;
+      chainArea.selectionEnd = from + rightRules[k].length;
+      history.push(chainArea.value);
+    }
+    chainArea.focus();
+    event.preventDefault();
+  }
+  ruleDivs[k].onclick = function (event) {
+    selectedRule = k;
+    validPlaces = whereCanItBeApplied(leftRules[k]);
+    if (validPlaces.length > 0) {
+      let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+      let i = validPlaces.indexOf(from);
+      // If it already is a correct selection, jump to the next one
+      if (to - from == leftRules[k].length && i>-1) {
+        i = (i+1)%validPlaces.length;
+        chainArea.selectionStart = validPlaces[i];
+        chainArea.selectionEnd = validPlaces[i] + leftRules[k].length;
+      } else {
+        chainArea.selectionStart = validPlaces[0];
+        chainArea.selectionEnd = validPlaces[0] + leftRules[k].length;
+      }
+      chainArea.focus();
+    }
+    //chainArea.focus();
+    event.preventDefault();
+  }
+}
+
+function apply() {
+  if (selectedRule != -1) {
+    let k = selectedRule;
+    let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+    let selected = chainArea.value.slice(from, to);
+    if (selected == leftRules[k]) {
+      chainArea.value = chainArea.value.slice(0, from) + rightRules[k] + chainArea.value.slice(to);
+      chainArea.selectionStart = from;
+      chainArea.selectionEnd = from + rightRules[k].length;
+      history.push(chainArea.value);
+    }
+    chainArea.focus();
+  }
+}
+
+function whereCanItBeApplied(leftRule) {
+  let n = leftRule.length;
+  let str = chainArea.value;
+  let places = [];
+  for (let k=0; k<=str.length-n; k++) {
+    if (chainArea.value.slice(k, k+n) == leftRule) {
+      places.push(k);
+    }
+  }
+  return places;
+}
+
+document.addEventListener('selectionchange', handleSelection);
+
+function handleSelection() {
+  const activeElement = document.activeElement
+  if (activeElement && activeElement.id === 'chain') {
+    updateVisuals();    
+  }
+}
+
+function updateVisuals() {
+  let from = chainArea.selectionStart, to = chainArea.selectionEnd;
+  let selected = chainArea.value.slice(from, to);
+  for (let k=0; k<ruleDivs.length; k++) {
+    if (leftRules[k] == selected) {
+      ruleDivs[k].style.opacity = "100%";
+      ruleDivs[k].style.color = "red";
+    } else if (chainArea.value.includes(leftRules[k])) {
+      ruleDivs[k].style.opacity = "40%";
+      ruleDivs[k].style.color = "red";
+    } else {
+      ruleDivs[k].style.opacity = "40%";
+      ruleDivs[k].style.color = "black";
+    }
+  }
+}
+
+updateVisuals();
+let history = [chainArea.value];
+
+function reset() {
+  chainArea.value = history[0];
+  history.push(history[0]);
+  updateVisuals();
+}
+
+function undo() {
+  if (history.length>1) {
+    history.pop();
+    chainArea.value = history[history.length-1];
+  }
+  updateVisuals();
+}
+
+function menu() {
+  window.open("menu.html");
+}
+
+  </script>   
+  </body>
+</html>
