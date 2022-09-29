@@ -1,9 +1,9 @@
 <body style=margin:0>
 <div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 60; pointer-events:none;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
-Mouse hover to select board, WASD to move, F to change display mode, Z/R to undo/restart, Q/E for previous/next level<br>
+WASD and IJKL to move, Z/R to undo/restart, Q/E for previous/next level<br>
 </div>
 <div style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 20;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
-<a href="https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74">Original game</a> by <a href="https://beekie.itch.io/">Beekie</a>, with a level from <a href="https://twitter.com/corey_hardt">Corey Hardt</a>. Modification by <a href="https://twitter.com/knexator">knexator</a>, inspired by <a href="https://tilmannr.itch.io/">Tilmann</a>'s <a href="https://www.puzzlescript.net/play.html?p=0c0062d17fefe9d6d4e54d354b31edc2">variation</a>
+<a href="https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74" target="_blank">Original game</a> by <a href="https://beekie.itch.io/" target="_blank">Beekie</a>, with a level from <a href="https://twitter.com/corey_hardt" target="_blank">Corey Hardt</a>. Modification by <a href="https://twitter.com/knexator" target="_blank">knexator</a>, inspired by <a href="https://tilmannr.itch.io/" target="_blank">Tilmann</a>'s <a href="https://www.puzzlescript.net/play.html?p=0c0062d17fefe9d6d4e54d354b31edc2" target="_blank">variation</a>. Including the <a href="https://www.youtube.com/watch?v=by8eAnez0i8"target="_blank">transparecy idea from CodeParade</a>.
 
 </div>
 <canvas id="canvas"></canvas>
@@ -11,7 +11,7 @@ Mouse hover to select board, WASD to move, F to change display mode, Z/R to undo
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext('2d');
 
-let TILE = 40;
+let TILE = 100;
 let OFFX = TILE;
 let OFFY = TILE;
 
@@ -179,10 +179,10 @@ const levels = [level1, level2, level3, level4, level5];
 let curLevel = 0;
 let stateQueue = [levels[curLevel]];
 
-// [a,b,c,d, f] = Board showing directions a & b will be shown at (c, d) (ignore f)
+// [a,b,c,d, f] = Board showing directions a & b will be shown at (c, d) (ignore f); gh: perpendicular directions, to show faintly
 let basic2 = [
-  [0, 1, 0, 0, false],
-  [2, 3, 5, 0, false],
+  [0, 1, 0, 0, true, 2, 3],
+  [2, 3, 5, 0, true, 0, 1],
 ];
 
 let basic6 = [
@@ -384,6 +384,10 @@ function add(arr1, arr2) {
   return arr1.map((x,n) => x + arr2[n]);
 }
 
+function sub(arr1, arr2) {
+  return arr1.map((x,n) => x - arr2[n]);
+}
+
 function mul(arr, s) {
   return arr.map(x => x * s);
 }
@@ -397,6 +401,8 @@ function one_hot(ind, dim=4) {
 window.addEventListener("resize", e => {
   canvas.width = innerWidth;
   canvas.height = innerHeight;
+  OFFX = Math.floor(canvas.width / 2 - TILE * 4.5);
+  OFFY = Math.floor(canvas.height / 2 - TILE * 3);
 });
 
 window.addEventListener("load", e => {
@@ -419,22 +425,29 @@ function draw() {
   window.requestAnimationFrame(draw);
 }
 
-function drawBoard(level, won, horDir, verDir, a, b, highlight=false) {
+function drawBoard(level, won, horDir, verDir, a, b, highlight=false, perpHorDir=-1, perpVerDir=-1, containsPoint=null, drawFloor=true) {
   if (horDir == verDir) return;
+  if (containsPoint === null) {
+	containsPoint = level.player;
+  } else if (!inBounds(containsPoint)) {
+	return
+  }
   if (highlight) {
     ctx.fillStyle = won ? '#c6ff0a' : '#0bffe6';
     drawRect( a-.2, b-.2, 4.4, 4.4);
   }
   dx = one_hot(horDir);
   dy = one_hot(verDir);
-  let neutral = mul(level.player, 1); // to copy the array lol
+  let neutral = mul(containsPoint, 1); // to copy the array lol
   neutral[horDir] = 0;
   neutral[verDir] = 0;
   for (let p=0; p<4; p++) {
     for (let q=0; q<4; q++) {
       let curCoor = add(neutral, add(mul(dx, p), mul(dy, q)));
       let curSpr = access(level.geo, curCoor);
-      drawSpr(sprMap[curSpr + (won ? 2 : 0)], a+p, b+q);
+	  if (drawFloor) {
+		drawSpr(sprMap[curSpr + (won ? 2 : 0)], a+p, b+q);
+	  }
       if (eq(level.player, curCoor)) drawSpr(playerSpr, a+p, b+q);
       level.crates.forEach(c => {
         if (eq(c, curCoor)) drawSpr(crateSpr, a+p, b+q);
@@ -443,10 +456,44 @@ function drawBoard(level, won, horDir, verDir, a, b, highlight=false) {
         if (eq(c, curCoor)) drawSpr(targetSpr, a+p, b+q);
       });
     }
-  }  
+  }
+  
+  /*
+  if (perpHorDir !== -1 && perpVerDir !== -1) {
+    ctx.globalAlpha = .4;
+	dz = one_hot(perpHorDir);
+	dw = one_hot(perpVerDir);
+	drawBoard(level, won, horDir, verDir, a+.1, b, false, -1, -1, add(containsPoint, dz), false);
+	drawBoard(level, won, horDir, verDir, a-.1, b, false, -1, -1, perpVerDir, sub(containsPoint, dz), false);
+	drawBoard(level, won, horDir, verDir, a, b+.1, false, -1, -1, add(containsPoint, dw), false);
+	drawBoard(level, won, horDir, verDir, a, b-.1, false, -1, -1, sub(containsPoint, dw), false);	
+	ctx.globalAlpha = 1;
+  }
+  */
+  
+	if (drawFloor) {
+	  dz = one_hot(perpHorDir);
+	  dw = one_hot(perpVerDir);
+	  let neutralBig = mul(containsPoint, 1); // to copy the array lol
+	  neutralBig[perpHorDir] = 0;
+	  neutralBig[perpVerDir] = 0;
+	  for (let p=0; p<4; p++) {
+		for (let q=0; q<4; q++) {		  
+		  let curCoor = add(neutralBig, add(mul(dz, p), mul(dw, q)));
+		  let di = containsPoint[perpHorDir] - p;
+		  let dj = containsPoint[perpVerDir] - q;
+		  let dist = Math.abs(di) + Math.abs(dj);
+		  if (dist === 0) continue;
+		  ctx.globalAlpha = .8 - .2*dist;
+		  if (ctx.globalAlpha <= 0) continue;
+		  drawBoard(level, won, horDir, verDir, a+di*.15, b+dj*.15, false, -1, -1, curCoor, false);
+		}
+	  }
+	  ctx.globalAlpha=1;
+    }
 }
 
-window.addEventListener('mousemove', e => {
+/*window.addEventListener('mousemove', e => {
   mx = (e.clientX-OFFX)/TILE;
   my = (e.clientY-OFFY)/TILE;
   
@@ -459,10 +506,17 @@ window.addEventListener('mousemove', e => {
   });
   
   return false;
-});
+});*/
 
 function inRange(t,a,b) {
   return a<=t && t<=b;
+}
+
+function inBounds(point) {
+	for (const coor of point) {
+		if (coor < 0 || coor >= 4) return false;
+	}
+	return true;
 }
 
 window.addEventListener('keydown', e => {
@@ -482,20 +536,20 @@ window.addEventListener('keydown', e => {
       curLevel -= 1;
       stateQueue = [levels[curLevel]];
     }
-  } else if (key == 'KeyF') {
+  } /*else if (key == 'KeyF') {
     boardDisplayId = (boardDisplayId + 1) % displays.length;
     boardDisplay = displays[boardDisplayId];
-  } else {    
-    /*let delta = [
+  } */ else {    
+    let delta = [
+	  key == 'KeyD' ? 1 : key == 'KeyA' ? -1 : 0,
+      key == 'KeyS' ? 1 : key == 'KeyW' ? -1 : 0,
       key == 'KeyL' ? 1 : key == 'KeyJ' ? -1 : 0,
-      key == 'KeyK' ? 1 : key == 'KeyI' ? -1 : 0,
-      key == 'KeyD' ? 1 : key == 'KeyA' ? -1 : 0,
-      key == 'KeyS' ? 1 : key == 'KeyW' ? -1 : 0
+      key == 'KeyK' ? 1 : key == 'KeyI' ? -1 : 0,      
     ];
     if (!eq(delta, [0,0,0,0])) {
       stuff(stateQueue[0], delta);
-    }*/
-    dx = key == 'KeyD' ? 1 : key == 'KeyA' ? -1 : 0;
+    }
+    /*dx = key == 'KeyD' ? 1 : key == 'KeyA' ? -1 : 0;
     dy = key == 'KeyS' ? 1 : key == 'KeyW' ? -1 : 0;
     if (dx != 0 || dy != 0) {
       // shitty code, will break if somehow multiple boards get highlighted
@@ -507,7 +561,7 @@ window.addEventListener('keydown', e => {
           stuff(stateQueue[0], delta);
         }
       });
-    }
+    }*/
   }
 });
 
