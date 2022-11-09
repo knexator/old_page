@@ -40,12 +40,24 @@ require('esbuild')
   })
   .catch(() => process.exit(1))
 
-
 require('esbuild')
   .build({
     entryPoints: ['./thue.ts'],
     bundle: true,
     outfile: './thue.js',
+    watch: watchFlag
+
+    // when building, change these 2
+    // minify: true,
+    // sourcemap: true
+  })
+  .catch(() => process.exit(1))
+
+require('esbuild')
+  .build({
+    entryPoints: ['./categories_order.ts'],
+    bundle: true,
+    outfile: './categories_order.js',
     watch: watchFlag
 
     // when building, change these 2

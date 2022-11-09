@@ -1,4 +1,4 @@
-type ThueState = string;
+export type ThueState = string;
 
 let initialState = "#AAA#"
 

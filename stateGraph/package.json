@@ -4,6 +4,7 @@
     "denque": "^2.1.0",
     "fast-sort": "^3.2.0",
     "geneticalgorithm": "^1.0.2",
+    "many-keys-map": "^2.0.0",
     "memoize-one": "^6.0.0",
     "simulated-annealing": "^1.0.2",
     "visjs-network": "^4.24.11"
