@@ -622,17 +622,21 @@ $$$$$$$$$$$$$$$$$$$$$`)
 
       if (key == 'KeyZ' && stateQueue.length > 1) {
         stateQueue.shift();
+        turn_time = 0;
       } else if (key == 'KeyR') {
         stateQueue.unshift(stateQueue[stateQueue.length - 1]);
+        turn_time = 0;
       } else if (key == 'KeyE') {
         if (curLevel < levels.length - 1) {
           curLevel += 1;
           stateQueue = [levels[curLevel]];
+          turn_time = 0;
         }
       } else if (key == 'KeyQ') {
         if (curLevel > 0) {
           curLevel -= 1;
           stateQueue = [levels[curLevel]];
+          turn_time = 0;
         }
       } /*else if (key == 'KeyF') {
     boardDisplayId = (boardDisplayId + 1) % displays.length;
