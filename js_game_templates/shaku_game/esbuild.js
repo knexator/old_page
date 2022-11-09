@@ -5,9 +5,9 @@ require('esbuild')
   .build({
     entryPoints: ['./src/main.ts'],
     bundle: true,
-    outfile: './js/main.js',
+    outfile: './dist/js/main.js',
     watch: watchFlag,
-
+    format: 'esm', // allows top level await
     // when building, change these 2
     // minify: true,
     sourcemap: true
