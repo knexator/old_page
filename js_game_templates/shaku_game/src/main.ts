@@ -25,6 +25,11 @@ Shaku.gfx!.setResolution(800, 600, true);
 console.log(CONFIG.value_1);
 console.log(CONFIG.value_2);
 
+// Loading Screen
+Shaku.startFrame();
+Shaku.gfx!.clear(Shaku.utils.Color.cornflowerblue);
+Shaku.endFrame();
+
 // TODO: INIT STUFF AND LOAD ASSETS HERE
 let soundAsset = await Shaku.assets.loadSound('sounds/example_sound.wav');
 let soundInstance = Shaku.sfx!.createSound(soundAsset);
@@ -67,11 +72,6 @@ function step() {
     Shaku.endFrame();
     Shaku.requestAnimationFrame(step);
 }
-
-let hola = Shaku!.gfx!.canvas;
-console.log(hola);
-
-// console.log(Shaku)
 
 // start main loop
 step();

@@ -12,6 +12,7 @@ Steps I followed to make this:
 - make src folder, add main.ts
 - take index.html from https://github.com/RonenNess/Shaku#html-boilerplate
 - do random gamedev
+- run upload.bat to upload/update it in itch.io
 
 When downloading, run:
 

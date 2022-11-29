@@ -4471,7 +4471,6 @@ var require_msdf_font_texture_asset = __commonJS({
     var TextureAsset = require_texture_asset();
     var FontTextureAsset = require_font_texture_asset();
     var JsonAsset = require_json_asset();
-    var TextureFilterModes = require_texture_filter_modes();
     var MsdfFontTextureAsset = class extends FontTextureAsset {
       constructor(url) {
         super(url);
@@ -10439,6 +10438,9 @@ document.body.appendChild(import_shaku.default.gfx.canvas);
 import_shaku.default.gfx.setResolution(800, 600, true);
 console.log(CONFIG.value_1);
 console.log(CONFIG.value_2);
+import_shaku.default.startFrame();
+import_shaku.default.gfx.clear(import_shaku.default.utils.Color.cornflowerblue);
+import_shaku.default.endFrame();
 var soundAsset = await import_shaku.default.assets.loadSound("sounds/example_sound.wav");
 var soundInstance = import_shaku.default.sfx.createSound(soundAsset);
 var texture = await import_shaku.default.assets.loadTexture("imgs/example_image.png", null);
@@ -10470,8 +10472,6 @@ function step() {
   import_shaku.default.endFrame();
   import_shaku.default.requestAnimationFrame(step);
 }
-var hola = import_shaku.default.gfx.canvas;
-console.log(hola);
 step();
 async function loadAsciiTexture(ascii, colors) {
   let rows = ascii.trim().split("\n").map((x) => x.trim());
