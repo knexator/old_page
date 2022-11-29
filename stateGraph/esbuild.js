@@ -65,3 +65,16 @@ require('esbuild')
     // sourcemap: true
   })
   .catch(() => process.exit(1))
+
+require('esbuild')
+  .build({
+    entryPoints: ['./handmade.ts'],
+    bundle: true,
+    outfile: './handmade.js',
+    watch: watchFlag
+
+    // when building, change these 2
+    // minify: true,
+    // sourcemap: true
+  })
+  .catch(() => process.exit(1))
