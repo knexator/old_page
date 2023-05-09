@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "esbuild": "^0.15.16",
+    "prompt-sync": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.11.10"
+  }
+}

@@ -1,7 +1,7 @@
 import * as dat from 'dat.gui';
 import * as vis from 'visjs-network';
 
-import { State, SokobanState } from "./sokobanState";
+import { State, SokobanState, Vec } from "./sokobanState";
 
 
 interface Node {
@@ -73,9 +73,9 @@ let network = new vis.Network(
             },
             minVelocity: 0,
         },
-        // interaction: {
-        //     multiselect: true,
-        // },
+        interaction: {
+            hover: true,
+        },
     }
 );
 addNode(State.initialState);
@@ -92,6 +92,40 @@ network.on("click", function (params) {
         }
     }
 });
+
+network.on("oncontext", function (params) {
+    let clicked_node_id = network.getNodeAt(params.pointer.DOM);
+    if (clicked_node_id !== undefined) {
+        nodes.remove(clicked_node_id);
+        cur_hover_id = null;
+    }
+});
+
+let cur_hover_id: string | null = null;
+
+network.on("hoverNode", function (params) {
+    if (!network.isCluster(params.node)) {
+        cur_hover_id = params.node;
+    }
+})
+
+network.on("blurNode", function (params) {
+    cur_hover_id = null;
+})
+
+network.on("afterDrawing", function (ctx: CanvasRenderingContext2D) {
+    if (cur_hover_id !== null) {
+        let cur_hover_node = nodes.get(cur_hover_id);
+        let pos = network.getPositions(cur_hover_id)[cur_hover_id];
+        // ctx.translate(pos.x, pos.y);
+        State.drawState(cur_hover_node.state, ctx, pos);
+        // console.log(cur_hover_node);
+        // ctx.fillStyle = "#000000";
+        // ctx.fillRect(0, 0, 100, 100);
+        // ctx.fillRect(pos.x, pos.y, 100, 100);
+        // ctx.fillRect(cur_hover_pos.x, cur_hover_pos.y, 100, 100);
+    }
+})
 
 function expandNode(cur_node) {
     if (cur_node.expanded) return;

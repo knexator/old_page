@@ -1,46 +1,28 @@
-import memoizeOne from 'memoize-one';
-
-export interface Vec {
-    x: number,
-    y: number
-}
-
-export interface SokobanState {
-    w: number,
-    h: number,
-    walls: boolean[][],
-    targets: Vec[],
-    crates: Vec[],
-    player: Vec,
-}
-
 const DIRS = [
     { x: 1, y: 0 },
     { x: 0, y: 1 },
     { x: -1, y: 0 },
     { x: 0, y: -1 },
-]
-
-let forbidden_places: boolean[][] | null = null;
-
-function parseLevel(ascii: string): SokobanState {
-    let rows = ascii.trim().split("\n").map(x => x.trim())
-    console.log(rows)
-    let height = rows.length
-    let width = rows[0].length
-
-    let targets: Vec[] = [];
-    let crates: Vec[] = [];
-    let player: Vec;
-    let walls: boolean[][] = [];
+];
+let forbidden_places = null;
+function parseLevel(ascii) {
+    let rows = ascii.trim().split("\n").map(x => x.trim());
+    console.log(rows);
+    let height = rows.length;
+    let width = rows[0].length;
+    let targets = [];
+    let crates = [];
+    let player;
+    let walls = [];
     for (let j = 0; j < height; j++) {
-        let wall_row: boolean[] = [];
+        let wall_row = [];
         for (let i = 0; i < width; i++) {
             let val = rows[j][i];
             if (val === "#") {
                 wall_row.push(true);
                 continue;
-            } else {
+            }
+            else {
                 wall_row.push(false);
             }
             switch (val) {
@@ -67,22 +49,18 @@ function parseLevel(ascii: string): SokobanState {
         }
         walls.push(wall_row);
     }
-
-    let state: SokobanState = {
+    let state = {
         w: width,
         h: height,
         walls: walls,
         targets: targets,
         crates: crates,
-        player: player!,
-    }
-
+        player: player,
+    };
     forbidden_places = generateForbiddenMap(state);
     movePlayerToStandardPosition(state);
-
-    return state
+    return state;
 }
-
 // let initialState = parseLevel(`
 // ####..
 // #.O#..
@@ -92,7 +70,6 @@ function parseLevel(ascii: string): SokobanState {
 // #..###
 // ####..
 // `)
-
 let initialState = parseLevel(`
 ..#####..
 .##...###
@@ -103,8 +80,7 @@ let initialState = parseLevel(`
 #......#.
 #...#..#.
 ########.
-`)
-
+`);
 // let initialState = parseLevel(`
 // .....####
 // ...###..#
@@ -116,7 +92,6 @@ let initialState = parseLevel(`
 // ######..#
 // .....####
 // `)
-
 // let initialState = parseLevel(`
 // ###########..
 // #...P.#...###
@@ -128,27 +103,24 @@ let initialState = parseLevel(`
 // #...........#
 // #############
 // `)
-
-function crateAt(state: SokobanState, pos: Vec) {
-    return state.crates.some(c => c.x == pos.x && c.y == pos.y)
+function crateAt(state, pos) {
+    return state.crates.some(c => c.x == pos.x && c.y == pos.y);
 }
-
-function targetAt(state: SokobanState, pos: Vec) {
-    return state.targets.some(c => c.x == pos.x && c.y == pos.y)
+function targetAt(state, pos) {
+    return state.targets.some(c => c.x == pos.x && c.y == pos.y);
 }
-
-function isWon(state: SokobanState) {
+function isWon(state) {
     return state.targets.every(t => {
         return crateAt(state, t);
-    })
+    });
 }
-
-function movePlayerToStandardPosition(state: SokobanState): void {
+function movePlayerToStandardPosition(state) {
     let explored = rectGrid(false, state.w, state.h);
-    let pending: Vec[] = [state.player];
+    let pending = [state.player];
     while (pending.length > 0) {
-        let curPos = pending.pop()!;
-        if (explored[curPos.y][curPos.x]) continue;
+        let curPos = pending.pop();
+        if (explored[curPos.y][curPos.x])
+            continue;
         explored[curPos.y][curPos.x] = true;
         for (let k = 0; k < 4; k++) {
             const dir = DIRS[k];
@@ -168,15 +140,14 @@ function movePlayerToStandardPosition(state: SokobanState): void {
         }
     }
 }
-
-function nextStates(state: SokobanState): Record<string, SokobanState> {
+function nextStates(state) {
     let result = {};
-
     let explored = rectGrid(false, state.w, state.h);
-    let pending: Vec[] = [state.player];
+    let pending = [state.player];
     while (pending.length > 0) {
-        let curPos = pending.pop()!;
-        if (explored[curPos.y][curPos.x]) continue;
+        let curPos = pending.pop();
+        if (explored[curPos.y][curPos.x])
+            continue;
         explored[curPos.y][curPos.x] = true;
         for (let k = 0; k < 4; k++) {
             const dir = DIRS[k];
@@ -189,14 +160,16 @@ function nextStates(state: SokobanState): Record<string, SokobanState> {
                 if (validPos(state, new_crate_pos) && !crateAt(state, new_crate_pos)) {
                     let new_crates = state.crates.map(c => {
                         if (c.x == newPos.x && c.y == newPos.y) {
-                            return { x: new_crate_pos.x, y: new_crate_pos.y }
-                        } else {
-                            return { x: c.x, y: c.y }
+                            return { x: new_crate_pos.x, y: new_crate_pos.y };
+                        }
+                        else {
+                            return { x: c.x, y: c.y };
                         }
                     }).sort((a, b) => {
-                        if (a.x === b.x) return a.y - b.y
+                        if (a.x === b.x)
+                            return a.y - b.y;
                         return a.x - b.x;
-                    })
+                    });
                     let new_state = {
                         w: state.w,
                         h: state.h,
@@ -211,15 +184,14 @@ function nextStates(state: SokobanState): Record<string, SokobanState> {
                     movePlayerToStandardPosition(new_state);
                     result[`${newPos.x},${newPos.y}->${new_crate_pos.x},${new_crate_pos.y}`] = new_state;
                 }
-            } else {
+            }
+            else {
                 pending.push(newPos);
             }
         }
     }
-
-    return result
+    return result;
 }
-
 // function nextStates(state: SokobanState): Record<string, SokobanState> {
 //     let result = {
 //         left: nextState(state, { x: -1, y: 0 }),
@@ -234,7 +206,6 @@ function nextStates(state: SokobanState): Record<string, SokobanState> {
 //     }
 //     return result as Record<string, SokobanState>;
 // }
-
 // function nextState(state: SokobanState, dir: Vec): SokobanState | false {
 //     let new_p = {
 //         x: state.player.x + dir.x,
@@ -277,92 +248,79 @@ function nextStates(state: SokobanState): Record<string, SokobanState> {
 //         player: new_p,
 //     }
 // }
-
 // false if oob or wall
-function validPos(state: SokobanState, pos: Vec) {
+function validPos(state, pos) {
     if (pos.x < 0 || pos.x >= state.w || pos.y < 0 || pos.y >= state.h) {
-        return false
+        return false;
     }
-    return !state.walls[pos.y][pos.x]
+    return !state.walls[pos.y][pos.x];
 }
-
-function id(state: SokobanState) {
-    let result = `${state.player.x}:${state.player.y}`
-    result += '[' + state.crates.map(c => `${c.x - 1}:${c.y - 1}`).join(',') + ']'
-    return result
+function id(state) {
+    let result = `${state.player.x}:${state.player.y}`;
+    result += '[' + state.crates.map(c => `${c.x - 1}:${c.y - 1}`).join(',') + ']';
+    return result;
 }
-
 let spritesheet = new Image();
 spritesheet.src = './sokoban_spritesheet.png';
-
-function drawState(state: SokobanState, ctx: CanvasRenderingContext2D, pos: Vec) {
+function drawState(state, ctx, pos) {
     let TILE_S = 50;
     ctx.imageSmoothingEnabled = false;
-
     let OFF_X = Math.round(pos.x - state.w * TILE_S / 2);
     let OFF_Y = Math.round(pos.y + TILE_S);
-
     for (let j = 0; j < state.h; j++) {
         for (let i = 0; i < state.w; i++) {
             if (state.walls[j][i]) {
                 // wall
                 ctx.drawImage(spritesheet, 0, 0, 5, 5, OFF_X + i * TILE_S, OFF_Y + j * TILE_S, TILE_S, TILE_S);
-            } else {
+            }
+            else {
                 // background
                 ctx.drawImage(spritesheet, 5, 0, 5, 5, OFF_X + i * TILE_S, OFF_Y + j * TILE_S, TILE_S, TILE_S);
             }
         }
     }
-
     state.targets.forEach(target => {
         ctx.drawImage(spritesheet, 10, 0, 5, 5, OFF_X + target.x * TILE_S, OFF_Y + target.y * TILE_S, TILE_S, TILE_S);
-    })
-
+    });
     state.crates.forEach(target => {
         ctx.drawImage(spritesheet, 15, 0, 5, 5, OFF_X + target.x * TILE_S, OFF_Y + target.y * TILE_S, TILE_S, TILE_S);
-    })
-
+    });
     ctx.drawImage(spritesheet, 20, 0, 5, 5, OFF_X + state.player.x * TILE_S, OFF_Y + state.player.y * TILE_S, TILE_S, TILE_S);
 }
-
-
-function isClearlyLost(state: SokobanState) {
+function isClearlyLost(state) {
     // is some crate is stuck in some corner?
     if (state.crates.some(crate => {
-        return forbidden_places![crate.y][crate.x]
+        return forbidden_places[crate.y][crate.x];
     })) {
         return true;
     }
-
     // hardcoded list of forbidden patterns: 2 crates together that can't move
     if (state.crates.some(crate_1 => {
         let crate_2 = state.crates.find(c => {
             return (c.x === crate_1.x + 1 && c.y === crate_1.y) ||
-                (c.y === crate_1.y + 1 && c.x === crate_1.x)
+                (c.y === crate_1.y + 1 && c.x === crate_1.x);
         });
-        if (crate_2 === undefined) return false;
+        if (crate_2 === undefined)
+            return false;
         // crate_2 is directly below or to the right of crate_1
         if (crate_1.x === crate_2.x) {
             // vertical case:
             // if there's at least one X and one Y, it's clearly lost
             // X1X
             // Y1Y
-            if (
-                (!validPos(state, addVec(crate_1, DIRS[0])) || !validPos(state, addVec(crate_1, DIRS[2])))
-                && (!validPos(state, addVec(crate_2, DIRS[0])) || !validPos(state, addVec(crate_2, DIRS[2])))
-            ) {
+            if ((!validPos(state, addVec(crate_1, DIRS[0])) || !validPos(state, addVec(crate_1, DIRS[2])))
+                && (!validPos(state, addVec(crate_2, DIRS[0])) || !validPos(state, addVec(crate_2, DIRS[2])))) {
                 return true;
             }
-        } else {
+        }
+        else {
             // horizontal case:
             // if there's at least one X and one Y, it's clearly lost
             // XX
             // 12
             // YY
-            if (
-                (!validPos(state, addVec(crate_1, DIRS[1])) || !validPos(state, addVec(crate_1, DIRS[3])))
-                && (!validPos(state, addVec(crate_2, DIRS[1])) || !validPos(state, addVec(crate_2, DIRS[3])))
-            ) {
+            if ((!validPos(state, addVec(crate_1, DIRS[1])) || !validPos(state, addVec(crate_1, DIRS[3])))
+                && (!validPos(state, addVec(crate_2, DIRS[1])) || !validPos(state, addVec(crate_2, DIRS[3])))) {
                 return true;
             }
         }
@@ -370,7 +328,6 @@ function isClearlyLost(state: SokobanState) {
     })) {
         return true;
     }
-
     // Subtler: can we find a mapping from crates to targets?
     for (let crate_indices of permute(zeroToN(state.crates.length))) {
         let valid_permutation = true;
@@ -386,20 +343,15 @@ function isClearlyLost(state: SokobanState) {
     }
     return true;
 }
-
-function zeroToN(N: number) {
+function zeroToN(N) {
     let res = Array(N);
     for (let i = 0; i < N; i++) {
         res[i] = i;
     }
     return res;
 }
-
-function* permute<T>(permutation: T[]) {
-    var length = permutation.length,
-        c = Array(length).fill(0),
-        i = 1, k, p;
-
+function* permute(permutation) {
+    var length = permutation.length, c = Array(length).fill(0), i = 1, k, p;
     yield permutation.slice();
     while (i < length) {
         if (c[i] < i) {
@@ -410,27 +362,24 @@ function* permute<T>(permutation: T[]) {
             ++c[i];
             i = 1;
             yield permutation.slice();
-        } else {
+        }
+        else {
             c[i] = 0;
             ++i;
         }
     }
-
     // Memory efficient iteration through permutations:
     // for (var permutation of permute([1, 2, 3])) console.log(permutation);
 }
-
 /*
 function generateTargetMap(state: SokobanState) {
  
 }
 */
-
-
-function generateForbiddenMap(state: SokobanState): boolean[][] {
-    let result: boolean[][] = [];
+function generateForbiddenMap(state) {
+    let result = [];
     for (let row = 0; row < state.h; row++) {
-        let cur_row: boolean[] = [];
+        let cur_row = [];
         for (let col = 0; col < state.w; col++) {
             cur_row.push(!state.targets.some(target => {
                 return couldMaybeBePushedFromAtoB(state, { x: col, y: row }, target);
@@ -439,18 +388,19 @@ function generateForbiddenMap(state: SokobanState): boolean[][] {
         }
         result.push(cur_row);
     }
-
     return result;
 }
-
-function couldMaybeBePushedFromAtoB(state: SokobanState, posA: Vec, posB: Vec): boolean {
-    if (!validPos(state, posA)) return false;
+function couldMaybeBePushedFromAtoB(state, posA, posB) {
+    if (!validPos(state, posA))
+        return false;
     let explored = rectGrid(false, state.w, state.h);
-    let pending: Vec[] = [posA];
+    let pending = [posA];
     while (pending.length > 0) {
-        let curPos = pending.pop()!;
-        if (eqVec(posB, curPos)) return true;
-        if (explored[curPos.y][curPos.x]) continue;
+        let curPos = pending.pop();
+        if (eqVec(posB, curPos))
+            return true;
+        if (explored[curPos.y][curPos.x])
+            continue;
         explored[curPos.y][curPos.x] = true;
         for (let k = 0; k < 4; k++) {
             const dir = DIRS[k];
@@ -464,25 +414,21 @@ function couldMaybeBePushedFromAtoB(state: SokobanState, posA: Vec, posB: Vec): 
             }
         }
     }
-    return false
+    return false;
 }
-
-function eqVec(a: Vec, b: Vec): boolean {
+function eqVec(a, b) {
     return a.x === b.x && a.y === b.y;
 }
-
-function addVec(a: Vec, b: Vec): Vec {
+function addVec(a, b) {
     return { x: a.x + b.x, y: a.y + b.y };
 }
-
-function subVec(a: Vec, b: Vec): Vec {
+function subVec(a, b) {
     return { x: a.x - b.x, y: a.y - b.y };
 }
-
-function rectGrid<T>(fillValue: T, width: number, height: number): T[][] {
-    let result: T[][] = [];
+function rectGrid(fillValue, width, height) {
+    let result = [];
     for (let row = 0; row < height; row++) {
-        let cur_row: T[] = [];
+        let cur_row = [];
         for (let col = 0; col < width; col++) {
             cur_row.push(fillValue);
         }
@@ -490,5 +436,4 @@ function rectGrid<T>(fillValue: T, width: number, height: number): T[][] {
     }
     return result;
 }
-
-export let State = { initialState, nextStates, isWon, id, isClearlyLost, drawState }
+export let State = { initialState, nextStates, isWon, id, isClearlyLost, drawState };

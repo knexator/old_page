@@ -5,13 +5,14 @@
   </div>
   <div
     style="position: absolute; font-size:25px; text-align: center; left: 0; right: 0; bottom: 20;-webkit-touch-callout: none;-webkit-user-select: none;-khtml-user-select: none;-moz-user-select: none;-ms-user-select: none;user-select: none;">
-    <a href="https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74" target="_blank">Original
-      game</a> by <a href="https://beekie.itch.io/" target="_blank">Beekie</a>, with a level from <a
+    <a href="https://coreyhardt.itch.io/4d" target="_blank">Original
+      game</a> by <a href="https://beekie.itch.io/" target="_blank">Beekie</a> & <a
       href="https://twitter.com/corey_hardt" target="_blank">Corey Hardt</a>. Modification by <a
       href="https://twitter.com/knexator" target="_blank">knexator</a>, inspired by <a href="https://tilmannr.itch.io/"
       target="_blank">Tilmann</a>'s <a href="https://www.puzzlescript.net/play.html?p=0c0062d17fefe9d6d4e54d354b31edc2"
       target="_blank">variation</a>. Including the <a href="https://www.youtube.com/watch?v=by8eAnez0i8"
       target="_blank">transparecy idea from CodeParade</a>.
+    <!-- https://www.puzzlescript.net/play.html?p=67b0f5f79f71d798d37266d471a6dc74 -->
 
   </div>
   <canvas id="canvas"></canvas>
@@ -117,7 +118,32 @@
 
     const sprMap = [floorSpr, wallSpr, floorWinSpr, wallSpr];
 
-    const level2 = str2lev(`\
+    // for copy pasting
+    //     str2lev(`\
+    // $$$$$$$$$$$$$$$$$$$$$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $$$$$$$$$$$$$$$$$$$$$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $$$$$$$$$$$$$$$$$$$$$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $$$$$$$$$$$$$$$$$$$$$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $....$....$....$....$
+    // $$$$$$$$$$$$$$$$$$$$$`),
+
+    const levels = [
+      transposeLevel(str2lev(`\
 $$$$$$$$$$$$$$$$$$$$$
 $p...$####$....$....$
 $...o$####$....$....$
@@ -138,9 +164,8 @@ $....$....$....$....$
 $....$....$....$....$
 $....$....$....$....$
 $....$....$....$....$
-$$$$$$$$$$$$$$$$$$$$$`)
-
-    const level1 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$`)),
+      transposeLevel(str2lev(`\
 $$$$$$$$$$$$$$$$$$$$$
 $p#..$.#..$.#..$.#..$
 $#...$#...$#...$#...$
@@ -161,9 +186,8 @@ $.#..$.#..$.#..$.#..$
 $#...$#...$#...$#...$
 $....$....$....$....$
 $....$....$....$....$
-$$$$$$$$$$$$$$$$$$$$$`)
-
-    const level3 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$`)),
+      str2lev(`\
 $$$$$$$$$$$$$$$$$$$$$
 $....$....$....$....$
 $....$....$....$....$
@@ -184,9 +208,8 @@ $....$....$....$....$
 $....$....$....$....$
 $....$....$....$....$
 $....$....$....$....$
-$$$$$$$$$$$$$$$$$$$$$`)
-
-    const level4 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$`),
+      str2lev(`\
 $$$$$$$$$$$$$$$$$$$$$
 $....$....$....$....$
 $.p..$....$....$..o.$
@@ -207,9 +230,32 @@ $....$....$..o.$....$
 $....$....$....$....$
 $....$....$....$....$
 $....$....$....$....$
-$$$$$$$$$$$$$$$$$$$$$`)
-
-    const level5 = str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$`),
+      // Blockage
+      str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$..o.$....$....$
+$....$.#..$.o..$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$####$####$....$
+$....$####$####$....$
+$.p..$#*##$#o##$.#..$
+$....$####$####$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$.##.$....$....$
+$....$.#*.$..*.$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`),
+      // Passages
+      str2lev(`\
 $$$$$$$$$$$$$$$$$$$$$
 $####$##.#$####$##.#$
 $####$##..$####$##.#$
@@ -230,9 +276,31 @@ $####$....$####$####$
 $####$.#..$####$####$
 $####$.#..$#.##$####$
 $####$....$#.##$####$
-$$$$$$$$$$$$$$$$$$$$$`)
-
-    const levels = [level1, level2, level3, level4, level5];
+$$$$$$$$$$$$$$$$$$$$$`),
+      // Microbes
+      str2lev(`\
+$$$$$$$$$$$$$$$$$$$$$
+$###.$#...$#...$#...$
+$.o#.$o#..$##..$##..$
+$###.$###.$#...$#...$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$.o##$#...$#...$#...$
+$@...$.#..$.#..$.#..$
+$..*.$#...$#...$#...$
+$p.##$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$####$#...$#...$#...$
+$..*.$.#..$*#..$.#..$
+$####$#...$#...$#...$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$
+$###.$#...$#...$#...$
+$..#.$.#..$##..$##..$
+$###.$#...$#...$#...$
+$....$....$....$....$
+$$$$$$$$$$$$$$$$$$$$$`),
+    ]
 
     let curLevel = 0;
     let stateQueue = [levels[curLevel]];
@@ -392,6 +460,30 @@ $$$$$$$$$$$$$$$$$$$$$`)
         res.push(cur_1);
       }
       return { geo: res, player: player, crates: crates, targets: targets };
+    }
+
+    function transposePoint([x, y, z, w]) {
+      return [z, w, x, y];
+    }
+
+    function transposeLevel(level) {
+      let new_geo = [];
+      for (let x = 0; x < 4; x++) {
+        let cur_1 = [];
+        for (let y = 0; y < 4; y++) {
+          let cur_2 = [];
+          for (let z = 0; z < 4; z++) {
+            let cur_3 = [];
+            for (let w = 0; w < 4; w++) {
+              cur_3.push(wall(level, [z, w, x, y]) ? 1 : 0);
+            }
+            cur_2.push(cur_3);
+          }
+          cur_1.push(cur_2);
+        }
+        new_geo.push(cur_1);
+      }
+      return { geo: new_geo, player: transposePoint(level.player), crates: level.crates.map(transposePoint), targets: level.targets.map(transposePoint) }
     }
 
     function solved(level) {

@@ -78,3 +78,16 @@ require('esbuild')
     // sourcemap: true
   })
   .catch(() => process.exit(1))
+
+require('esbuild')
+  .build({
+    entryPoints: ['./coronation.ts'],
+    bundle: true,
+    outfile: './coronation.js',
+    watch: watchFlag
+
+    // when building, change these 2
+    // minify: true,
+    // sourcemap: true
+  })
+  .catch(() => process.exit(1))

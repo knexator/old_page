@@ -1,6 +1,6 @@
 // Example: Sokoban - Microban 1
 
-export let State = {
+let State = {
   w: 4,
   h: 5,
   walls: [

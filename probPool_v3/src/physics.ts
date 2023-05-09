@@ -107,27 +107,25 @@ export function advanceGame(deltaTime: number) {
           let [dd1x, dd1y] = dotpart(b1vx, b1vy, nx, ny);
           let [dd2x, dd2y] = dotpart(b2vx, b2vy, nx, ny);
 
-          if (2 * BALL_R - dist > 0) {
-            let push = (2 * BALL_R - dist) * 0.5 * CONFIG.BALL_BOUNCE / dist;
-            // let push = Math.max(0, 2 * BALL_R - dist) * 0.5 / dist;
-            pos_data[k1] += dx * push;
-            pos_data[k1 + 1] += dy * push;
-            pos_data[k2] -= dx * push;
-            pos_data[k2 + 1] -= dy * push;
+          let push = (2 * BALL_R - dist) * 0.5 * CONFIG.BALL_BOUNCE / dist;
+          // let push = Math.max(0, 2 * BALL_R - dist) * 0.5 / dist;
+          pos_data[k1] += dx * push;
+          pos_data[k1 + 1] += dy * push;
+          pos_data[k2] -= dx * push;
+          pos_data[k2 + 1] -= dy * push;
 
-            /*b1.vx = b1.vx - dd1x + dd2x;
-            b1.vy = b1.vy - dd1y + dd2y;
-            b2.vx = b2.vx - dd2x + dd1x;
-            b2.vy = b2.vy - dd2y + dd1y;*/
-            vel_data[k1] -= dd1x - dd2x;
-            vel_data[k1 + 1] -= dd1y - dd2y;
-            vel_data[k2] -= dd2x - dd1x;
-            vel_data[k2 + 1] -= dd2y - dd1y;
+          /*b1.vx = b1.vx - dd1x + dd2x;
+          b1.vy = b1.vy - dd1y + dd2y;
+          b2.vx = b2.vx - dd2x + dd1x;
+          b2.vy = b2.vy - dd2y + dd1y;*/
+          vel_data[k1] -= dd1x - dd2x;
+          vel_data[k1 + 1] -= dd1y - dd2y;
+          vel_data[k2] -= dd2x - dd1x;
+          vel_data[k2 + 1] -= dd2y - dd1y;
 
-            tree_data[j].push(i1 + i2 * CONFIG.N_BALLS)
-            ball_collisions_data[j][i1].push(i2)
-            ball_collisions_data[j][i2].push(i1)
-          }
+          tree_data[j].push(i1 + i2 * CONFIG.N_BALLS)
+          ball_collisions_data[j][i1].push(i2)
+          ball_collisions_data[j][i2].push(i1)
         }
       }
     }
@@ -171,7 +169,7 @@ export function ballPosSTD(ball_i: number) {
 
 export function areTreesEqual(tree1: number[], tree2: number[]) {
   if (tree1.length !== tree2.length) return false;
-  for (let k=0; k<tree1.length; k++) {
+  for (let k = 0; k < tree1.length; k++) {
     if (tree1[k] != tree2[k]) {
       return false
     }
