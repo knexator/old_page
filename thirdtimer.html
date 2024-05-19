@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Third Timer</title>
+</head>
+
+<body>
+    <h1 id="time">??:??:??</h1>
+    <button onclick="on_break = !on_break;">Reverse</button>
+    <script>
+        const display_element = document.querySelector("h1");
+        let break_time_seconds = 0;
+        let on_break = false;
+
+        function updateDisplay() {
+            if (break_time_seconds < 0) {
+                const hours = Math.floor(-break_time_seconds / 3600);
+                const minutes = Math.floor(-break_time_seconds / 60) % 60;
+                const seconds = Math.floor(-break_time_seconds) % 60;
+                display_element.innerText = `${on_break ? 'Remaining' : 'Earned'} break: -${h(hours)}:${h(minutes)}:${h(seconds)}`;
+            } else {
+                const hours = Math.floor(break_time_seconds / 3600);
+                const minutes = Math.floor(break_time_seconds / 60) % 60;
+                const seconds = Math.floor(break_time_seconds) % 60;
+                display_element.innerText = `${on_break ? 'Remaining' : 'Earned'} break: ${h(hours)}:${h(minutes)}:${h(seconds)}`;
+            }
+
+            function h(v) {
+                return v.toString().padStart(2, '0');
+            }
+        }
+
+        addEventListener("keypress", _ => {
+            on_break = !on_break;
+        })
+
+        updateDisplay();
+
+        let last_timestamp_millis = 0;
+        function onFrame(cur_timestamp_millis) {
+            const delta = (cur_timestamp_millis - last_timestamp_millis) / 1000;
+            last_timestamp_millis = cur_timestamp_millis;
+
+            if (on_break) {
+                break_time_seconds -= delta;
+            } else {
+                break_time_seconds += delta * .5;
+            }
+            updateDisplay();
+            requestAnimationFrame(onFrame);
+        }
+
+        requestAnimationFrame(onFrame);
+    </script>
+</body>
+
+</html>
